@@ -1,0 +1,32 @@
+# Compiled class files
+*.class
+
+# Maven
+target/
+
+# Packaged files
+*.jar
+*.war
+*.ear
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# JVM crash logs
+*.log
+hs_err_pid*
+replay_pid*
+
+# Generated clips and archive produced by running the demo
+clips/
+*.csv
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

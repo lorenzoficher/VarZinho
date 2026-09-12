@@ -1,0 +1,9 @@
+# Every pull request is reviewed by the repository owner.
+# GitHub requests this review automatically.
+*       @lorenzoficher
+
+# TODO: add the other four team members' GitHub usernames.
+# Once known, ownership can be narrowed per aggregate, for example:
+#
+# /src/main/java/br/edu/unipampa/varzinho/domain/capture/     @lorenzoficher @member2
+# /src/main/java/br/edu/unipampa/varzinho/repository/         @lorenzoficher @member3
