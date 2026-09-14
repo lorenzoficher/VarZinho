@@ -1,0 +1,74 @@
+# Project constraints
+
+> Seeded once by the ARK and filled in by `adopt-repo`; the ARK never touches it
+> again. The generic conventions (language, clean code) come from the ARK clone via
+> the global installation — this file is only what holds in **this** repository.
+>
+> Domain model, decisions and their reasoning: [`CONTEXT.md`](../../CONTEXT.md).
+
+---
+
+## Platform
+
+- **Java 17 (LTS), and no language feature above it.** Team machines and the
+  presentation machine may run older JDKs; code that only compiles on 21 cannot be
+  demonstrated.
+- **Maven, no wrapper, no CI.** `mvn compile`, `mvn test`, `mvn exec:java`. The build
+  is verified on each person's machine, so it must depend on nothing but a JDK and
+  Maven.
+
+## Dependencies
+
+- **JUnit 5 is the only dependency, and that is a decision, not an accident.** Adding
+  a third-party library requires an issue and the team's agreement first.
+- **The dependency arrow points inward.** `domain/` never imports from `repository/`.
+  Persistence knows the domain; the domain knows nothing about persistence.
+- **All persistence goes through the `HighlightRepository` interface.** CSV is
+  today's implementation (`CsvHighlightRepository`), not the contract.
+
+## Model invariants
+
+- Every field is `private`. Expose behaviour, not state.
+- No setters. Constructors validate — an object that exists is an object that is
+  valid.
+- The only permitted mutation in the model is `Highlight.assignAuthor(Athlete)`. A
+  highlight's author is optional (`0..1`) because at capture time nobody knows it.
+- Domain errors use this project's own exceptions in `exception/`. Never a raw
+  `RuntimeException`, never an empty `catch`.
+
+## Permanently out of scope
+
+Stated so nobody mistakes them for oversights — each is argued in `CONTEXT.md`:
+
+- No graphical interface, in Swing or anything else.
+- No real database.
+- No real video capture: `VideoClip` is metadata only, and no frame is ever decoded.
+
+## Language
+
+All code, comments, commit messages, branch names, issues and technical
+documentation are in English, identifiers included (`Highlight`, never `Lance`).
+`README.md` is the only exception.
+
+**This overrides the ARK's generic `code-conventions.md`**, which asks for
+documentation in Portuguese and `snake_case` identifiers. In this repository
+`AGENTS.md` wins on both counts.
+
+## Delivery
+
+| | |
+|---|---|
+| Course | AL0330 — Object-Oriented Programming, Unipampa Alegrete, 2026/2 |
+| Deadline | 2026-09-30 |
+| Team | 5 people, one aggregate each |
+| Must be demonstrated | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling |
+
+`main` and `development` are protected: a pull request with one approval, no direct
+pushes, no force pushes. See [`docs/WORKFLOW.md`](../../docs/WORKFLOW.md).
+
+Because the work is graded on OOP concepts, a change that simplifies the model by
+removing one of the required topics is not an improvement here.
+
+## Open questions
+
+Tracked in [`CONTEXT.md`](../../CONTEXT.md) and as issues #21–#23. Not repeated here.
