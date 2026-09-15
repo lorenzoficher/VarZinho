@@ -4,8 +4,11 @@
 
 Sistema de captura de lances para ginásios esportivos. As câmeras gravam
 continuamente em um buffer circular de 30 segundos; quando acontece um gol ou
-uma jogada bonita, o operador aciona um botão e aquele trecho é salvo como
-vídeo permanente.
+uma jogada bonita, o atleta aciona um botão e aquele trecho é salvo como vídeo
+permanente. Depois é só pedir o vídeo ao operador, que tem o acervo inteiro.
+
+O foco é futebol, mas o sistema não conhece esporte nem tipo de jogada: serve a
+qualquer modalidade que o ginásio jogue.
 
 ## A regra central
 
@@ -17,8 +20,9 @@ em um buffer circular que retém os últimos 30 segundos e descarta
 automaticamente o conteúdo mais antigo.
 
 Essa regra explica quase todas as decisões do projeto — inclusive por que o
-autor do lance é opcional: no momento da captura não existe nenhuma camada de
-identificação de usuário, apenas um botão sendo apertado.
+lance não registra ninguém: no momento da captura não existe nenhuma camada de
+identificação de usuário, apenas um botão sendo apertado. Quem quer o vídeo
+procura o operador, que localiza pela quadra e pelo horário.
 
 ## Sobre o projeto
 
