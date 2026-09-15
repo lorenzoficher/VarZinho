@@ -44,7 +44,7 @@ src/main/java/br/edu/unipampa/varzinho/
 │   └── people/      Person, Athlete, Operator
 ├── repository/      HighlightRepository, CsvHighlightRepository
 ├── exception/       domain exceptions
-├── enums/           HighlightType, Sport, CameraStatus, Resolution
+├── enums/           CameraStatus, Resolution
 └── Main.java        console entry point
 
 src/test/java/br/edu/unipampa/varzinho/   mirrors the same structure
@@ -57,10 +57,11 @@ A test lives in the same package as the class it tests, under `src/test`.
 **Encapsulation is not optional.** Every field is `private`. Expose behaviour,
 not state: prefer `court.triggerCapture()` over `court.getCameras().get(0)...`.
 
-**No setters unless a real use case demands one.** A `Highlight` receives its
-timestamp at construction and never changes it. The only mutable piece of the
-model is the optional author, and it has a dedicated method
-(`assignAuthor(Athlete)`), not a setter.
+**No setters, and in this model nothing mutable at all.** A `Highlight`
+receives everything at construction and changes nothing afterwards. Objects are
+built valid and stay that way; the collections a `Gym` or a `Court` owns grow
+through named behaviour (`addCourt`, `installCamera`, `registerPerson`), never
+through a setter handing out the list.
 
 **Constructors validate.** If an argument would produce an invalid object,
 throw. An object that exists is an object that is valid.
