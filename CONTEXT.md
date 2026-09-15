@@ -6,20 +6,23 @@ what it means here.
 
 ## The problem
 
-A sports gym has courts. Courts have cameras. A good play happens — a goal, a
-save, a dunk — and by the time anyone reacts, it is over. Nobody can start
-recording a moment that already ended.
+A sports gym has courts. Courts have cameras. A good play happens and, by the
+time anyone reacts, it is over. Nobody can start recording a moment that
+already ended.
 
 So the cameras never stop recording. Each one keeps the most recent 30 seconds
-in memory and throws away everything older. When someone presses the button,
-those 30 seconds are frozen and written to disk as a permanent clip.
+in memory and throws away everything older. When the button is pressed, those
+30 seconds are frozen and written to disk as a permanent clip.
+
+The athlete who just played is the one who presses the button. Later they ask
+the operator for the clip, and the operator — who holds the whole archive —
+looks it up by court and time.
 
 ## Glossary
 
 **Highlight** — a play worth keeping, captured and persisted. The central
-entity of the system. Carries when it happened, what kind of play it was,
-which court and camera produced it, the resulting clip, and optionally the
-athlete who performed it.
+entity of the system. Carries when it happened, which court and camera
+produced it, and the resulting clip.
 
 Portuguese speakers say *lance*. In code it is always `Highlight`.
 
@@ -36,18 +39,18 @@ triggered it.
 is metadata only: path, duration, resolution, size. No bytes are read or
 written.
 
-**Court** — a playing surface inside a gym, dedicated to one sport. Owns its
-cameras.
+**Court** — a playing surface inside a gym. Owns its cameras.
 
 **Camera** — equipment mounted on a court, continuously recording into its own
 buffer. Has status (active, inactive, maintenance).
 
-**Operator** — the person who presses the button. Known to the system as a
-registered person, but *not* recorded on the highlight, because the button
-carries no identity.
+**Athlete** — the player. Presses the button when something worth keeping
+happens, and asks the operator for the clip afterwards. Registered at the gym,
+never recorded on a highlight.
 
-**Athlete** — the player who performed the highlight. Optional, and filled in
-later by a human who watched the clip.
+**Operator** — gym staff, and the person who holds the archive. When an
+athlete asks for a clip, the operator is who searches for it. Registered at
+the gym, never recorded on a highlight either.
 
 ## Decisions
 
@@ -60,17 +63,38 @@ Every alternative design fails the same way: if the button starts a recording,
 the play is already gone. The circular buffer exists because of this, and it
 is the reason `CircularBuffer` holds real behaviour rather than being a list.
 
-### The highlight's author is optional (`0..1`)
+### A highlight has no author
 
-At capture time the system genuinely does not know who made the play. There is
-no login, no identification, no user session — just a button being pressed.
-Requiring an author would force the code to invent data it does not have.
+The button carries no identity. There is no login, no badge reader, no
+session — somebody pressed a button on a wall. Recording who performed the
+play, or even who pressed it, would mean inventing data the system never had.
 
-An author may be assigned later, manually, by someone who watches the clip and
-recognises the player. This is the only mutation allowed on a `Highlight`.
+It is also unnecessary. An athlete who wants their clip asks the operator, who
+searches the archive by court and time. That is how the gym already works, and
+no name has to be stored on the highlight for it to work.
 
-This decision also settles a scope question: no GUI is needed for capture,
-because there is nobody to interact with at that moment.
+The consequence is that `Highlight` is entirely immutable: every field is set
+at construction, and nothing in the model changes after the object exists.
+
+### The system does not classify the play
+
+An earlier draft gave every highlight a type — goal, save, dunk, block — and
+every court a sport. Both are gone.
+
+The focus is football, but the system has to serve whatever a gym plays. A
+closed vocabulary of plays is per-sport by definition: it would grow with every
+sport added, and every class holding it would change along. A highlight is a
+preserved window of footage; what happened inside it is for whoever watches.
+
+`CameraStatus` and `Resolution` stay, because those are properties of the
+equipment and do not vary by sport.
+
+### The gym keeps the register of people
+
+Athletes and operators are registered at the gym — not at a court, and not on
+a highlight. A person exists before the gym registers them and goes on
+existing afterwards, which makes this aggregation, like the gym's cameras and
+unlike its courts.
 
 ### A court aggregates its cameras, it does not compose them
 
