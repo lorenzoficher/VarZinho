@@ -52,13 +52,13 @@ justification for declaring an interface at all.
 ### The CSV format
 
 ```csv
-id,capturedAt,type,durationSeconds,courtNumber,cameraId,clipPath,authorDocument
-h-001,2026-09-12T20:14:33Z,GOAL,30,3,cam-a1,/clips/h-001.mp4,
-h-002,2026-09-12T20:41:02Z,SAVE,30,3,cam-a1,/clips/h-002.mp4,01234567890
+id,capturedAt,courtNumber,cameraId,clipPath,durationSeconds,resolution,sizeMb
+h-001,2026-09-12T20:14:33Z,3,cam-a1,/clips/h-001.mp4,30,FULL_HD,42.5
+h-002,2026-09-12T20:41:02Z,3,cam-a1,/clips/h-002.mp4,30,FULL_HD,41.8
 ```
 
-An empty `authorDocument` means the highlight has no author yet — the normal
-state right after capture.
+No column names a person: a highlight records nobody. The columns after
+`clipPath` are the `VideoClip`, rebuilt on load.
 
 The format is an implementation detail of `CsvHighlightRepository`. No other
 class parses or produces it.
@@ -71,8 +71,7 @@ Domain errors are signalled with our own exception types, never with raw
 ```
 DomainException (abstract, unchecked)
 ├── NoActiveCameraException
-├── EmptyBufferException
-└── AuthorAlreadyAssignedException
+└── EmptyBufferException
 
 RepositoryException (checked)
 └── CorruptedRecordException
@@ -88,10 +87,6 @@ nothing, and they need to know why.
 **`EmptyBufferException`** — a clip is requested from a camera that has not
 recorded enough footage yet, typically right after being switched on. The
 window asked for does not exist.
-
-**`AuthorAlreadyAssignedException`** — an author is assigned to a highlight
-that already has one. Authorship is set once; a silent overwrite would destroy
-information a human entered.
 
 **`CorruptedRecordException`** — a line in the CSV cannot be parsed. Checked,
 because the caller can reasonably recover: skip the record, report it, and
@@ -115,8 +110,8 @@ real decision: a damaged file the caller may want to partially read.
 ## Console demo
 
 `Main` exists to exercise the model end to end, not to be a product. It builds
-a gym, installs cameras, records, triggers captures, persists, reloads from
-disk, assigns an author, and lists the archive.
+a gym, registers its people, installs cameras, records, triggers captures,
+persists, reloads from disk, and lists the archive as the operator would.
 
 It is deliberately thin: every rule lives in the domain, and the console only
 calls it. If logic starts accumulating in `Main`, it belongs in a domain class
