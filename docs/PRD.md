@@ -18,9 +18,10 @@ Cameras record continuously into a circular buffer holding the last 30
 seconds. A button on the court freezes that window into a permanent clip.
 Everything older is discarded automatically and never reaches disk.
 
-The result is an archive containing only the moments somebody cared about, each
-one catalogued by time, court, play type and — when a human fills it in — the
-athlete who performed it.
+The result is an archive containing only the moments somebody cared about,
+each one catalogued by the time it happened and the court and camera it came
+from. Nothing is catalogued by who was involved: the button carries no
+identity.
 
 ## Goals
 
@@ -42,15 +43,18 @@ Stated explicitly so they are not mistaken for omissions:
 | User accounts, login, authentication | No identity exists in the capture flow |
 | Live streaming, sponsors, multi-angle | Real products do this; out of scope here |
 | Automatic play detection | Listed as future work |
+| Classifying the kind of play | Per-sport by nature; the system must serve any sport |
+| Recording who played or who pressed | No identity exists at the button |
 
 ## Users
 
-**Operator** — works at the gym, presses the button when something happens,
-later retrieves clips for players who ask. Needs capture to be instant and
-retrieval to be searchable.
+**Athlete** — plays the match and presses the button when something worth
+keeping happens. Afterwards asks the operator for the clip. Needs capture to be
+a single button press, with nothing to fill in.
 
-**Athlete** — played the match, wants the clip of their goal. Never touches the
-system directly; asks the operator.
+**Operator** — works at the gym and holds the archive. Retrieves clips for the
+athletes who ask, searching by court and time. Needs retrieval to be
+searchable.
 
 **Gym manager** — registers courts and cameras, wants to know the equipment is
 working.
@@ -67,15 +71,17 @@ content when full. An inactive camera does not record.
 
 Triggering a capture on a court produces a highlight from the current buffer
 contents of its cameras. The highlight records the moment of the trigger, the
-play type, the originating court and camera, and the resulting clip.
+originating court and camera, and the resulting clip. It records nothing
+about who played or who pressed.
 
 Triggering a court with no active camera is an error, not a silent no-op.
 
-### FR-3 — Optional authorship
+### FR-3 — People registered at the gym
 
-A highlight is created without an author. An author may be assigned afterwards
-exactly once. Attempting to capture an author at trigger time is impossible by
-design: no identity exists at that moment.
+A gym keeps a register of the people around it: athletes who play there and
+operators who work there. Registration is independent of capture — no person is
+ever recorded on a highlight, because no identity exists at the moment the
+button is pressed.
 
 ### FR-4 — Persistence
 
@@ -84,8 +90,9 @@ the `HighlightRepository` abstraction. No other class knows the storage format.
 
 ### FR-5 — Retrieval
 
-The archive can be listed in full, filtered by court, by date and by play type,
-and a single highlight can be fetched by its identifier.
+The archive can be listed in full, filtered by court, and a single highlight
+can be fetched by its identifier. This is what the operator uses when an
+athlete asks for a clip.
 
 ### FR-6 — Equipment management
 
@@ -106,8 +113,8 @@ status (active, inactive, maintenance) determines whether it records.
 The project is done when:
 
 - [ ] `mvn test` passes with every spec's criteria covered
-- [ ] `mvn exec:java` demonstrates the full flow: register gym and court,
-      install camera, record, trigger, persist, reload, assign author, list
+- [ ] `mvn exec:java` demonstrates the full flow: register gym, court and
+      people, install camera, record, trigger, persist, reload, list
 - [ ] Highlights written in one run are readable in the next
 - [ ] Every syllabus topic appears in the code with a defensible reason
 - [ ] Every document in `docs/` reflects the code as shipped
