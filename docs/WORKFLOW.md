@@ -74,7 +74,7 @@ English, imperative mood, lowercase:
 
 ```
 add circular buffer overwrite rule
-fix author assignment on empty highlight
+fix camera removal on a court that never had it
 document exception hierarchy
 ```
 
