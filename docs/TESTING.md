@@ -27,8 +27,8 @@ mvn test -Dtest=CircularBufferTest#overwritesOldestFrameWhenFull
 
 Test behaviour that can break:
 
-- **Rules** — the buffer overwrites when full; an author cannot be assigned
-  twice; a court with no active camera refuses to capture
+- **Rules** — the buffer overwrites when full; a document cannot be registered
+  twice at the same gym; a court with no active camera refuses to capture
 - **Boundaries** — empty buffer, exactly full buffer, one frame past full
 - **Exceptions** — the error path is thrown, with the right type
 - **Round-trips** — a highlight written to CSV and read back is equal to the
@@ -56,7 +56,7 @@ void overwritesOldestFrameWhenBufferIsFull() { }
 void throwsWhenCourtHasNoActiveCamera() { }
 
 @Test
-void keepsOriginalAuthorWhenAssignedTwice() { }
+void rejectsPersonWhoseDocumentIsAlreadyRegistered() { }
 ```
 
 Never `test1()`, `testBuffer()`, or `shouldWork()`.
@@ -89,11 +89,11 @@ Assert the type, and assert it comes from the right call:
 ```java
 @Test
 void throwsWhenCourtHasNoActiveCamera() {
-    Court court = new Court(1, Sport.FUTSAL);
+    Court court = new Court(1);
     court.installCamera(inactiveCamera());
 
     assertThrows(NoActiveCameraException.class,
-                 () -> court.triggerCapture(HighlightType.GOAL));
+                 () -> court.triggerCapture());
 }
 ```
 

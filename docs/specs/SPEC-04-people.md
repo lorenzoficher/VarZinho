@@ -2,8 +2,11 @@
 
 **Aggregate:** `Person`, `Athlete`, `Operator` · **Milestone:** Phase 1 — Domain
 
-The people around the system: the athlete who may be credited with a highlight,
-and the operator who presses the button.
+The people around the system: the athlete who plays and presses the button, and
+the operator who holds the archive and finds the clip when asked for it.
+
+Neither is recorded on a highlight. They are registered at the gym (SPEC-01
+B-5), which is the only place in the model that refers to them.
 
 ## Contract
 
@@ -59,16 +62,21 @@ no type checks at the call site.
 - **AC-3.1** An athlete exposes shirt number and position
 - **AC-3.2** A shirt number outside 1–99 is rejected
 - **AC-3.3** Two athletes with the same document are equal
-- **AC-3.4** An athlete's document is what links them to a persisted highlight
+- **AC-3.4** An athlete's document is what the gym register keys on
 
 ### B-4 — An operator has work details
 
 - **AC-4.1** An operator exposes badge and shift
 - **AC-4.2** A blank badge is rejected
 
-The operator is **not** recorded on the highlight. The button carries no
-identity, and inventing one would contradict the domain. The class exists
-because gyms have staff, not because captures are attributable.
+**Nobody in this aggregate is recorded on a highlight** — not the operator, and
+not the athlete who pressed the button. The button carries no identity, and
+inventing one would contradict the domain. These classes exist because a gym
+has members and staff, not because captures are attributable.
+
+The operator is the one who retrieves clips from the archive, but that happens
+in the console: `domain/` must not import `repository/`, so `Operator` holds no
+repository and has no `listHighlights()`.
 
 ## Errors
 
@@ -87,8 +95,8 @@ start if you want a quick win on day one.
 ## Notes
 
 Override `equals()` and `hashCode()` on `Person`, keyed on the document. The
-CSV stores an author as a document string, and reloading must produce an
-athlete that compares equal to the original.
+gym register rejects a document it already holds, and that check is the
+equality doing its job.
 
 Keep the hierarchy honest: if `Person` ends up with nothing but three fields
 and no behaviour, the inheritance is decorative. `age()` and the abstract
@@ -98,3 +106,6 @@ and no behaviour, the inheritance is decorative. `age()` and the abstract
 
 Teams, contracts, statistics, careers, authentication. Nobody logs in to this
 system.
+
+Any link from a person to a highlight. That association does not exist — see
+[CONTEXT.md](../../CONTEXT.md), *A highlight has no author*.
