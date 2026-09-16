@@ -32,7 +32,8 @@ Desktop.ini
 .DS_Store
 
 # Agent kit: .claude/rules/ is versioned so the team shares it.
-# These three are per-machine or per-session state.
+# These four are per-machine or per-session state.
+.claude/settings.json
 .claude/settings.local.json
 .claude/current-issue
 .claude/board.env
