@@ -4,17 +4,23 @@ How five people work on this repository without blocking each other.
 
 ## Branches
 
-| Branch | Purpose | Protected |
-|---|---|---|
-| `main` | Delivered, presentable state | Yes |
-| `development` | Integration of finished work | Yes |
-| `feature/*` | One issue's worth of work | No |
-| `docs/*` | Documentation only | No |
-| `fix/*` | Corrections | No |
+| Branch | Purpose | Protected | Approval to merge |
+|---|---|---|---|
+| `main` | Delivered, presentable state | Yes | One |
+| `development` | Integration of finished work | Yes | None |
+| `feature/*` | One issue's worth of work | No | — |
+| `docs/*` | Documentation only | No | — |
+| `fix/*` | Corrections | No | — |
 
-Both `main` and `development` require a pull request with **one approval**.
-Direct pushes are rejected for everyone, repository owner included. Force
-pushes and branch deletion are blocked.
+Both `main` and `development` require a **pull request**: direct pushes are
+rejected for everyone, repository owner included, and force pushes and branch
+deletion are blocked. Every commit reaches `development` through a pull
+request, always.
+
+The two branches differ in what it takes to merge. `development` needs no
+approval — open the pull request and merge it yourself once the tests pass.
+`main` needs **one approval**, because that is the branch that gets
+delivered.
 
 `main` only ever receives pull requests from `development`.
 
@@ -32,7 +38,8 @@ git push -u origin feature/circular-buffer-overwrite
 gh pr create --base development --fill
 ```
 
-After approval, squash-merge and delete the branch:
+Then squash-merge and delete the branch — no approval is needed to merge
+into `development`:
 
 ```bash
 gh pr merge --squash --delete-branch
@@ -90,24 +97,27 @@ One issue per pull request. If it grows beyond its issue, split it.
 The description says what changed and how it was verified. The template
 prompts for both.
 
-Before requesting review:
+Before merging — or before requesting review, when the target is `main`:
 
 ```bash
 mvn test
 ```
 
-A pull request with failing tests wastes a reviewer's time.
+A pull request with failing tests wastes everyone's time, and on `development`
+nobody else is there to catch it.
 
 ## Review
 
-Every pull request needs one approval. `CODEOWNERS` requests review
-automatically.
+A pull request into `development` merges without approval. `CODEOWNERS` still
+requests a review automatically, so the work is visible and anyone can comment
+after the fact; nobody has to wait for it. Ask for a review when you actually
+want a second opinion.
+
+A pull request into `main` needs **one approval**. Nobody approves their own —
+GitHub does not allow it, which is deliberate.
 
 Reviewing means reading the code and running it, not clicking approve. Say
 what is wrong and why; a review that only says "ok" adds nothing.
-
-Nobody approves their own pull request — GitHub does not allow it, which is
-deliberate.
 
 ## Issues
 
@@ -132,4 +142,4 @@ An issue is done when:
 - [ ] Tests cover its acceptance criteria and pass
 - [ ] The code follows [AGENTS.md](../AGENTS.md)
 - [ ] Documentation affected by the change was updated
-- [ ] The pull request was approved and merged into `development`
+- [ ] The pull request was merged into `development`

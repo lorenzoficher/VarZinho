@@ -1,5 +1,6 @@
-# Every pull request is reviewed by the repository owner.
-# GitHub requests this review automatically.
+# GitHub requests a review from the repository owner on every pull request.
+# Only a pull request into `main` has to wait for that approval; one into
+# `development` merges without it.
 *       @lorenzoficher
 
 # TODO: add the other four team members' GitHub usernames.
