@@ -31,8 +31,10 @@
 - Every field is `private`. Expose behaviour, not state.
 - No setters. Constructors validate — an object that exists is an object that is
   valid.
-- The only permitted mutation in the model is `Highlight.assignAuthor(Athlete)`. A
-  highlight's author is optional (`0..1`) because at capture time nobody knows it.
+- **Nothing in the model mutates.** `Highlight` is immutable and records no person:
+  the button carries no identity, so there is no author to assign later.
+- **The system classifies neither the sport nor the kind of play.** The focus is
+  football, but the model has to serve whatever a gym plays.
 - Domain errors use this project's own exceptions in `exception/`. Never a raw
   `RuntimeException`, never an empty `catch`.
 
@@ -63,8 +65,9 @@ documentation in Portuguese and `snake_case` identifiers. In this repository
 | Team | 5 people, one aggregate each |
 | Must be demonstrated | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling |
 
-`main` and `development` are protected: a pull request with one approval, no direct
-pushes, no force pushes. See [`docs/WORKFLOW.md`](../../docs/WORKFLOW.md).
+`main` and `development` are protected: no direct pushes, no force pushes, every
+commit through a pull request. Merging into `development` needs no approval;
+merging into `main` needs one. See [`docs/WORKFLOW.md`](../../docs/WORKFLOW.md).
 
 Because the work is graded on OOP concepts, a change that simplifies the model by
 removing one of the required topics is not an improvement here.

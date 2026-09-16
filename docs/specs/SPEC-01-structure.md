@@ -2,8 +2,9 @@
 
 **Aggregate:** `Gym`, `Court` · **Milestone:** Phase 1 — Domain
 
-The physical layout of the venue: a gym containing courts, each court holding
-the cameras installed on it and exposing the capture trigger.
+The physical layout of the venue: a gym containing courts and holding the
+register of the people around it, each court holding the cameras installed on
+it and exposing the capture trigger.
 
 ## Contract
 
@@ -12,18 +13,24 @@ public class Gym {
     public Gym(String name, String address);
     public void addCourt(Court court);
     public Court findCourt(int number);
-    public List<Court> getCourts();          // unmodifiable
+    public List<Court> getCourts();             // unmodifiable
+    public void registerPerson(Person person);
+    public Optional<Person> findPerson(String document);
+    public List<Person> getPeople();            // unmodifiable
 }
 
 public class Court {
-    public Court(int number, Sport sport);
+    public Court(int number);
     public void installCamera(Camera camera);
     public void removeCamera(Camera camera);
     public boolean hasActiveCamera();
-    public Highlight triggerCapture(HighlightType type);
+    public Highlight triggerCapture();
     public List<Camera> getCameras();        // unmodifiable
 }
 ```
+
+A court has no sport. The system serves whatever the gym plays — see
+[CONTEXT.md](../../CONTEXT.md), *The system does not classify the play*.
 
 ## Behaviours
 
@@ -60,10 +67,31 @@ This is aggregation: destroying the court does not destroy its cameras.
 
 - **AC-4.1** Triggering on a court with an active camera returns a highlight
 - **AC-4.2** The highlight records the court's number and the originating camera
-- **AC-4.3** The highlight records the play type passed in
-- **AC-4.4** The highlight is created without an author
-- **AC-4.5** Triggering on a court with no active camera throws
+- **AC-4.3** The highlight records nothing about who played or who pressed
+- **AC-4.4** Triggering on a court with no active camera throws
   `NoActiveCameraException`
+
+The trigger takes no argument. Everything the highlight knows comes from the
+court and the camera.
+
+### B-5 — A gym registers the people around it
+
+Athletes who play there and operators who work there. Registration is a
+membership list and says nothing about any highlight.
+
+- **AC-5.1** A newly created gym has nobody registered
+- **AC-5.2** A registered person is retrievable by document
+- **AC-5.3** Looking up a document that is nobody's returns empty, never null
+- **AC-5.4** Registering a document that is already registered is rejected
+- **AC-5.5** An athlete and an operator are registered through the same call
+  and come back as `Person`
+- **AC-5.6** The returned people list cannot be modified from outside
+
+AC-5.5 is the polymorphism here: `Gym` stores `Person` and never asks which
+kind it is holding.
+
+This is aggregation, like the cameras and unlike the courts: a person exists
+before being registered and after being removed.
 
 ## Errors
 
@@ -71,13 +99,15 @@ This is aggregation: destroying the court does not destroy its cameras.
 |---|---|
 | Capture triggered with no active camera | `NoActiveCameraException` |
 | Duplicate court number | `IllegalArgumentException` |
+| Duplicate person document | `IllegalArgumentException` |
+| Null person passed to `registerPerson` | `IllegalArgumentException` |
 | Removing a camera that is not installed | `IllegalArgumentException` |
 | Null or blank gym name | `IllegalArgumentException` |
 | Court number not positive | `IllegalArgumentException` |
 
 ## Dependencies
 
-Needs `Camera` (SPEC-02), `Highlight` (SPEC-03), `Sport`, `HighlightType`,
+Needs `Camera` (SPEC-02), `Highlight` (SPEC-03), `Person` (SPEC-04),
 `CameraStatus`, `NoActiveCameraException`.
 
 Write against the contracts above; do not wait for those classes to be
@@ -87,3 +117,6 @@ finished, and do not edit them.
 
 Scheduling, court availability, bookings, matches. A court is a place with
 cameras, nothing more.
+
+Memberships, fees, attendance and anything else about the registered people.
+The register is a list of who is known to the gym, not a management module.

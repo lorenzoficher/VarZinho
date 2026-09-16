@@ -34,7 +34,7 @@ signature: anything that throws, that may return empty, or that mutates state.
  * Freezes the current buffer content into a clip.
  *
  * @return the highlight produced by this trigger
- * @throws CameraUnavailableException if the camera is not active
+ * @throws NoActiveCameraException if no camera on the court is active
  */
 public Highlight trigger() { ... }
 ```
@@ -55,9 +55,10 @@ if a line needs a comment to be read, rename something first.
   `AGENTS.md` asks for.
 - **`final` on the class** unless it is designed to be extended. `Camera` is
   extended by `FixedCamera` and `PtzCamera` — it is not final. `CircularBuffer` is.
-- **`Optional<T>` in return types only.** Never as a field, never as a parameter. The
-  optional author of a `Highlight` is a nullable field exposed as
-  `Optional<Athlete> author()`.
+- **`Optional<T>` in return types only.** Never as a field, never as a parameter. A
+  lookup that may find nothing says so in its type — `Optional<Person>
+  findPerson(String)`, `Optional<Highlight> findById(String)` — while the field
+  behind it stays a plain reference.
 - **Declare the interface, not the implementation:** `List<Frame>`, never
   `ArrayList<Frame>`; `HighlightRepository`, never `CsvHighlightRepository`.
 - **No raw types and no wildcard imports.** `List<Frame>`, not `List`; import each

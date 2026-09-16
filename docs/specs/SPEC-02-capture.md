@@ -77,6 +77,9 @@ overwritten.
 - **AC-3.5** An inactive camera ignores frames sent to it
 - **AC-3.6** An active camera stores frames in its buffer
 
+Ask `status.canRecord()` rather than comparing against `CameraStatus.ACTIVE`.
+The enum owns that rule, and `Court.hasActiveCamera()` asks the same question.
+
 ### B-4 — Cameras capture polymorphically
 
 `Camera` is abstract; each subclass produces its clip its own way. A court

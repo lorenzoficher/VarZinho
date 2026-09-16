@@ -11,18 +11,19 @@ classDiagram
         -String name
         -String address
         -List~Court~ courts
+        -List~Person~ people
         +addCourt(Court)
         +findCourt(int) Court
-        +listHighlights() List~Highlight~
+        +registerPerson(Person)
+        +findPerson(String) Optional~Person~
     }
 
     class Court {
         -int number
-        -Sport sport
         -List~Camera~ cameras
         +installCamera(Camera)
         +removeCamera(Camera)
-        +triggerCapture(HighlightType) Highlight
+        +triggerCapture() Highlight
         +hasActiveCamera() boolean
     }
 
@@ -69,13 +70,9 @@ classDiagram
     class Highlight {
         -String id
         -Instant capturedAt
-        -HighlightType type
-        -int durationSeconds
-        -Athlete author
+        -int courtNumber
+        -String cameraId
         -VideoClip clip
-        -Camera origin
-        +assignAuthor(Athlete)
-        +hasAuthor() boolean
         +describe() String
     }
 
@@ -132,6 +129,7 @@ classDiagram
     }
 
     Gym "1" *-- "1..*" Court
+    Gym "1" o-- "0..*" Person
     Court "1" o-- "0..*" Camera
     Camera "1" *-- "1" CircularBuffer
     CircularBuffer "1" *-- "0..*" Frame
@@ -139,7 +137,6 @@ classDiagram
     Camera <|-- PtzCamera
     Camera "1" --> "0..*" Highlight
     Highlight "1" *-- "1" VideoClip
-    Highlight "0..*" --> "0..1" Athlete
     Person <|-- Athlete
     Person <|-- Operator
     Triggerable <|.. PhysicalButton
@@ -156,12 +153,12 @@ are **interfaces**.
 | Relationship | Cardinality | Type | Why |
 |---|---|---|---|
 | Gym → Court | 1 : 1..* | Composition ◆ | A court cannot exist outside its gym |
+| Gym → Person | 1 : 0..* | **Aggregation ◇** | A person exists before and after being registered |
 | Court → Camera | 1 : 0..* | **Aggregation ◇** | Cameras are movable equipment |
 | Camera → CircularBuffer | 1 : 1 | Composition ◆ | Internal memory of the device |
 | CircularBuffer → Frame | 1 : 0..* | Composition ◆ | Frames exist only inside the buffer |
 | Camera → Highlight | 1 : 0..* | Association → | Highlights outlive the camera |
 | Highlight → VideoClip | 1 : 1 | Composition ◆ | Without a clip there is no highlight |
-| Highlight → Athlete | 0..* : **0..1** | Association → | Author is optional and assigned later |
 
 ### Composition or aggregation?
 
@@ -173,6 +170,10 @@ The test: *if the whole is removed, does the part still make sense alone?*
 repaired, gets mounted on another court. It survives. **Aggregation**, drawn
 with a hollow diamond.
 
+**Gym and person** — an athlete existed before joining and goes on existing
+after leaving. Aggregation as well, which is why `Gym` holds one of each kind
+of diamond.
+
 Having both in the same model is deliberate: it shows the distinction is
 understood rather than applied by habit.
 
@@ -181,24 +182,30 @@ understood rather than applied by habit.
 A court that was just built has no cameras yet. `1..*` would make that state
 unrepresentable and force the code to lie.
 
-### Why `0..1` author
+### Why a highlight records nobody
 
-At the moment of capture the system does not know who made the play. There is
-no login and no identification — a button was pressed, nothing more. Requiring
-an author would mean inventing data.
+At the moment of capture the system does not know who made the play, and it
+does not know who pressed the button either — there is no login and no
+identification. Recording either would mean inventing data.
 
-An author is assigned later by a human who watched the clip. This is the only
-mutable field on `Highlight`, and it changes through `assignAuthor()`, not a
-setter. Assigning twice is an error.
+`Highlight` is therefore immutable: every field is set at construction and
+nothing changes afterwards. See [CONTEXT.md](../CONTEXT.md), *A highlight has
+no author*.
 
 ## Enumerations
 
-| Enum | Values |
-|---|---|
-| `HighlightType` | `GOAL`, `SAVE`, `DUNK`, `SPIKE`, `BLOCK`, `FOUL`, `OTHER` |
-| `Sport` | `FUTSAL`, `BASKETBALL`, `VOLLEYBALL`, `HANDBALL` |
-| `CameraStatus` | `ACTIVE`, `INACTIVE`, `MAINTENANCE` |
-| `Resolution` | `HD`, `FULL_HD`, `ULTRA_HD` |
+| Enum | Values | Behaviour |
+|---|---|---|
+| `CameraStatus` | `ACTIVE`, `INACTIVE`, `MAINTENANCE` | `canRecord()` — only `ACTIVE` does |
+| `Resolution` | `HD`, `FULL_HD`, `ULTRA_HD` | `width()`, `height()`, `label()` |
+
+Both carry behaviour rather than being bare lists of constants.
+`Court.hasActiveCamera()` asks `status.canRecord()` instead of comparing against
+a constant at the call site.
+
+There is no enum for the sport or for the kind of play: the system classifies
+neither. See [CONTEXT.md](../CONTEXT.md), *The system does not classify the
+play*.
 
 ## Where the syllabus topics appear
 
