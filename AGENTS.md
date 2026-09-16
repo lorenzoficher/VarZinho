@@ -120,8 +120,10 @@ Branches: `feature/<short-description>`, `docs/<short-description>`,
 Commits: imperative mood, English. `add circular buffer overwrite rule`, not
 `added` or `adicionei buffer`.
 
-Never push to `main` or `development` — both are protected and require a pull
-request with one approval. See [docs/WORKFLOW.md](docs/WORKFLOW.md).
+Never push to `main` or `development` — both are protected and every commit
+arrives through a pull request. A pull request into `development` merges
+without approval; one into `main` needs one approval. See
+[docs/WORKFLOW.md](docs/WORKFLOW.md).
 
 ## Scope discipline
 

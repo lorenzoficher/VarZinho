@@ -65,8 +65,9 @@ documentation in Portuguese and `snake_case` identifiers. In this repository
 | Team | 5 people, one aggregate each |
 | Must be demonstrated | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling |
 
-`main` and `development` are protected: a pull request with one approval, no direct
-pushes, no force pushes. See [`docs/WORKFLOW.md`](../../docs/WORKFLOW.md).
+`main` and `development` are protected: no direct pushes, no force pushes, every
+commit through a pull request. Merging into `development` needs no approval;
+merging into `main` needs one. See [`docs/WORKFLOW.md`](../../docs/WORKFLOW.md).
 
 Because the work is graded on OOP concepts, a change that simplifies the model by
 removing one of the required topics is not an improvement here.
