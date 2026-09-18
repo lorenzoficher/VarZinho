@@ -45,7 +45,8 @@ src/main/java/br/edu/unipampa/varzinho/
 ├── repository/      HighlightRepository, CsvHighlightRepository
 ├── exception/       domain exceptions
 ├── enums/           CameraStatus, Resolution
-└── Main.java        console entry point
+├── ui/              Swing windows — the only package that imports javax.swing
+└── Main.java        entry point, opens the interface
 
 src/test/java/br/edu/unipampa/varzinho/   mirrors the same structure
 ```
@@ -129,5 +130,13 @@ without approval; one into `main` needs one approval. See
 
 The deadline is 2026-09-30 and the team has five people. Before adding
 anything not in [docs/PRD.md](docs/PRD.md), open an issue and get agreement.
-Features listed as out of scope stay out of scope — including a GUI, a real
-database, and actual video capture.
+Features listed as out of scope stay out of scope — including a real database
+and actual video capture.
+
+The graphical interface used to be on that list and no longer is:
+[docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md) requires one. It stays
+**minimal** — the brief's word — and it owns no business rule.
+
+The brief is the contract. Where it and these conventions disagree, the brief
+wins, and the disagreement gets fixed here rather than worked around in a
+branch.
