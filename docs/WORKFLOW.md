@@ -58,13 +58,15 @@ classes and works in files nobody else touches.
 | People | `Person`, `Athlete`, `Operator` | [SPEC-04](specs/SPEC-04-people.md) |
 | Persistence | `HighlightRepository`, `CsvHighlightRepository` | [SPEC-05](specs/SPEC-05-persistence.md) |
 
-Splitting by layer was rejected: whoever owned the console would sit idle until
-the domain existed, and with eighteen days that is fatal. Splitting by
+Splitting by layer was rejected: whoever owned the interface would sit idle
+until the domain existed, and with eighteen days that is fatal. Splitting by
 aggregate lets all five start on day one, in different files, with almost no
 merge conflicts.
 
-Shared work — enums, exceptions, `Main`, final integration — is picked up by
-whoever finishes their aggregate first.
+Shared work — enums, exceptions, the Swing interface, `Main`, final
+integration — is picked up by whoever finishes their aggregate first. The
+interface is the largest piece of it and the one nobody planned for, so it
+wants an owner earlier than the rest.
 
 ### Working against classes you do not own
 
@@ -132,7 +134,7 @@ anyone. Milestones track phases; labels mark aggregate and kind.
 |---|---|
 | Phase 1 — Domain | Structure, capture, highlight, people |
 | Phase 2 — Persistence | Repository, CSV, exceptions |
-| Phase 3 — Console | `Main`, integration, final documentation |
+| Phase 3 — Interface | Swing windows, `Main`, integration, screenshots, final documentation |
 
 ## Definition of done
 
