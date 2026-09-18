@@ -18,7 +18,7 @@ Academic project for AL0330 (Object-Oriented Programming). The goal is
 mvn compile          # compile
 mvn test             # run all tests
 mvn test -Dtest=CircularBufferTest   # run one test class
-mvn exec:java        # run the console demo
+mvn exec:java        # open the interface
 ```
 
 Java 17. Do not use language features above 17 — several team machines and the
