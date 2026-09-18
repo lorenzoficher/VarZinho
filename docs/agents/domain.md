@@ -57,9 +57,10 @@ If your output contradicts an existing ADR, surface it explicitly rather than si
 **`docs/adr/` does not exist.** The decisions that would live there are already
 recorded in prose in `CONTEXT.md`, under *Decisions* — the trigger preserving the
 past, the highlight that records nobody, the system not classifying the play,
-aggregation versus composition, persistence behind an interface, no GUI, no real
-video capture. Read that section where these instructions
-say to read ADRs, and flag a contradiction against it the same way.
+aggregation versus composition, persistence behind an interface, the minimal Swing
+interface the brief forced back into scope, no real video capture. Read that section
+where these instructions say to read ADRs, and flag a contradiction against it the
+same way.
 
 Alongside `CONTEXT.md`, three project files carry the rest of the domain:
 
