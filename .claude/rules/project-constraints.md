@@ -31,8 +31,10 @@
 - Every field is `private`. Expose behaviour, not state.
 - No setters. Constructors validate — an object that exists is an object that is
   valid.
-- **Nothing in the model mutates.** `Highlight` is immutable and records no person:
-  the button carries no identity, so there is no author to assign later.
+- **`Highlight` never mutates.** It is immutable and records no person: the button
+  carries no identity, so there is no author to assign later. Equipment does change
+  state — a camera starts and stops recording, a buffer is written to — and that
+  state changes only through named behaviour that validates first, never a setter.
 - **The system classifies neither the sport nor the kind of play.** The focus is
   football, but the model has to serve whatever a gym plays.
 - Domain errors use this project's own exceptions in `exception/`. Never a raw
@@ -42,9 +44,13 @@
 
 Stated so nobody mistakes them for oversights — each is argued in `CONTEXT.md`:
 
-- No graphical interface, in Swing or anything else.
 - No real database.
 - No real video capture: `VideoClip` is metadata only, and no frame is ever decoded.
+
+**A graphical interface was on this list until 2026-09-18.** Section 2.9 of
+[`docs/ASSIGNMENT-BRIEF.md`](../../docs/ASSIGNMENT-BRIEF.md) requires one, so it is
+now required here too: minimal, in Swing, confined to `ui/`, owning no rule. The
+reversal and its reasoning are in `CONTEXT.md`.
 
 ## Language
 
@@ -63,7 +69,9 @@ documentation in Portuguese and `snake_case` identifiers. In this repository
 | Course | AL0330 — Object-Oriented Programming, Unipampa Alegrete, 2026/2 |
 | Deadline | 2026-09-30 |
 | Team | 5 people, one aggregate each |
-| Must be demonstrated | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling |
+| Brief | [`docs/ASSIGNMENT-BRIEF.md`](../../docs/ASSIGNMENT-BRIEF.md) — free theme, 18-item checklist |
+| Must be demonstrated | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling, a minimal Swing interface, `java.time` |
+| Must be delivered | Source in packages, `README.md` with the checklist filled in, screenshots of the interface, commit history |
 
 `main` and `development` are protected: no direct pushes, no force pushes, every
 commit through a pull request. Merging into `development` needs no approval;

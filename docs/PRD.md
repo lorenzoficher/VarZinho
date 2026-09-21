@@ -28,7 +28,8 @@ identity.
 1. Model the domain in Java with correct object-oriented design
 2. Demonstrate encapsulation, inheritance, polymorphism, abstraction,
    associations and exception handling
-3. Produce a working, testable system exercised from the console
+3. Produce a working, testable system, driven from a minimal Swing interface
+   and exercised by automated tests
 4. Keep persistence swappable behind an abstraction
 
 ## Non-goals
@@ -38,7 +39,7 @@ Stated explicitly so they are not mistaken for omissions:
 | Not doing | Why |
 |---|---|
 | Real video capture or encoding | Would consume the entire schedule and demonstrate no OOP |
-| Graphical interface | Not the focus; capture has no interaction layer by nature |
+| A polished or complete interface | Section 2.9 of the brief asks for a minimal one; every rule stays in the domain, never on the screen |
 | Database | CSV is sufficient at this scale; the interface allows a later swap |
 | User accounts, login, authentication | No identity exists in the capture flow |
 | Live streaming, sponsors, multi-angle | Real products do this; out of scope here |
@@ -99,6 +100,18 @@ athlete asks for a clip.
 A gym registers courts; a court has cameras installed and removed. Camera
 status (active, inactive, maintenance) determines whether it records.
 
+### FR-7 — Graphical interface
+
+A minimal Swing interface drives the system: the user supplies data, runs at
+least one real operation, and sees the result. It is the layer that catches
+domain exceptions and turns them into a message a person can read — triggering
+a court with no active camera reports why nothing was captured, rather than
+failing silently or printing a stack trace.
+
+The interface owns no rule. It calls the domain and displays what comes back;
+if logic starts accumulating in a window class, it belongs in a domain class
+instead.
+
 ## Non-functional requirements
 
 - **Java 17.** No language feature above 17, so the project compiles on every
@@ -113,10 +126,16 @@ status (active, inactive, maintenance) determines whether it records.
 The project is done when:
 
 - [ ] `mvn test` passes with every spec's criteria covered
-- [ ] `mvn exec:java` demonstrates the full flow: register gym, court and
-      people, install camera, record, trigger, persist, reload, list
+- [ ] `mvn exec:java` opens the interface and demonstrates the full flow:
+      register gym, court and people, install camera, record, trigger, persist,
+      reload, list
+- [ ] A domain exception raised by the model reaches the user as a readable
+      message, never as a stack trace
 - [ ] Highlights written in one run are readable in the next
 - [ ] Every syllabus topic appears in the code with a defensible reason
+- [ ] `README.md` carries the brief's checklist, filled in, pointing at where
+      each concept was used or saying why it does not apply
+- [ ] Screenshots of the interface are committed
 - [ ] Every document in `docs/` reflects the code as shipped
 
 ## Future work
@@ -128,13 +147,14 @@ Deliberately deferred, recorded so the scope boundary is visible:
 - Database repository implementation
 - Automatic play detection
 - Sponsor and live-streaming features
-- Graphical archive browser
+- A full archive browser, beyond the minimal interface the brief asks for
 
 ## Risks
 
 | Risk | Mitigation |
 |---|---|
-| Official brief contradicts these decisions | Read it on Codefólio and reconcile early |
+| ~~Official brief contradicts these decisions~~ — it did, and required a GUI | Reconciled in #30; the brief now lives in `docs/ASSIGNMENT-BRIEF.md` |
+| Swing is new to the team and was never planned for | Keep it minimal, give it its own issue and its own owner |
 | TDD unfamiliar to the team — time lost to tooling | Maven preconfigured; test only real logic, never accessors |
 | Five people editing the same files | Work split by aggregate, no cross-dependency |
 | Scope creep near the deadline | Non-goals are explicit; new work needs an issue |
