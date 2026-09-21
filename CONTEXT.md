@@ -124,15 +124,24 @@ This is dependency inversion, and it is the project's strongest justification
 for using an interface — the domain depends on an abstraction, never on a
 concrete storage mechanism.
 
-### No graphical interface
+### A minimal Swing interface, because the brief requires one
 
-The focus is object-oriented modelling: classes, relationships, business
-rules. The real-world flow reinforces this — the camera records on a button
-press with no interaction layer, and clips end up in a folder. A GUI would add
-work in Swing without demonstrating a single additional OOP concept.
+**Reversed on 2026-09-18.** This project decided against a graphical interface
+and argued it at length: the focus is object-oriented modelling, the real-world
+flow has no interaction layer — a button is pressed and clips end up in a
+folder — and Swing work demonstrates no additional OOP concept.
 
-The domain is nonetheless kept independent of any interface, so a GUI could be
-added later without changing the model.
+The brief overrules it. Section 2.9 of
+[docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md) requires a minimal
+graphical interface in Java, preferably Swing. It is not one checklist line
+either: section 1 asks which operations the interface offers, 2.4 asks for a
+package of its own, 2.8 requires domain exceptions to be caught and reported
+there, and 4.3 makes screenshots a deliverable.
+
+The old reasoning is kept above instead of deleted, because it was not wrong
+about the domain — it was wrong about what was being asked. What survives from
+it is the part that still holds: the domain stays independent of the interface,
+and the screen calls the model without owning a single rule.
 
 ### No real video capture
 
@@ -148,19 +157,27 @@ so nobody mistakes it for an oversight.
 | Institution | Unipampa, Alegrete — Software Engineering, 2026/2 |
 | Instructor | Silvio Ereno Quincozes |
 | Deadline | 2026-09-30 |
-| Team | 5 people |
-| Required syllabus topics | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling |
+| Team | 5 people — Lorenzo Ficher, Lara Rios, Rafael Lopes, Artur Kraemer, Inaurrara Flores |
+| Brief | [docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md) — free theme, judged against an 18-item checklist |
+| Required syllabus topics | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling, a minimal Swing interface and `java.time` |
 
 ## Open questions
 
 These are unresolved and marked deliberately. Do not silently assume an answer.
 
-- **The official assignment brief has not been read.** It lives on the
-  Codefólio platform (`codefolio.com.br/cursos/poo`) and no local copy exists.
-  If it imposes requirements that contradict anything here — a mandatory GUI,
-  a required diagram format, a different deliverable — this document loses.
-- **GitHub usernames of the other four members** are unknown. `CODEOWNERS`
+- **GitHub usernames of the four other members** are unknown. `CODEOWNERS`
   and issue assignment are incomplete until they are filled in.
-- **Whether the instructor expects a UML diagram** in a specific tool. The
-  Mermaid diagram in `docs/DOMAIN-MODEL.md` may need to be rebuilt in
-  draw.io or Astah.
+- **How far the interface has to reach.** The brief asks for a minimal one:
+  enter data, run at least one operation, see the result. Whether the archive
+  listing also deserves a screen, or the capture flow alone is enough, is a
+  judgement nobody has made yet.
+
+Answered by the brief. Kept so nobody reopens them:
+
+- ~~The official assignment brief has not been read.~~ It is now
+  [docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md), and it required a
+  graphical interface — which reversed the decision above.
+- ~~Whether the instructor expects a UML diagram in a specific tool.~~ The
+  deliverables in section 4 are source code, a `README.md`, screenshots and
+  commit history. No diagram is asked for, so the Mermaid one in
+  `docs/DOMAIN-MODEL.md` stays as it is.

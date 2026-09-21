@@ -30,9 +30,12 @@ Trabalho da disciplina **AL0330 — Programação Orientada a Objetos**
 (Engenharia de Software, Unipampa Alegrete, 2026/2).
 
 O objetivo é a **modelagem do domínio** — classes, relacionamentos,
-encapsulamento, herança, polimorfismo e tratamento de exceções. Não há captura
-real de vídeo nem interface gráfica: o sistema é exercitado por console e por
-testes automatizados.
+encapsulamento, herança, polimorfismo e tratamento de exceções. O sistema é
+operado por uma interface gráfica mínima em Swing, exigida pelo enunciado, e
+verificado por testes automatizados.
+
+Não há captura real de vídeo: o `VideoClip` guarda apenas os metadados do
+arquivo — caminho, duração, resolução e tamanho. Nenhum quadro é decodificado.
 
 ## Tecnologias
 
@@ -52,6 +55,7 @@ mvn exec:java
 
 | Documento | Conteúdo |
 |---|---|
+| [docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md) | O enunciado do trabalho — é ele que manda quando houver divergência |
 | [AGENTS.md](AGENTS.md) | Convenções de código, build e fluxo de trabalho |
 | [CONTEXT.md](CONTEXT.md) | Glossário do domínio e decisões tomadas |
 | [docs/PRD.md](docs/PRD.md) | O que o sistema faz, e o que não faz |
@@ -68,6 +72,8 @@ mvn exec:java
 
 ## Equipe
 
-Projeto desenvolvido por 5 estudantes. A divisão do trabalho é por agregado do
-domínio — cada pessoa é dona de um conjunto de classes, sem dependência
-cruzada. Ver [docs/WORKFLOW.md](docs/WORKFLOW.md).
+Lorenzo Ficher, Lara Rios, Rafael Lopes, Artur Kraemer e Inaurrara Flores.
+
+A divisão do trabalho é por agregado do domínio — cada pessoa é dona de um
+conjunto de classes, sem dependência cruzada. Ver
+[docs/WORKFLOW.md](docs/WORKFLOW.md).

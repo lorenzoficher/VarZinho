@@ -7,7 +7,8 @@ persistence behind an abstraction, and errors as domain exceptions.
 
 ```
 ┌──────────────────────────────────────┐
-│  Main — console demo                 │
+│  ui/                                 │
+│  Swing windows · Main                │
 ├──────────────────────────────────────┤
 │  repository/                         │
 │  HighlightRepository (interface)     │
@@ -19,12 +20,19 @@ persistence behind an abstraction, and errors as domain exceptions.
 └──────────────────────────────────────┘
 ```
 
-**Dependencies point inward.** The console knows the repository; the
+**Dependencies point inward.** The interface knows the repository; the
 repository knows the domain; the domain knows nothing about either. No class
-under `domain/` imports from `repository/`.
+under `domain/` imports from `repository/`, and no class under `domain/`
+imports anything from `javax.swing`.
 
 This is what allows the storage mechanism — or the interface — to change
 without touching the model.
+
+Section 2.4 of the brief asks the packages to distinguish three
+responsibilities, and these three layers are that split: `domain/` is the
+model, `repository/` is the service that stores and retrieves it, and `ui/` is
+the interaction. The business rules live in the domain classes rather than in a
+separate service layer, which is where a rich object model puts them.
 
 ## Persistence
 
@@ -107,22 +115,37 @@ real decision: a damaged file the caller may want to partially read.
 - A constructor that receives invalid arguments throws; an object that exists
   is valid
 
-## Console demo
+### Where they are caught
 
-`Main` exists to exercise the model end to end, not to be a product. It builds
-a gym, registers its people, installs cameras, records, triggers captures,
-persists, reloads from disk, and lists the archive as the operator would.
+In `ui/`, and nowhere below it. The domain throws, the repository lets domain
+exceptions through, and the window that started the operation catches the
+specific type and shows the message — typically with `JOptionPane`.
 
-It is deliberately thin: every rule lives in the domain, and the console only
-calls it. If logic starts accumulating in `Main`, it belongs in a domain class
-instead.
+Section 2.8 of the brief requires exactly this: domain exceptions handled in
+the layer that talks to the user, reported as a clear message. A stack trace on
+the console is not a message, and a swallowed exception is worse than either.
 
-## Why no GUI
+Triggering a court whose cameras are all inactive is the case to get right.
+`NoActiveCameraException` reaches the screen and the user is told why nothing
+was captured — which is the whole reason the exception exists instead of a
+`null` return.
 
-The capture flow has no interaction layer — a physical button, nothing else.
-The retrieval flow could justify a screen, and real products have one, but it
-would add Swing work without demonstrating any additional OOP concept.
+## The interface
 
-The domain is kept independent of any interface, so a GUI could be added later
-as another consumer of the same model. That independence is the part being
-graded; the screen is not.
+`Main` starts the application and hands control to Swing. The windows exist to
+exercise the model end to end, not to be a product: build a gym, register its
+people, install cameras, record, trigger a capture, persist, reload from disk,
+and list the archive as the operator would.
+
+They are deliberately thin. Every rule lives in the domain and the interface
+only calls it. If logic starts accumulating in a window class, it belongs in a
+domain class instead — a screen that decides whether a court can be captured
+has taken a rule away from `Court`.
+
+The brief asks for a minimal interface, and minimal is the target: fields to
+type into, a button that runs a real operation, and somewhere the result and
+the error messages appear. Nothing here is graded on looking good.
+
+That the domain stays independent of the screen is the part worth defending. A
+`Court` that compiles without `javax.swing` on the classpath is the proof, and
+it is why this layer sits on top of the other two rather than inside them.

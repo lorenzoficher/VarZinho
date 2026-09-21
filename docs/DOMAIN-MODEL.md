@@ -244,4 +244,8 @@ Start with what depends on nothing:
 6. `Highlight`
 7. `HighlightRepository` → `CsvHighlightRepository`
 8. `Court`, `Gym`
-9. `Main` console demo
+9. `ui/` — the Swing windows and `Main`
+
+The interface comes last because it depends on everything else, not because it
+matters least. It is what the brief asks to see working, so it cannot be what
+gets cut when time runs short.
