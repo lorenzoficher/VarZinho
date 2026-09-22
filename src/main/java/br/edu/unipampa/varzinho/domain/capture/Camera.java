@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho.domain.capture;
 
+import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
 import br.edu.unipampa.varzinho.enums.CameraStatus;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.exception.EmptyBufferException;
@@ -14,6 +15,8 @@ import java.util.List;
  * camera was switched off for.
  */
 public abstract class Camera {
+
+    private static final double MB_PER_MEGAPIXEL_SECOND = 0.5;
 
     private final String id;
     private final String model;
@@ -89,12 +92,48 @@ public abstract class Camera {
      * <p>Protected because the buffer is the camera's own memory: a court asks the
      * camera for a capture, never for its frames.
      *
+     * <p>The refusal to read from a camera that is off lives here rather than in each
+     * subclass: a camera that stops recording keeps whatever it had, and handing that
+     * stale window out would pass off the past as the present. A subclass cannot
+     * forget a rule it never had to write.
+     *
      * @param seconds how many of the most recent seconds to read
      * @return the window, oldest first
-     * @throws EmptyBufferException if that many seconds have not been recorded yet
+     * @throws EmptyBufferException if the camera is not recording, or has not recorded
+     *         that many seconds yet
      */
     protected final List<Frame> recordedWindow(int seconds) {
+        if (!isRecording()) {
+            throw new EmptyBufferException("camera " + id + " is not recording");
+        }
         return buffer.extractLastSeconds(seconds);
+    }
+
+    /**
+     * Freezes the most recent seconds into a clip. Each kind of camera produces one
+     * its own way, and a court triggers them all through this single call.
+     *
+     * @param seconds how much of the recent past to keep
+     * @return the clip that stands for those seconds
+     * @throws EmptyBufferException if the camera is not recording, or has not recorded
+     *         that many seconds yet
+     */
+    public abstract VideoClip captureLastSeconds(int seconds);
+
+    /**
+     * Builds the clip for a window this camera has already taken, stamping it with
+     * what every camera knows about its own footage.
+     *
+     * <p>The size is an estimate, not a measurement: no file is written and no frame
+     * is ever encoded, so megapixels times seconds is as close to the truth as this
+     * model gets.
+     *
+     * @param filePath where the subclass decided the clip belongs
+     * @param seconds the length of the window being frozen
+     */
+    protected final VideoClip clipFrom(String filePath, int seconds) {
+        double megapixels = resolution.width() * resolution.height() / 1_000_000.0;
+        return new VideoClip(filePath, seconds, resolution, megapixels * seconds * MB_PER_MEGAPIXEL_SECOND);
     }
 
     public boolean isRecording() {
