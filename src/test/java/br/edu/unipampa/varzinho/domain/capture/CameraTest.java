@@ -2,8 +2,10 @@ package br.edu.unipampa.varzinho.domain.capture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
 import br.edu.unipampa.varzinho.enums.CameraStatus;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.exception.EmptyBufferException;
@@ -85,8 +87,18 @@ class CameraTest {
         camera.stopRecording();
 
         camera.record(frame(2));
+        camera.startRecording();
 
         assertEquals(List.of(frame(1)), camera.window(1));
+    }
+
+    @Test
+    void refusesToHandOutAWindowWhileNotRecording() {
+        TestCamera camera = recordingCamera(3);
+        camera.record(frame(1));
+        camera.stopRecording();
+
+        assertThrows(EmptyBufferException.class, () -> camera.window(1));
     }
 
     @Test
@@ -99,6 +111,21 @@ class CameraTest {
     void rejectsAMissingResolution() {
         assertThrows(IllegalArgumentException.class,
                 () -> new TestCamera("CAM-1", "Generic", null, 30));
+    }
+
+    @Test
+    void capturesFromEveryKindOfCameraThroughTheSameCall() {
+        List<Camera> cameras = List.of(
+                new FixedCamera("CAM-1", "Bullet", Resolution.HD, 30, 45),
+                new PtzCamera("CAM-2", "Domo", Resolution.ULTRA_HD, 30));
+        cameras.forEach(Camera::startRecording);
+        cameras.forEach(camera -> camera.record(frame(1)));
+
+        List<VideoClip> clips = cameras.stream().map(camera -> camera.captureLastSeconds(1)).toList();
+
+        assertEquals(List.of(Resolution.HD, Resolution.ULTRA_HD),
+                clips.stream().map(VideoClip::getResolution).toList());
+        assertNotEquals(clips.get(0).getFilePath(), clips.get(1).getFilePath());
     }
 
     private static TestCamera camera(int bufferSeconds) {
@@ -127,6 +154,11 @@ class CameraTest {
 
         private TestCamera(String id, String model, Resolution resolution, int bufferSeconds) {
             super(id, model, resolution, bufferSeconds);
+        }
+
+        @Override
+        public VideoClip captureLastSeconds(int seconds) {
+            return clipFrom("clips/test.mp4", seconds);
         }
 
         private List<Frame> window(int seconds) {
