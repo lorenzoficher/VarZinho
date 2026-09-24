@@ -21,6 +21,11 @@ public final class Highlight {
         this.clip = clip;
     }
 
+    public String describe() {
+        return id + " | court " + courtNumber + " | camera " + cameraId + " | "
+                + capturedAt + " | " + clip.getDurationSeconds() + "s | " + clip.getFilePath();
+    }
+
     public String getId() { return id; }
     public Instant getCapturedAt() { return capturedAt; }
     public int getCourtNumber() { return courtNumber; }

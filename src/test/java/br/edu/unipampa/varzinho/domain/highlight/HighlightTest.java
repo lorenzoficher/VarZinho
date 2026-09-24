@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -39,6 +40,17 @@ class HighlightTest {
         assertEquals(2, highlight.getCourtNumber());
         assertEquals("camera-1", highlight.getCameraId());
         assertEquals(CLIP, highlight.getClip());
+    }
+
+    @Test
+    void describesTheCaptureWithoutNamingAPerson() {
+        Highlight highlight = new Highlight("h-1", CAPTURED_AT, 2, "camera-1", CLIP);
+
+        assertTrue(highlight.describe().contains("court 2"));
+        assertTrue(highlight.describe().contains("camera camera-1"));
+        assertTrue(highlight.describe().contains(CAPTURED_AT.toString()));
+        assertTrue(highlight.describe().contains("5s"));
+        assertFalse(highlight.describe().toLowerCase().contains("person"));
     }
 
     @Test
