@@ -1,38 +1,40 @@
-# Compiled class files
-*.class
-
-# Maven
+# Maven build output
 target/
 
-# Packaged files
+# Runtime data
+data/
+clips/
+*.csv
+
+# Java build and packaged artifacts
+*.class
 *.jar
 *.war
 *.ear
-
-# IDEs
-.idea/
-*.iml
-.vscode/
-.classpath
-.project
-.settings/
 
 # JVM crash logs
 *.log
 hs_err_pid*
 replay_pid*
 
-# Generated clips and archive produced by running the demo
-clips/
-*.csv
+# IntelliJ IDEA
+.idea/
+*.iml
 
-# OS
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Visual Studio Code
+.vscode/
+
+# Operating system files
+.DS_Store
 Thumbs.db
 Desktop.ini
-.DS_Store
 
-# Agent kit: .claude/rules/ is versioned so the team shares it.
-# These four are per-machine or per-session state.
+# Per-machine agent state; shared rules remain versioned
 .claude/settings.json
 .claude/settings.local.json
 .claude/current-issue
