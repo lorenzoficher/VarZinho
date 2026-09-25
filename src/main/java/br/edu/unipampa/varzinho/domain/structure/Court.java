@@ -1,11 +1,19 @@
 package br.edu.unipampa.varzinho.domain.structure;
 
 import br.edu.unipampa.varzinho.domain.capture.Camera;
+import br.edu.unipampa.varzinho.domain.capture.Frame;
+import br.edu.unipampa.varzinho.domain.highlight.Highlight;
+import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
+import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public final class Court {
+    public static final int DEFAULT_CAPTURE_SECONDS = 5;
+
     private final int number;
     private final List<Camera> cameras = new ArrayList<>();
 
@@ -26,6 +34,18 @@ public final class Court {
         if (camera == null || !cameras.remove(camera)) {
             throw new IllegalArgumentException("the camera is not installed on court " + number);
         }
+    }
+
+    public void record(Frame frame) {
+        cameras.forEach(camera -> camera.record(frame));
+    }
+
+    public Highlight triggerCapture() {
+        Camera camera = cameras.stream().filter(Camera::isRecording).findFirst()
+                .orElseThrow(() -> new NoActiveCameraException(
+                        "Court " + number + " has no active camera."));
+        VideoClip clip = camera.captureLastSeconds(DEFAULT_CAPTURE_SECONDS);
+        return new Highlight("h-" + UUID.randomUUID(), Instant.now(), number, camera.getId(), clip);
     }
 
     public boolean hasActiveCamera() {
