@@ -96,6 +96,15 @@ class CsvHighlightRepositoryTest extends HighlightRepositoryContractTest {
     }
 
     @Test
+    void anArchiveThatWasNeverWrittenIsEmptyRatherThanAnError() throws RepositoryException {
+        HighlightRepository repository = createRepository();
+
+        assertTrue(repository.findAll().isEmpty());
+        assertTrue(repository.findByCourt(3).isEmpty());
+        assertTrue(repository.findById("h-001").isEmpty());
+    }
+
+    @Test
     void refusesToWriteAFieldThatWouldBreakTheLineApart() {
         VideoClip clip = new VideoClip("/clips/a,b.mp4", 30, Resolution.FULL_HD, 1.0);
         Highlight highlight = new Highlight("h-001", Instant.parse("2026-09-12T20:14:33Z"), 3, "cam-a1", clip);
