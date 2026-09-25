@@ -1,0 +1,127 @@
+package br.edu.unipampa.varzinho.repository;
+
+import br.edu.unipampa.varzinho.domain.highlight.Highlight;
+import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
+import br.edu.unipampa.varzinho.enums.Resolution;
+import br.edu.unipampa.varzinho.exception.RepositoryException;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+/**
+ * Keeps highlights in a CSV file, so they outlive the process that captured them.
+ *
+ * <p>The file format is private to this class: no other class reads or writes it.
+ * Every call goes to the file, so two instances on the same path always agree.
+ */
+public final class CsvHighlightRepository implements HighlightRepository {
+
+    private static final String HEADER =
+            "id,capturedAt,courtNumber,cameraId,clipPath,durationSeconds,resolution,sizeMb";
+    private static final String SEPARATOR = ",";
+    private static final int COLUMNS = 8;
+
+    private final Path file;
+
+    public CsvHighlightRepository(Path file) {
+        if (file == null) {
+            throw new IllegalArgumentException("the archive needs a file to live in");
+        }
+        this.file = file;
+    }
+
+    @Override
+    public void save(Highlight highlight) throws RepositoryException {
+        if (highlight == null) {
+            throw new IllegalArgumentException("there is no highlight to save");
+        }
+        Map<String, Highlight> highlightsById = new LinkedHashMap<>();
+        for (Highlight existing : findAll()) {
+            highlightsById.put(existing.getId(), existing);
+        }
+        highlightsById.put(highlight.getId(), highlight);
+        write(highlightsById.values());
+    }
+
+    @Override
+    public Optional<Highlight> findById(String id) throws RepositoryException {
+        return findAll().stream().filter(highlight -> highlight.getId().equals(id)).findFirst();
+    }
+
+    @Override
+    public List<Highlight> findAll() throws RepositoryException {
+        if (!Files.exists(file)) {
+            return new ArrayList<>();
+        }
+        List<String> lines;
+        try {
+            lines = Files.readAllLines(file);
+        } catch (IOException cause) {
+            throw new RepositoryException("could not read the archive " + file, cause);
+        }
+        List<Highlight> highlights = new ArrayList<>();
+        for (String line : lines.subList(1, lines.size())) {
+            highlights.add(parse(line));
+        }
+        return highlights;
+    }
+
+    @Override
+    public List<Highlight> findByCourt(int courtNumber) throws RepositoryException {
+        return findAll().stream()
+                .filter(highlight -> highlight.getCourtNumber() == courtNumber)
+                .collect(Collectors.toList());
+    }
+
+    private void write(Iterable<Highlight> highlights) throws RepositoryException {
+        List<String> lines = new ArrayList<>();
+        lines.add(HEADER);
+        for (Highlight highlight : highlights) {
+            lines.add(format(highlight));
+        }
+        try {
+            Path directory = file.toAbsolutePath().getParent();
+            Files.createDirectories(directory);
+            Files.write(file, lines);
+        } catch (IOException cause) {
+            throw new RepositoryException("could not write the archive " + file, cause);
+        }
+    }
+
+    private static String format(Highlight highlight) throws RepositoryException {
+        VideoClip clip = highlight.getClip();
+        String[] fields = {
+            highlight.getId(),
+            highlight.getCapturedAt().toString(),
+            Integer.toString(highlight.getCourtNumber()),
+            highlight.getCameraId(),
+            clip.getFilePath(),
+            Integer.toString(clip.getDurationSeconds()),
+            clip.getResolution().name(),
+            Double.toString(clip.getSizeMb())
+        };
+        // A separator or line break inside a field would split the record into two on reload.
+        for (String field : fields) {
+            if (field.contains(SEPARATOR) || field.contains("\n") || field.contains("\r")) {
+                throw new RepositoryException("cannot store a value with a comma or line break: " + field);
+            }
+        }
+        return String.join(SEPARATOR, fields);
+    }
+
+    private static Highlight parse(String line) {
+        String[] fields = line.split(SEPARATOR, COLUMNS);
+        VideoClip clip = new VideoClip(fields[4], Integer.parseInt(fields[5]),
+                Resolution.valueOf(fields[6]), Double.parseDouble(fields[7]));
+        return new Highlight(fields[0], Instant.parse(fields[1]), Integer.parseInt(fields[2]),
+                fields[3], clip);
+    }
+}
