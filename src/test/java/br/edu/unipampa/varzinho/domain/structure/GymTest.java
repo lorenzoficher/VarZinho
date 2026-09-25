@@ -1,17 +1,68 @@
 package br.edu.unipampa.varzinho.domain.structure;
 
-import br.edu.unipampa.varzinho.domain.people.Athlete;
-import br.edu.unipampa.varzinho.domain.people.Operator;
-import br.edu.unipampa.varzinho.domain.people.Person;
-import org.junit.jupiter.api.Test;
-
-import java.time.LocalDate;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
+import br.edu.unipampa.varzinho.domain.people.Athlete;
+import br.edu.unipampa.varzinho.domain.people.Operator;
+import br.edu.unipampa.varzinho.domain.people.Person;
+
 class GymTest {
+
+    @Test
+    void newGymIsEmpty() {
+        Gym gym = new Gym("Arena", "Rua A");
+        assertTrue(gym.getCourts().isEmpty());
+    }
+
+    @Test
+    void findAddedCourt() {
+        Gym gym = new Gym("Arena", "Rua A");
+        Court court = new Court(1);
+        gym.addCourt(court);
+        assertSame(court, gym.findCourt(1));
+    }
+
+    @Test
+    void findUnknownCourt() {
+        Gym gym = new Gym("Arena", "Rua A");
+        assertNull(gym.findCourt(99));
+    }
+
+    @Test
+    void rejectDuplicateCourt() {
+        Gym gym = new Gym("Arena", "Rua A");
+        gym.addCourt(new Court(1));
+
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> gym.addCourt(new Court(1))
+        );
+    }
+
+    @Test
+    void courtsAreUnmodifiable() {
+        Gym gym = new Gym("Arena", "Rua A");
+        gym.addCourt(new Court(1));
+
+        List<Court> courts = gym.getCourts();
+
+        assertThrows(
+            UnsupportedOperationException.class,
+            () -> courts.clear()
+        );
+
+        assertEquals(1, gym.getCourts().size());
+    }
+
     @Test
     void registersDifferentKindsOfPeopleThroughTheSameOperation() {
         Gym gym = new Gym("VarZinho", "100 Sports Avenue");
