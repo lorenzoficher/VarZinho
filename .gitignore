@@ -24,6 +24,7 @@ replay_pid*
 
 # Generated clips and archive produced by running the demo
 clips/
+data/
 *.csv
 
 # OS
