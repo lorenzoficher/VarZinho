@@ -8,7 +8,7 @@ import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.exception.EmptyBufferException;
 import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
-import br.edu.unipampa.varzinho.exception.RepositoryException;
+import br.edu.unipampa.varzinho.repository.CsvHighlightRepository;
 import br.edu.unipampa.varzinho.repository.HighlightRepository;
 
 import javax.swing.BorderFactory;
@@ -21,8 +21,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.nio.file.Path;
 import java.time.Instant;
 
 public final class VarZinhoWindow extends JFrame {
@@ -33,12 +35,26 @@ public final class VarZinhoWindow extends JFrame {
     private final JTextField cameraId = new JTextField("camera-1");
     private final JCheckBox activeCamera = new JCheckBox("Start camera after installation", true);
     private final JTextArea output = new JTextArea(12, 64);
-    private Gym gym;
     private Court court;
     private int frameSequence;
+    private Instant lastFrameAt;
+
+    public static void open() {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                HighlightRepository repository = new CsvHighlightRepository(
+                        Path.of("data", "highlights.csv"));
+                new VarZinhoWindow(repository).setVisible(true);
+            } catch (Exception exception) {
+                JOptionPane.showMessageDialog(null,
+                        "Could not open the archive: " + exception.getMessage(),
+                        "VarZinho", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+    }
 
     public VarZinhoWindow(HighlightRepository repository) {
-        super("VarZinho — Highlight Capture");
+        super("VarZinho - Highlight Capture");
         if (repository == null) throw new IllegalArgumentException("a window needs a highlight repository");
         this.repository = repository;
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -67,7 +83,7 @@ public final class VarZinhoWindow extends JFrame {
     private JPanel buildActions() {
         JButton register = new JButton("Register gym and install camera");
         register.addActionListener(event -> registerGym());
-        JButton record = new JButton("Record 5 seconds");
+        JButton record = new JButton("Record " + Court.DEFAULT_CAPTURE_SECONDS + " seconds");
         record.addActionListener(event -> recordFrames());
         JButton capture = new JButton("Trigger capture");
         capture.addActionListener(event -> triggerCapture());
@@ -81,13 +97,14 @@ public final class VarZinhoWindow extends JFrame {
     private void registerGym() {
         try {
             int number = parseCourtNumber();
-            gym = new Gym(gymName.getText(), address.getText());
-            court = new Court(number);
-            gym.addCourt(court);
+            Gym registeredGym = new Gym(gymName.getText(), address.getText());
+            Court registeredCourt = new Court(number);
+            registeredGym.addCourt(registeredCourt);
             FixedCamera camera = new FixedCamera(cameraId.getText(), "UI camera", Resolution.FULL_HD, 30, 45);
-            court.installCamera(camera);
+            registeredCourt.installCamera(camera);
             if (activeCamera.isSelected()) camera.startRecording();
-            output.setText("Registered " + gym.getName() + ", court " + number
+            court = registeredCourt;
+            output.setText("Registered " + registeredGym.getName() + ", court " + number
                     + ", camera " + camera.getId() + ".\n");
         } catch (IllegalArgumentException exception) {
             showError(exception.getMessage());
@@ -96,10 +113,20 @@ public final class VarZinhoWindow extends JFrame {
 
     private void recordFrames() {
         if (!requireCourt()) return;
-        for (int second = 0; second < Court.DEFAULT_CAPTURE_SECONDS; second++) {
-            court.record(new Frame(Instant.now().plusSeconds(second), frameSequence++));
+        if (!court.hasActiveCamera()) {
+            showError("Court " + court.getNumber() + " has no active camera.");
+            return;
         }
-        output.append("Recorded 5 seconds on court " + court.getNumber() + ".\n");
+        Instant firstFrameAt = Instant.now().minusSeconds(Court.DEFAULT_CAPTURE_SECONDS - 1L);
+        if (lastFrameAt != null && !firstFrameAt.isAfter(lastFrameAt)) {
+            firstFrameAt = lastFrameAt.plusNanos(1);
+        }
+        for (int second = 0; second < Court.DEFAULT_CAPTURE_SECONDS; second++) {
+            lastFrameAt = firstFrameAt.plusNanos(second);
+            court.record(new Frame(lastFrameAt, frameSequence++));
+        }
+        output.append("Recorded " + Court.DEFAULT_CAPTURE_SECONDS + " seconds on court "
+                + court.getNumber() + ".\n");
     }
 
     private void triggerCapture() {
@@ -110,7 +137,7 @@ public final class VarZinhoWindow extends JFrame {
             output.append("Captured and saved: " + highlight.describe() + "\n");
         } catch (NoActiveCameraException | EmptyBufferException exception) {
             showError(exception.getMessage());
-        } catch (RepositoryException exception) {
+        } catch (Exception exception) {
             showError("Archive error: " + exception.getMessage());
         }
     }
@@ -118,13 +145,13 @@ public final class VarZinhoWindow extends JFrame {
     private void listArchive() {
         try {
             int number = parseCourtNumber();
-            output.setText("Archive for court " + number + ":\n");
             var highlights = repository.findByCourt(number);
+            output.setText("Archive for court " + number + ":\n");
             if (highlights.isEmpty()) output.append("No highlights found.\n");
             highlights.forEach(item -> output.append(item.describe() + "\n"));
         } catch (IllegalArgumentException exception) {
             showError(exception.getMessage());
-        } catch (RepositoryException exception) {
+        } catch (Exception exception) {
             showError("Archive error: " + exception.getMessage());
         }
     }
