@@ -1,22 +1,43 @@
 package br.edu.unipampa.varzinho.domain.structure;
 
-import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
-import br.edu.unipampa.varzinho.domain.capture.Frame;
-import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
-import br.edu.unipampa.varzinho.enums.Resolution;
-import br.edu.unipampa.varzinho.exception.EmptyBufferException;
-import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
-import org.junit.jupiter.api.Test;
-
-import java.time.Instant;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
+
+import org.junit.jupiter.api.Test;
+
+import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
+import br.edu.unipampa.varzinho.domain.capture.Frame;
+import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
+import br.edu.unipampa.varzinho.enums.Resolution;
+import br.edu.unipampa.varzinho.exception.EmptyBufferException;
+import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
+
 class CourtTest {
+
+    @Test
+    void createCourt() {
+        Court court = new Court(1);
+        assertEquals(1, court.getNumber());
+    }
+
+    @Test
+    void rejectInvalidNumber() {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new Court(0)
+        );
+
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new Court(-1)
+        );
+    }
+
     @Test
     void installsEachCameraOnlyOnceAndRemovesInstalledEquipment() {
         Court court = new Court(1);
