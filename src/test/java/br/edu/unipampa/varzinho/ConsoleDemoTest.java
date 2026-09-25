@@ -19,13 +19,12 @@ class ConsoleDemoTest {
     @Test
     void demonstratesTheCompleteCaptureFlow() throws Exception {
         Path archive = directory.resolve("archive.csv");
-        CsvHighlightRepository repository = new CsvHighlightRepository(archive);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         PrintStream originalOutput = System.out;
 
         try {
             System.setOut(new PrintStream(output, true, StandardCharsets.UTF_8));
-            ConsoleDemo.run(repository);
+            ConsoleDemo.run(archive);
         } finally {
             System.setOut(originalOutput);
         }
@@ -34,7 +33,8 @@ class ConsoleDemoTest {
         assertEquals(1, new CsvHighlightRepository(archive).findByCourt(1).size());
         assertTrue(demonstration.contains("Registered:"));
         assertTrue(demonstration.contains("Reloaded highlight:"));
-        assertTrue(demonstration.contains("filtered by court 1:"));
+        assertTrue(demonstration.contains("Existing archive for court 1 searched by"));
+        assertTrue(demonstration.contains("after a request from"));
         assertTrue(demonstration.contains("Expected error:"));
     }
 }
