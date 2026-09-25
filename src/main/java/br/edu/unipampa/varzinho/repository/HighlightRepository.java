@@ -1,6 +1,7 @@
 package br.edu.unipampa.varzinho.repository;
 
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
+import br.edu.unipampa.varzinho.exception.RepositoryException;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,12 +18,13 @@ public interface HighlightRepository {
      * Stores a highlight, replacing any earlier one with the same id.
      *
      * @throws IllegalArgumentException if the highlight is {@code null}
+     * @throws RepositoryException if the storage cannot be written
      */
-    void save(Highlight highlight);
+    void save(Highlight highlight) throws RepositoryException;
 
-    Optional<Highlight> findById(String id);
+    Optional<Highlight> findById(String id) throws RepositoryException;
 
-    List<Highlight> findAll();
+    List<Highlight> findAll() throws RepositoryException;
 
-    List<Highlight> findByCourt(int courtNumber);
+    List<Highlight> findByCourt(int courtNumber) throws RepositoryException;
 }
