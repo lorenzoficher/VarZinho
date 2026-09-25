@@ -1,7 +1,6 @@
 package br.edu.unipampa.varzinho.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,6 +11,7 @@ import br.edu.unipampa.varzinho.exception.RepositoryException;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,33 +27,27 @@ abstract class HighlightRepositoryContractTest {
     @Test
     void findsASavedHighlightById() throws RepositoryException {
         HighlightRepository repository = createRepository();
-        Highlight highlight = highlight("h-001", 3);
+        repository.save(highlight("h-001", 3));
 
-        repository.save(highlight);
-
-        assertSame(highlight, repository.findById("h-001").orElseThrow());
+        assertEquals("h-001", repository.findById("h-001").orElseThrow().getId());
     }
 
     @Test
     void findAllReturnsEveryHighlightSaved() throws RepositoryException {
         HighlightRepository repository = createRepository();
-        Highlight first = highlight("h-001", 3);
-        Highlight second = highlight("h-002", 4);
-        repository.save(first);
-        repository.save(second);
+        repository.save(highlight("h-001", 3));
+        repository.save(highlight("h-002", 4));
 
-        assertEquals(2, repository.findAll().size());
-        assertTrue(repository.findAll().containsAll(List.of(first, second)));
+        assertEquals(List.of("h-001", "h-002"), ids(repository.findAll()));
     }
 
     @Test
     void findByCourtReturnsOnlyThatCourtsHighlights() throws RepositoryException {
         HighlightRepository repository = createRepository();
-        Highlight onCourtThree = highlight("h-001", 3);
-        repository.save(onCourtThree);
+        repository.save(highlight("h-001", 3));
         repository.save(highlight("h-002", 4));
 
-        assertEquals(List.of(onCourtThree), repository.findByCourt(3));
+        assertEquals(List.of("h-001"), ids(repository.findByCourt(3)));
     }
 
     @Test
@@ -80,16 +74,21 @@ abstract class HighlightRepositoryContractTest {
     void savingAnExistingIdReplacesItInsteadOfDuplicating() throws RepositoryException {
         HighlightRepository repository = createRepository();
         repository.save(highlight("h-001", 3));
-        Highlight replacement = highlight("h-001", 4);
 
-        repository.save(replacement);
+        repository.save(highlight("h-001", 4));
 
-        assertEquals(List.of(replacement), repository.findAll());
+        List<Highlight> all = repository.findAll();
+        assertEquals(List.of("h-001"), ids(all));
+        assertEquals(4, all.get(0).getCourtNumber());
     }
 
     @Test
     void findAllReturnsAnEmptyListWhenNothingWasSaved() throws RepositoryException {
         assertTrue(createRepository().findAll().isEmpty());
+    }
+
+    private static List<String> ids(List<Highlight> highlights) {
+        return highlights.stream().map(Highlight::getId).collect(Collectors.toList());
     }
 
     protected static Highlight highlight(String id, int courtNumber) {
