@@ -8,6 +8,7 @@ import br.edu.unipampa.varzinho.exception.RepositoryException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -90,7 +91,15 @@ public final class CsvHighlightRepository implements HighlightRepository {
         try {
             Path directory = file.toAbsolutePath().getParent();
             Files.createDirectories(directory);
-            Files.write(file, lines);
+            // Writing in place truncates first, so a crash mid-write would lose the whole archive.
+            Path temporary = Files.createTempFile(directory, "highlights", ".tmp");
+            try {
+                Files.write(temporary, lines);
+                Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE);
+            } finally {
+                Files.deleteIfExists(temporary);
+            }
         } catch (IOException cause) {
             throw new RepositoryException("could not write the archive " + file, cause);
         }
