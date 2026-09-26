@@ -15,16 +15,20 @@ import java.util.Optional;
 public interface HighlightRepository {
 
     /**
-     * Stores a highlight, replacing any earlier one with the same id.
+     * Stores a highlight, replacing any earlier one with the same id. A replaced highlight
+     * keeps its position: only a new id goes to the end.
      *
      * @throws IllegalArgumentException if the highlight is {@code null}
      * @throws RepositoryException if the storage cannot be written
      */
     void save(Highlight highlight) throws RepositoryException;
 
+    /** An unknown id, or {@code null}, gives an empty result — never an exception. */
     Optional<Highlight> findById(String id) throws RepositoryException;
 
+    /** Every highlight, in the order first saved. */
     List<Highlight> findAll() throws RepositoryException;
 
+    /** The highlights of one court, in the order first saved. */
     List<Highlight> findByCourt(int courtNumber) throws RepositoryException;
 }
