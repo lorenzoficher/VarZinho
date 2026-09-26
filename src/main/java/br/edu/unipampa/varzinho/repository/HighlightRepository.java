@@ -18,7 +18,10 @@ public interface HighlightRepository {
      * Stores a highlight, replacing any earlier one with the same id. A replaced highlight
      * keeps its position: only a new id goes to the end.
      *
-     * @throws IllegalArgumentException if the highlight is {@code null}
+     * @throws IllegalArgumentException if the highlight is {@code null}, or holds a value the
+     *     storage cannot represent. That is bad input rather than a storage failure, so it is
+     *     unchecked and never a {@link RepositoryException}. The CSV file cannot hold a comma
+     *     or a line break in a field; an implementation with no such limit accepts them.
      * @throws RepositoryException if the storage cannot be written
      */
     void save(Highlight highlight) throws RepositoryException;
