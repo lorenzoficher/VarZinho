@@ -42,6 +42,26 @@ abstract class HighlightRepositoryContractTest {
     }
 
     @Test
+    void savingAnExistingIdKeepsItsPosition() throws RepositoryException {
+        HighlightRepository repository = createRepository();
+        repository.save(highlight("h-001", 3));
+        repository.save(highlight("h-002", 3));
+
+        repository.save(highlight("h-001", 4));
+
+        assertEquals(List.of("h-001", "h-002"), ids(repository.findAll()));
+        assertEquals(4, repository.findById("h-001").orElseThrow().getCourtNumber());
+    }
+
+    @Test
+    void findingANullIdGivesAnEmptyResult() throws RepositoryException {
+        HighlightRepository repository = createRepository();
+        repository.save(highlight("h-001", 3));
+
+        assertTrue(repository.findById(null).isEmpty());
+    }
+
+    @Test
     void findByCourtReturnsOnlyThatCourtsHighlights() throws RepositoryException {
         HighlightRepository repository = createRepository();
         repository.save(highlight("h-001", 3));
