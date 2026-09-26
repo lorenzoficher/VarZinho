@@ -2,11 +2,14 @@ package br.edu.unipampa.varzinho.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
 import br.edu.unipampa.varzinho.enums.Resolution;
+import br.edu.unipampa.varzinho.exception.CorruptedRecordException;
 import br.edu.unipampa.varzinho.exception.RepositoryException;
 
 import java.io.IOException;
@@ -97,7 +100,36 @@ class CsvHighlightRepositoryTest extends HighlightRepositoryContractTest {
         VideoClip clip = new VideoClip("/clips/a,b.mp4", 30, Resolution.FULL_HD, 1.0);
         Highlight highlight = new Highlight("h-001", Instant.parse("2026-09-12T20:14:33Z"), 3, "cam-a1", clip);
 
-        org.junit.jupiter.api.Assertions.assertThrows(RepositoryException.class,
-                () -> createRepository().save(highlight));
+        assertThrows(IllegalArgumentException.class, () -> createRepository().save(highlight));
+    }
+
+    @Test
+    void anEmptyFileHoldsNoHighlights() throws RepositoryException, IOException {
+        Path file = archive.resolve("highlights.csv");
+        Files.write(file, new byte[0]);
+
+        assertTrue(new CsvHighlightRepository(file).findAll().isEmpty());
+    }
+
+    @Test
+    void reportsAFileWhoseFirstLineIsNotTheHeader() throws IOException {
+        Path file = archive.resolve("highlights.csv");
+        Files.write(file, List.of("h-001,2026-09-12T20:14:33Z,3,cam-a1,/clips/a.mp4,30,FULL_HD,1.0"));
+
+        assertThrows(RepositoryException.class, () -> new CsvHighlightRepository(file).findAll());
+    }
+
+    @Test
+    void reportsTheLineOfARecordThatCannotBeRead() throws IOException {
+        Path file = archive.resolve("highlights.csv");
+        Files.write(file, List.of(
+                "id,capturedAt,courtNumber,cameraId,clipPath,durationSeconds,resolution,sizeMb",
+                "h-001,not-a-date,3,cam-a1,/clips/a.mp4,30,FULL_HD,1.0"));
+
+        CorruptedRecordException failure = assertThrows(CorruptedRecordException.class,
+                () -> new CsvHighlightRepository(file).findAll());
+
+        assertTrue(failure.getMessage().contains("line 2"));
+        assertNotNull(failure.getCause());
     }
 }

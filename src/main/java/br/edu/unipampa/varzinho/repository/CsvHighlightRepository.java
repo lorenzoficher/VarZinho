@@ -3,13 +3,15 @@ package br.edu.unipampa.varzinho.repository;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
 import br.edu.unipampa.varzinho.enums.Resolution;
+import br.edu.unipampa.varzinho.exception.CorruptedRecordException;
 import br.edu.unipampa.varzinho.exception.RepositoryException;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.time.Instant;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -69,8 +71,15 @@ public final class CsvHighlightRepository implements HighlightRepository {
             throw new RepositoryException("could not read the archive " + file, cause);
         }
         List<Highlight> highlights = new ArrayList<>();
-        for (String line : lines.subList(1, lines.size())) {
-            highlights.add(parse(line));
+        if (lines.isEmpty()) {
+            return highlights;
+        }
+        // Skipping an unchecked first line would silently drop a record when the header is lost.
+        if (!HEADER.equals(lines.get(0))) {
+            throw new RepositoryException("the archive " + file + " does not start with the header");
+        }
+        for (int index = 1; index < lines.size(); index++) {
+            highlights.add(parse(lines.get(index), index + 1));
         }
         return highlights;
     }
@@ -105,7 +114,7 @@ public final class CsvHighlightRepository implements HighlightRepository {
         }
     }
 
-    private static String format(Highlight highlight) throws RepositoryException {
+    private static String format(Highlight highlight) {
         VideoClip clip = highlight.getClip();
         String[] fields = {
             highlight.getId(),
@@ -120,17 +129,25 @@ public final class CsvHighlightRepository implements HighlightRepository {
         // A separator or line break inside a field would split the record into two on reload.
         for (String field : fields) {
             if (field.contains(SEPARATOR) || field.contains("\n") || field.contains("\r")) {
-                throw new RepositoryException("cannot store a value with a comma or line break: " + field);
+                throw new IllegalArgumentException("cannot store a value with a comma or line break: " + field);
             }
         }
         return String.join(SEPARATOR, fields);
     }
 
-    private static Highlight parse(String line) {
-        String[] fields = line.split(SEPARATOR, COLUMNS);
-        VideoClip clip = new VideoClip(fields[4], Integer.parseInt(fields[5]),
-                Resolution.valueOf(fields[6]), Double.parseDouble(fields[7]));
-        return new Highlight(fields[0], Instant.parse(fields[1]), Integer.parseInt(fields[2]),
-                fields[3], clip);
+    private static Highlight parse(String line, int lineNumber) throws CorruptedRecordException {
+        String[] fields = line.split(SEPARATOR, -1);
+        try {
+            if (fields.length != COLUMNS) {
+                throw new IllegalArgumentException(
+                        "expected " + COLUMNS + " columns but found " + fields.length);
+            }
+            VideoClip clip = new VideoClip(fields[4], Integer.parseInt(fields[5]),
+                    Resolution.valueOf(fields[6]), Double.parseDouble(fields[7]));
+            return new Highlight(fields[0], Instant.parse(fields[1]), Integer.parseInt(fields[2]),
+                    fields[3], clip);
+        } catch (IllegalArgumentException | DateTimeParseException cause) {
+            throw new CorruptedRecordException("cannot read line " + lineNumber + " of the archive", cause);
+        }
     }
 }
