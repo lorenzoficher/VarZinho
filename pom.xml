@@ -47,10 +47,20 @@
                                     <version>[17,)</version>
                                     <message>VarZinho requires JDK 17 or newer. Found ${java.version}.</message>
                                 </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>[3.6.3,)</version>
+                                    <message>VarZinho requires Maven 3.6.3 or newer. Found ${maven.version}.</message>
+                                </requireMavenVersion>
                             </rules>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
             </plugin>
 
             <plugin>
