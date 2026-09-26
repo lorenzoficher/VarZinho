@@ -3,7 +3,6 @@ package br.edu.unipampa.varzinho.repository;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
 import br.edu.unipampa.varzinho.enums.Resolution;
-import br.edu.unipampa.varzinho.exception.CorruptedRecordException;
 import br.edu.unipampa.varzinho.exception.RepositoryException;
 
 import java.io.IOException;
