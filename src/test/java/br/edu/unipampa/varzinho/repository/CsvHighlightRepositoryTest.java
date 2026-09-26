@@ -80,6 +80,19 @@ class CsvHighlightRepositoryTest extends HighlightRepositoryContractTest {
     }
 
     @Test
+    void leavesNoTemporaryFileBesideTheArchiveAfterSaving() throws RepositoryException, IOException {
+        Path file = archive.resolve("highlights.csv");
+        HighlightRepository repository = new CsvHighlightRepository(file);
+
+        repository.save(highlight("h-001", 3));
+        repository.save(highlight("h-002", 3));
+
+        try (java.util.stream.Stream<Path> siblings = Files.list(archive)) {
+            assertEquals(List.of(file), siblings.collect(java.util.stream.Collectors.toList()));
+        }
+    }
+
+    @Test
     void refusesToWriteAFieldThatWouldBreakTheLineApart() {
         VideoClip clip = new VideoClip("/clips/a,b.mp4", 30, Resolution.FULL_HD, 1.0);
         Highlight highlight = new Highlight("h-001", Instant.parse("2026-09-12T20:14:33Z"), 3, "cam-a1", clip);
