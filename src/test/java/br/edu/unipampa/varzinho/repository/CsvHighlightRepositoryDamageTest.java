@@ -23,6 +23,8 @@ class CsvHighlightRepositoryDamageTest {
     private static final String GOOD_1 = "h-001,2026-09-12T20:14:33Z,3,cam-a1,/clips/h-001.mp4,30,FULL_HD,42.5";
     private static final String GOOD_2 = "h-003,2026-09-12T20:41:02Z,3,cam-a1,/clips/h-003.mp4,30,FULL_HD,41.8";
 
+    private static final String OTHER_COURT = "h-004,2026-09-12T20:50:00Z,5,cam-b1,/clips/h-004.mp4,30,FULL_HD,40.0";
+
     @TempDir
     private Path archive;
 
@@ -54,6 +56,30 @@ class CsvHighlightRepositoryDamageTest {
         List<String> recovered = damage.getRecovered().stream()
                 .map(Highlight::getId).collect(Collectors.toList());
         assertEquals(List.of("h-001", "h-003"), recovered);
+    }
+
+    @Test
+    void recoveredHighlightsOfACourtSearchBelongToThatCourt() throws IOException {
+        HighlightRepository repository =
+                repositoryOver(HEADER, GOOD_1, OTHER_COURT, "h-002,not-a-date,3", GOOD_2);
+
+        CorruptedRecordException damage =
+                assertThrows(CorruptedRecordException.class, () -> repository.findByCourt(5));
+
+        assertEquals(List.of("h-004"), damage.getRecovered().stream()
+                .map(Highlight::getId).collect(Collectors.toList()));
+    }
+
+    @Test
+    void recoveredHighlightsOfAnIdSearchAreOnlyThatHighlight() throws IOException {
+        HighlightRepository repository =
+                repositoryOver(HEADER, GOOD_1, OTHER_COURT, "h-002,not-a-date,3", GOOD_2);
+
+        CorruptedRecordException damage =
+                assertThrows(CorruptedRecordException.class, () -> repository.findById("h-004"));
+
+        assertEquals(List.of("h-004"), damage.getRecovered().stream()
+                .map(Highlight::getId).collect(Collectors.toList()));
     }
 
     @Test
