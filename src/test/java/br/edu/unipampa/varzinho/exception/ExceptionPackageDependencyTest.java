@@ -29,7 +29,7 @@ class ExceptionPackageDependencyTest {
 
     private static boolean importsTheDomain(Path source) {
         try {
-            return Files.readString(source).contains("import br.edu.unipampa.varzinho.domain");
+            return Files.readString(source).contains("br.edu.unipampa.varzinho.domain");
         } catch (IOException cause) {
             throw new IllegalStateException("cannot read " + source, cause);
         }
