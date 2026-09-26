@@ -3,7 +3,7 @@ package br.edu.unipampa.varzinho.repository;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  */
 public final class InMemoryHighlightRepository implements HighlightRepository {
 
-    private final Map<String, Highlight> highlightsById = new HashMap<>();
+    private final Map<String, Highlight> highlightsById = new LinkedHashMap<>();
 
     @Override
     public void save(Highlight highlight) {
