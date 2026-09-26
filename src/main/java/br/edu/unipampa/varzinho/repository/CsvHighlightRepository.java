@@ -7,6 +7,7 @@ import br.edu.unipampa.varzinho.exception.CorruptedRecordException;
 import br.edu.unipampa.varzinho.exception.RepositoryException;
 
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -104,8 +105,13 @@ public final class CsvHighlightRepository implements HighlightRepository {
             Path temporary = Files.createTempFile(directory, "highlights", ".tmp");
             try {
                 Files.write(temporary, lines);
-                Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE);
+                try {
+                    Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING,
+                            StandardCopyOption.ATOMIC_MOVE);
+                } catch (AtomicMoveNotSupportedException unsupported) {
+                    // Some synced or network folders refuse an atomic move; a plain replace still beats failing the save.
+                    Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
+                }
             } finally {
                 Files.deleteIfExists(temporary);
             }
