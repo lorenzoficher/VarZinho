@@ -91,7 +91,7 @@ abstract class HighlightRepositoryContractTest {
         return highlights.stream().map(Highlight::getId).collect(Collectors.toList());
     }
 
-    protected static Highlight highlight(String id, int courtNumber) {
+    static Highlight highlight(String id, int courtNumber) {
         VideoClip clip = new VideoClip("/clips/" + id + ".mp4", 30, Resolution.FULL_HD, 42.5);
         return new Highlight(id, Instant.parse("2026-09-12T20:14:33Z"), courtNumber, "cam-a1", clip);
     }
