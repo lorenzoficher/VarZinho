@@ -8,6 +8,7 @@ import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.exception.EmptyBufferException;
 import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
+import br.edu.unipampa.varzinho.exception.RepositoryException;
 import br.edu.unipampa.varzinho.repository.CsvHighlightRepository;
 import br.edu.unipampa.varzinho.repository.HighlightRepository;
 
@@ -41,15 +42,9 @@ public final class VarZinhoWindow extends JFrame {
 
     public static void open() {
         SwingUtilities.invokeLater(() -> {
-            try {
-                HighlightRepository repository = new CsvHighlightRepository(
-                        Path.of("data", "highlights.csv"));
-                new VarZinhoWindow(repository).setVisible(true);
-            } catch (Exception exception) {
-                JOptionPane.showMessageDialog(null,
-                        "Could not open the archive: " + exception.getMessage(),
-                        "VarZinho", JOptionPane.ERROR_MESSAGE);
-            }
+            HighlightRepository repository = new CsvHighlightRepository(
+                    Path.of("data", "highlights.csv"));
+            new VarZinhoWindow(repository).setVisible(true);
         });
     }
 
@@ -137,7 +132,7 @@ public final class VarZinhoWindow extends JFrame {
             output.append("Captured and saved: " + highlight.describe() + "\n");
         } catch (NoActiveCameraException | EmptyBufferException exception) {
             showError(exception.getMessage());
-        } catch (Exception exception) {
+        } catch (RepositoryException exception) {
             showError("Archive error: " + exception.getMessage());
         }
     }
@@ -151,7 +146,7 @@ public final class VarZinhoWindow extends JFrame {
             highlights.forEach(item -> output.append(item.describe() + "\n"));
         } catch (IllegalArgumentException exception) {
             showError(exception.getMessage());
-        } catch (Exception exception) {
+        } catch (RepositoryException exception) {
             showError("Archive error: " + exception.getMessage());
         }
     }
