@@ -1,6 +1,7 @@
-package br.edu.unipampa.varzinho.exception;
+package br.edu.unipampa.varzinho.repository;
 
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
+import br.edu.unipampa.varzinho.exception.RepositoryException;
 
 import java.util.List;
 

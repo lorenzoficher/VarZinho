@@ -82,7 +82,7 @@ DomainException (abstract, unchecked)
 └── EmptyBufferException
 
 RepositoryException (checked)
-└── CorruptedRecordException
+└── CorruptedRecordException (lives in `repository/`, not `exception/`: it carries `Highlight`s)
 ```
 
 ### When each is thrown
