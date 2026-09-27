@@ -4,6 +4,8 @@ import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.exception.RepositoryException;
 
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Thrown when one record in the archive cannot be read back into a highlight.
@@ -40,6 +42,14 @@ public final class CorruptedRecordException extends RepositoryException {
         super(message, cause);
         this.lineNumber = lineNumber;
         this.recovered = List.copyOf(recovered);
+    }
+
+    /**
+     * The same damage, reporting only the recovered highlights that match a search.
+     */
+    public CorruptedRecordException keeping(Predicate<Highlight> filter) {
+        List<Highlight> matching = recovered.stream().filter(filter).collect(Collectors.toList());
+        return new CorruptedRecordException(getMessage(), lineNumber, matching, getCause());
     }
 
     public int getLineNumber() {
