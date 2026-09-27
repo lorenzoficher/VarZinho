@@ -3,7 +3,7 @@ package br.edu.unipampa.varzinho.repository;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
 import br.edu.unipampa.varzinho.enums.Resolution;
-import br.edu.unipampa.varzinho.exception.CorruptedRecordException;
+import br.edu.unipampa.varzinho.exception.CorruptedRecordException;
 import br.edu.unipampa.varzinho.exception.RepositoryException;
 
 import java.io.IOException;
@@ -11,7 +11,7 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.time.Instant;
+import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -79,8 +79,25 @@ public final class CsvHighlightRepository implements HighlightRepository {
         if (!HEADER.equals(lines.get(0))) {
             throw new RepositoryException("the archive " + file + " does not start with the header");
         }
+        int firstMalformedLine = 0;
+        RuntimeException firstFailure = null;
+        // Index 0 is the header, so the file's line number is the index plus one.
         for (int index = 1; index < lines.size(); index++) {
-            highlights.add(parse(lines.get(index), index + 1));
+            String line = lines.get(index);
+            if (line.isBlank()) {
+                continue;
+            }
+            try {
+                highlights.add(parse(line));
+            } catch (IllegalArgumentException | DateTimeParseException failure) {
+                if (firstFailure == null) {
+                    firstMalformedLine = index + 1;
+                    firstFailure = failure;
+                }
+            }
+        }
+        if (firstFailure != null) {
+            throw new CorruptedRecordException(firstMalformedLine, highlights, firstFailure);
         }
         return highlights;
     }
@@ -141,19 +158,15 @@ public final class CsvHighlightRepository implements HighlightRepository {
         return String.join(SEPARATOR, fields);
     }
 
-    private static Highlight parse(String line, int lineNumber) throws CorruptedRecordException {
+    private static Highlight parse(String line) {
         String[] fields = line.split(SEPARATOR, -1);
-        try {
-            if (fields.length != COLUMNS) {
-                throw new IllegalArgumentException(
-                        "expected " + COLUMNS + " columns but found " + fields.length);
-            }
-            VideoClip clip = new VideoClip(fields[4], Integer.parseInt(fields[5]),
-                    Resolution.valueOf(fields[6]), Double.parseDouble(fields[7]));
-            return new Highlight(fields[0], Instant.parse(fields[1]), Integer.parseInt(fields[2]),
-                    fields[3], clip);
-        } catch (IllegalArgumentException | DateTimeParseException cause) {
-            throw new CorruptedRecordException("cannot read line " + lineNumber + " of the archive", cause);
+        if (fields.length != COLUMNS) {
+            throw new IllegalArgumentException(
+                    "expected " + COLUMNS + " columns but found " + fields.length);
         }
+        VideoClip clip = new VideoClip(fields[4], Integer.parseInt(fields[5]),
+                Resolution.valueOf(fields[6]), Double.parseDouble(fields[7]));
+        return new Highlight(fields[0], Instant.parse(fields[1]), Integer.parseInt(fields[2]),
+                fields[3], clip);
     }
 }
