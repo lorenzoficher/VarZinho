@@ -112,15 +112,47 @@ class CsvHighlightRepositoryDamageTest {
     }
 
     @Test
-    void savingIntoADamagedArchiveLeavesTheFileUntouched() throws IOException {
+    void savingIntoADamagedArchiveStoresTheHighlightAndKeepsTheDamagedLine() throws Exception {
         Path file = archive.resolve("highlights.csv");
         Files.write(file, List.of(HEADER, GOOD_1, "garbage", GOOD_2));
         HighlightRepository repository = new CsvHighlightRepository(file);
 
-        assertThrows(CorruptedRecordException.class,
-                () -> repository.save(HighlightRepositoryContractTest.highlight("h-009", 3)));
+        repository.save(HighlightRepositoryContractTest.highlight("h-009", 3));
 
-        assertEquals(List.of(HEADER, GOOD_1, "garbage", GOOD_2), Files.readAllLines(file));
+        List<String> lines = Files.readAllLines(file);
+        assertEquals(List.of(HEADER, GOOD_1, "garbage", GOOD_2), lines.subList(0, 4));
+        assertEquals(5, lines.size());
+        assertTrue(lines.get(4).startsWith("h-009,"));
+    }
+
+    @Test
+    void theDamageIsStillReportedOnTheNextReadAfterASave() throws Exception {
+        Path file = archive.resolve("highlights.csv");
+        Files.write(file, List.of(HEADER, GOOD_1, "garbage"));
+        HighlightRepository repository = new CsvHighlightRepository(file);
+        repository.save(HighlightRepositoryContractTest.highlight("h-009", 3));
+
+        CorruptedRecordException damage =
+                assertThrows(CorruptedRecordException.class, repository::findAll);
+
+        assertEquals(3, damage.getLineNumber());
+        assertEquals(List.of("h-001", "h-009"), damage.getRecovered().stream()
+                .map(Highlight::getId).collect(Collectors.toList()));
+    }
+
+    @Test
+    void savingAnExistingIdInADamagedArchiveReplacesThatLine() throws Exception {
+        Path file = archive.resolve("highlights.csv");
+        Files.write(file, List.of(HEADER, "garbage", GOOD_1));
+        HighlightRepository repository = new CsvHighlightRepository(file);
+
+        repository.save(HighlightRepositoryContractTest.highlight("h-001", 7));
+
+        List<String> lines = Files.readAllLines(file);
+        assertEquals(3, lines.size());
+        assertEquals("garbage", lines.get(1));
+        assertTrue(lines.get(2).startsWith("h-001,"));
+        assertTrue(lines.get(2).contains(",7,"));
     }
 
     private HighlightRepository repositoryOver(String... lines) throws IOException {

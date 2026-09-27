@@ -13,9 +13,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -47,12 +45,26 @@ public final class CsvHighlightRepository implements HighlightRepository {
         if (highlight == null) {
             throw new IllegalArgumentException("there is no highlight to save");
         }
-        Map<String, Highlight> highlightsById = new LinkedHashMap<>();
-        for (Highlight existing : findAll()) {
-            highlightsById.put(existing.getId(), existing);
+        String record = format(highlight);
+        // Working on the raw lines, not on parsed highlights, so a damaged line neither blocks
+        // the save nor is destroyed by it.
+        List<String> lines = new ArrayList<>();
+        boolean replaced = false;
+        for (String existing : readLines().stream().skip(1).collect(Collectors.toList())) {
+            if (existing.isBlank()) {
+                continue;
+            }
+            if (!idOf(existing).equals(highlight.getId())) {
+                lines.add(existing);
+            } else if (!replaced) {
+                lines.add(record);
+                replaced = true;
+            }
         }
-        highlightsById.put(highlight.getId(), highlight);
-        write(highlightsById.values());
+        if (!replaced) {
+            lines.add(record);
+        }
+        write(lines);
     }
 
     @Override
@@ -62,23 +74,8 @@ public final class CsvHighlightRepository implements HighlightRepository {
 
     @Override
     public List<Highlight> findAll() throws RepositoryException {
-        if (!Files.exists(file)) {
-            return new ArrayList<>();
-        }
-        List<String> lines;
-        try {
-            lines = Files.readAllLines(file);
-        } catch (IOException cause) {
-            throw new RepositoryException("could not read the archive " + file, cause);
-        }
+        List<String> lines = readLines();
         List<Highlight> highlights = new ArrayList<>();
-        if (lines.isEmpty()) {
-            return highlights;
-        }
-        // Skipping an unchecked first line would silently drop a record when the header is lost.
-        if (!HEADER.equals(lines.get(0))) {
-            throw new RepositoryException("the archive " + file + " does not start with the header");
-        }
         int firstMalformedLine = 0;
         RuntimeException firstFailure = null;
         // Index 0 is the header, so the file's line number is the index plus one.
@@ -116,12 +113,33 @@ public final class CsvHighlightRepository implements HighlightRepository {
         }
     }
 
-    private void write(Iterable<Highlight> highlights) throws RepositoryException {
+    /** Every line of the file, header first; empty when the file does not exist or is empty. */
+    private List<String> readLines() throws RepositoryException {
+        if (!Files.exists(file)) {
+            return new ArrayList<>();
+        }
+        List<String> lines;
+        try {
+            lines = Files.readAllLines(file);
+        } catch (IOException cause) {
+            throw new RepositoryException("could not read the archive " + file, cause);
+        }
+        // Skipping an unchecked first line would silently drop a record when the header is lost.
+        if (!lines.isEmpty() && !HEADER.equals(lines.get(0))) {
+            throw new RepositoryException("the archive " + file + " does not start with the header");
+        }
+        return lines;
+    }
+
+    private static String idOf(String line) {
+        int separator = line.indexOf(SEPARATOR);
+        return separator < 0 ? line : line.substring(0, separator);
+    }
+
+    private void write(List<String> records) throws RepositoryException {
         List<String> lines = new ArrayList<>();
         lines.add(HEADER);
-        for (Highlight highlight : highlights) {
-            lines.add(format(highlight));
-        }
+        lines.addAll(records);
         try {
             Path directory = file.toAbsolutePath().getParent();
             Files.createDirectories(directory);
