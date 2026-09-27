@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -56,7 +57,7 @@ public final class CsvHighlightRepository implements HighlightRepository {
 
     @Override
     public Optional<Highlight> findById(String id) throws RepositoryException {
-        return findAll().stream().filter(highlight -> highlight.getId().equals(id)).findFirst();
+        return findMatching(highlight -> highlight.getId().equals(id)).stream().findFirst();
     }
 
     @Override
@@ -103,9 +104,16 @@ public final class CsvHighlightRepository implements HighlightRepository {
 
     @Override
     public List<Highlight> findByCourt(int courtNumber) throws RepositoryException {
-        return findAll().stream()
-                .filter(highlight -> highlight.getCourtNumber() == courtNumber)
-                .collect(Collectors.toList());
+        return findMatching(highlight -> highlight.getCourtNumber() == courtNumber);
+    }
+
+    // A damaged archive must not hand a filtered search records the search did not ask for.
+    private List<Highlight> findMatching(Predicate<Highlight> filter) throws RepositoryException {
+        try {
+            return findAll().stream().filter(filter).collect(Collectors.toList());
+        } catch (CorruptedRecordException damage) {
+            throw damage.keeping(filter);
+        }
     }
 
     private void write(Iterable<Highlight> highlights) throws RepositoryException {
