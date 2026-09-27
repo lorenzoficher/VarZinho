@@ -68,7 +68,7 @@ public final class ConsoleDemo {
                     + " after a request from " + athlete.identify() + " ("
                     + courtArchive.size() + " total entries):");
             courtArchive.forEach(item -> System.out.println(" - " + item.describe()));
-        } catch (Exception exception) {
+        } catch (RepositoryException exception) {
             System.err.println("Archive error: " + exception.getMessage());
         }
 
