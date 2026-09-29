@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.domain.capture.Frame;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
@@ -18,7 +19,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Font;
 import java.nio.file.Path;
@@ -26,15 +26,11 @@ import java.time.Instant;
 import java.util.Comparator;
 
 public final class VarZinhoWindow extends JFrame {
-    private static final int BUFFER_SECONDS = 30;
-    private static final int ONE_SECOND_MILLIS = 1000;
-
     private final Gym gym;
     private final HighlightRepository repository;
-    private final LiveFeed liveFeed;
-    private final Timer clock;
     private final JTextArea output = new JTextArea(12, 64);
-    private final JLabel bufferStatus = new JLabel();
+    private int frameSequence;
+    private Instant lastFrameAt;
 
     public static void open() {
         SwingUtilities.invokeLater(() -> {
@@ -51,8 +47,6 @@ public final class VarZinhoWindow extends JFrame {
         if (repository == null) throw new IllegalArgumentException("a window needs a highlight repository");
         this.gym = gym;
         this.repository = repository;
-        this.liveFeed = new LiveFeed(gym, BUFFER_SECONDS);
-        this.clock = new Timer(ONE_SECOND_MILLIS, event -> recordOneSecond());
         setTitle("VarZinho - " + gym.getName());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(8, 8));
@@ -61,15 +55,10 @@ public final class VarZinhoWindow extends JFrame {
         output.setLineWrap(true);
         output.setWrapStyleWord(true);
         add(new JScrollPane(output), BorderLayout.CENTER);
-        JPanel bottom = new JPanel(new BorderLayout());
-        showBufferStatus();
-        bottom.add(bufferStatus, BorderLayout.NORTH);
-        bottom.add(buildActions(), BorderLayout.SOUTH);
-        add(bottom, BorderLayout.SOUTH);
+        add(buildActions(), BorderLayout.SOUTH);
         getRootPane().setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         pack();
         setLocationRelativeTo(null);
-        clock.start();
     }
 
     private JLabel buildHeader() {
@@ -79,24 +68,33 @@ public final class VarZinhoWindow extends JFrame {
     }
 
     private JPanel buildActions() {
+        JButton record = new JButton("Record " + Court.DEFAULT_CAPTURE_SECONDS + " seconds");
+        record.addActionListener(event -> recordFrames());
         JButton capture = new JButton("Trigger capture");
         capture.addActionListener(event -> triggerCapture());
         JButton archive = new JButton("List archive for court");
         archive.addActionListener(event -> listArchive());
         JPanel panel = new JPanel();
-        panel.add(capture); panel.add(archive);
+        panel.add(record); panel.add(capture); panel.add(archive);
         return panel;
     }
 
-    private void recordOneSecond() {
-        liveFeed.tick(Instant.now());
-        showBufferStatus();
-    }
-
-    private void showBufferStatus() {
+    private void recordFrames() {
         Court court = selectedCourt();
-        bufferStatus.setText("Court " + court.getNumber() + " buffer: "
-                + liveFeed.secondsHeld(court) + " of " + BUFFER_SECONDS + " seconds.");
+        if (!court.hasActiveCamera()) {
+            showError("Court " + court.getNumber() + " has no active camera.");
+            return;
+        }
+        Instant firstFrameAt = Instant.now().minusSeconds(Court.DEFAULT_CAPTURE_SECONDS - 1L);
+        if (lastFrameAt != null && !firstFrameAt.isAfter(lastFrameAt)) {
+            firstFrameAt = lastFrameAt.plusNanos(1);
+        }
+        for (int second = 0; second < Court.DEFAULT_CAPTURE_SECONDS; second++) {
+            lastFrameAt = firstFrameAt.plusNanos(second);
+            court.record(new Frame(lastFrameAt, frameSequence++));
+        }
+        output.append("Recorded " + Court.DEFAULT_CAPTURE_SECONDS + " seconds on court "
+                + court.getNumber() + ".\n");
     }
 
     private void triggerCapture() {
