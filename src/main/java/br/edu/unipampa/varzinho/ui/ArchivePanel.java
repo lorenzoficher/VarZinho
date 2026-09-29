@@ -4,6 +4,7 @@ import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.exception.RepositoryException;
+import br.edu.unipampa.varzinho.repository.CorruptedRecordException;
 import br.edu.unipampa.varzinho.repository.HighlightRepository;
 
 import javax.swing.JComboBox;
@@ -27,7 +28,8 @@ import java.util.function.Consumer;
  *
  * <p>It fills itself from the repository when built, so highlights from earlier runs
  * show up at once. It never filters rows itself — choosing a court only chooses which
- * repository lookup to ask — and a lookup that fails leaves the rows it already had.
+ * repository lookup to ask. A damaged archive still shows the records that could be
+ * read, and a lookup that fails outright leaves the rows it already had.
  */
 final class ArchivePanel extends JPanel {
     private static final String ALL_COURTS = "All courts";
@@ -68,15 +70,25 @@ final class ArchivePanel extends JPanel {
 
     JTable table() { return table; }
 
-    /** Reads the archive again for the chosen filter; on failure reports it and keeps the rows. */
+    /**
+     * Reads the archive again for the chosen filter. Damaged lines are reported and the
+     * readable records shown; any other failure is reported and the rows are kept.
+     */
     void refresh() {
         try {
-            List<Highlight> found = new ArrayList<>(lookup());
-            found.sort(Comparator.comparing(Highlight::getCapturedAt).reversed());
-            rows.show(found);
+            show(lookup());
+        } catch (CorruptedRecordException damage) {
+            show(damage.getRecovered());
+            errorSink.accept("Archive damaged: " + damage.getMessage());
         } catch (RepositoryException failure) {
             errorSink.accept("Archive error: " + failure.getMessage());
         }
+    }
+
+    private void show(List<Highlight> highlights) {
+        List<Highlight> newestFirst = new ArrayList<>(highlights);
+        newestFirst.sort(Comparator.comparing(Highlight::getCapturedAt).reversed());
+        rows.show(newestFirst);
     }
 
     private List<Highlight> lookup() throws RepositoryException {
