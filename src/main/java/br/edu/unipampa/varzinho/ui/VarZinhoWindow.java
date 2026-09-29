@@ -23,7 +23,6 @@ import java.awt.BorderLayout;
 import java.awt.Font;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Comparator;
 
 public final class VarZinhoWindow extends JFrame {
     private static final int BUFFER_SECONDS = 30;
@@ -33,6 +32,7 @@ public final class VarZinhoWindow extends JFrame {
     private final HighlightRepository repository;
     private final LiveFeed liveFeed;
     private final Timer clock;
+    private final CourtPanel courtPanel;
     private final JTextArea output = new JTextArea(12, 64);
     private final JLabel bufferStatus = new JLabel();
 
@@ -53,10 +53,14 @@ public final class VarZinhoWindow extends JFrame {
         this.repository = repository;
         this.liveFeed = new LiveFeed(gym, BUFFER_SECONDS);
         this.clock = new Timer(ONE_SECOND_MILLIS, event -> recordOneSecond());
+        this.courtPanel = new CourtPanel(gym, this::showError);
         setTitle("VarZinho - " + gym.getName());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(8, 8));
-        add(buildHeader(), BorderLayout.NORTH);
+        JPanel top = new JPanel(new BorderLayout(8, 8));
+        top.add(buildHeader(), BorderLayout.NORTH);
+        top.add(courtPanel, BorderLayout.CENTER);
+        add(top, BorderLayout.NORTH);
         output.setEditable(false);
         output.setLineWrap(true);
         output.setWrapStyleWord(true);
@@ -123,11 +127,8 @@ public final class VarZinhoWindow extends JFrame {
         }
     }
 
-    // Until the window lets the viewer pick a court, every action targets the lowest-numbered one.
     private Court selectedCourt() {
-        return gym.getCourts().stream()
-                .min(Comparator.comparingInt(Court::getNumber))
-                .orElseThrow(() -> new IllegalStateException("the gym has no court"));
+        return courtPanel.selectedCourt();
     }
 
     private void showError(String message) {
