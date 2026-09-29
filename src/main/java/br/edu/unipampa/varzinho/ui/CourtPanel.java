@@ -62,6 +62,10 @@ final class CourtPanel extends JPanel {
         courtSelector.setSelectedItem(number);
     }
 
+    void onCourtChange(Runnable listener) {
+        courtSelector.addActionListener(event -> listener.run());
+    }
+
     void selectCamera(int index) {
         cameraList.setSelectedIndex(index);
     }
