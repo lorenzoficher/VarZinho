@@ -1,12 +1,14 @@
 package br.edu.unipampa.varzinho.domain.capture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
 import br.edu.unipampa.varzinho.enums.Resolution;
 
 import java.time.Instant;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -62,6 +64,38 @@ class PtzCameraTest {
 
         assertThrows(IllegalArgumentException.class, () -> camera.moveTo(90, 10, 99));
         assertEquals(2, camera.getZoom());
+    }
+
+    @Test
+    void describesItsNewAimAfterBeingMoved() {
+        PtzCamera camera = recordingCamera(30);
+        String before = camera.describe();
+
+        camera.moveTo(30, 10, 2);
+
+        assertNotEquals(before, camera.describe());
+    }
+
+    @Test
+    void describesADifferentLineForEachStatus() {
+        PtzCamera camera = new PtzCamera("CAM-2", "Domo", Resolution.ULTRA_HD, 30);
+        String inactive = camera.describe();
+        camera.startRecording();
+        String active = camera.describe();
+        camera.sendToMaintenance();
+        String maintenance = camera.describe();
+
+        assertEquals(3, Set.of(inactive, active, maintenance).size());
+    }
+
+    @Test
+    void describesItselfDifferentlyOnceRecordingStops() {
+        PtzCamera camera = recordingCamera(30);
+        String recording = camera.describe();
+
+        camera.stopRecording();
+
+        assertNotEquals(recording, camera.describe());
     }
 
     private static PtzCamera recordingCamera(int bufferSeconds) {

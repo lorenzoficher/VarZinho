@@ -161,6 +161,11 @@ class CameraTest {
             return clipFrom("clips/test.mp4", seconds);
         }
 
+        @Override
+        public String describe() {
+            return describeAs("test");
+        }
+
         private List<Frame> window(int seconds) {
             return recordedWindow(seconds);
         }

@@ -43,6 +43,24 @@ arquivo — caminho, duração, resolução e tamanho. Nenhum quadro é decodifi
 - Maven
 - JUnit 5
 
+## Instalando o Maven
+
+Você precisa do JDK 17 (ou superior) e do Maven. O build para com uma mensagem
+clara se o JDK for anterior ao 17.
+
+| Sistema | Comando |
+|---|---|
+| Windows | `choco install maven` num terminal de administrador — depois **feche e reabra o terminal**. Sem o Chocolatey: baixe o zip em <https://maven.apache.org/download.cgi>, extraia e adicione a pasta `bin` ao `PATH` (o pacote `Apache.Maven` não existe no `winget`) |
+| macOS | `brew install maven` |
+| Linux (Debian/Ubuntu) | `sudo apt install maven` |
+
+Para conferir a instalação:
+
+```bash
+java -version   # deve mostrar 17 ou superior
+mvn -v          # deve mostrar a versão do Maven e o mesmo JDK
+```
+
 ## Como executar
 
 ```bash

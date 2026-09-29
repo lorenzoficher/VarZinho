@@ -136,6 +136,25 @@ public abstract class Camera {
         return new VideoClip(filePath, seconds, resolution, megapixels * seconds * MB_PER_MEGAPIXEL_SECOND);
     }
 
+    /**
+     * One line a person reads to tell this camera apart from the others on the court.
+     * Each kind says what only it can say, so a caller never has to ask which kind it
+     * is holding.
+     *
+     * @return the camera's current state in one line; it changes as the camera does
+     */
+    public abstract String describe();
+
+    /**
+     * The part of the line every camera shares, in the same order for every kind, so
+     * the lines of different cameras still read alike when listed together.
+     *
+     * @param kind how this kind of camera names itself
+     */
+    protected final String describeAs(String kind) {
+        return id + " · " + kind + " · " + resolution + " · " + status;
+    }
+
     public boolean isRecording() {
         return status.canRecord();
     }
