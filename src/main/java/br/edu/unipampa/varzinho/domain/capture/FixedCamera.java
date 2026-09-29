@@ -26,6 +26,11 @@ public final class FixedCamera extends Camera {
         return clipFrom(clipPath(window), seconds);
     }
 
+    @Override
+    public String describe() {
+        return describeAs("fixed");
+    }
+
     private String clipPath(List<Frame> window) {
         Frame last = window.get(window.size() - 1);
         return "clips/" + getId() + "-" + last.getTimestamp().getEpochSecond() + ".mp4";
