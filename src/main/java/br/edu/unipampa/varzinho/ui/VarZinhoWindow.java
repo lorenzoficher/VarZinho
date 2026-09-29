@@ -1,10 +1,7 @@
 package br.edu.unipampa.varzinho.ui;
 
-import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
-import br.edu.unipampa.varzinho.exception.EmptyBufferException;
-import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
 import br.edu.unipampa.varzinho.exception.RepositoryException;
 import br.edu.unipampa.varzinho.repository.CsvHighlightRepository;
 import br.edu.unipampa.varzinho.repository.HighlightRepository;
@@ -33,6 +30,7 @@ public final class VarZinhoWindow extends JFrame {
     private final LiveFeed liveFeed;
     private final Timer clock;
     private final CourtPanel courtPanel;
+    private final CapturePanel capturePanel;
     private final JTextArea output = new JTextArea(12, 64);
     private final JLabel bufferStatus = new JLabel();
 
@@ -54,12 +52,15 @@ public final class VarZinhoWindow extends JFrame {
         this.liveFeed = new LiveFeed(gym, BUFFER_SECONDS);
         this.clock = new Timer(ONE_SECOND_MILLIS, event -> recordOneSecond());
         this.courtPanel = new CourtPanel(gym, this::showError);
+        this.capturePanel = new CapturePanel(courtPanel, repository, this::showError,
+                highlight -> listArchive());
         setTitle("VarZinho - " + gym.getName());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(8, 8));
         JPanel top = new JPanel(new BorderLayout(8, 8));
         top.add(buildHeader(), BorderLayout.NORTH);
         top.add(courtPanel, BorderLayout.CENTER);
+        top.add(capturePanel, BorderLayout.SOUTH);
         add(top, BorderLayout.NORTH);
         output.setEditable(false);
         output.setLineWrap(true);
@@ -83,12 +84,10 @@ public final class VarZinhoWindow extends JFrame {
     }
 
     private JPanel buildActions() {
-        JButton capture = new JButton("Trigger capture");
-        capture.addActionListener(event -> triggerCapture());
         JButton archive = new JButton("List archive for court");
         archive.addActionListener(event -> listArchive());
         JPanel panel = new JPanel();
-        panel.add(capture); panel.add(archive);
+        panel.add(archive);
         return panel;
     }
 
@@ -101,18 +100,6 @@ public final class VarZinhoWindow extends JFrame {
         Court court = selectedCourt();
         bufferStatus.setText("Court " + court.getNumber() + " buffer: "
                 + liveFeed.secondsHeld(court) + " of " + BUFFER_SECONDS + " seconds.");
-    }
-
-    private void triggerCapture() {
-        try {
-            Highlight highlight = selectedCourt().triggerCapture();
-            repository.save(highlight);
-            output.append("Captured and saved: " + highlight.describe() + "\n");
-        } catch (NoActiveCameraException | EmptyBufferException exception) {
-            showError(exception.getMessage());
-        } catch (RepositoryException exception) {
-            showError("Archive error: " + exception.getMessage());
-        }
     }
 
     private void listArchive() {
