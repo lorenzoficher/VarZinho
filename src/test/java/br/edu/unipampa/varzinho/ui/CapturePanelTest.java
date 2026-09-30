@@ -20,7 +20,7 @@ class CapturePanelTest {
     private final InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
     private final List<String> errors = new ArrayList<>();
     private final List<Highlight> saved = new ArrayList<>();
-    private final CourtPanel courtPanel = new CourtPanel(gym, errors::add);
+    private final CourtPanel courtPanel = new CourtPanel(gym, 30, errors::add);
     private final CapturePanel panel = new CapturePanel(courtPanel, repository, errors::add, saved::add);
 
     @Test
