@@ -77,6 +77,19 @@ class CapturePanelTest {
     }
 
     @Test
+    void failedSaveClearsThePreviousConfirmation() {
+        fillBuffers();
+        courtPanel.selectCourt(2);
+        panel.saveButton().doClick();
+        gym.findCourt(2).getCameras().get(0).stopRecording();
+
+        panel.saveButton().doClick();
+
+        assertEquals(1, errors.size());
+        assertEquals("", panel.confirmation());
+    }
+
+    @Test
     void emptyBufferReportsTheDomainMessageAndSavesNothing() {
         panel.saveButton().doClick();
 
