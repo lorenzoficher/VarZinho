@@ -73,9 +73,11 @@ final class CapturePanel extends JPanel {
             onSaved.accept(highlight);
 
         } catch (NoActiveCameraException | EmptyBufferException failure) {
+            confirmation.setText(" ");
             errorSink.accept(failure.getMessage());
 
         } catch (RepositoryException failure) {
+            confirmation.setText(" ");
             errorSink.accept("Archive error: " + failure.getMessage());
         }
     }
