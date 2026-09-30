@@ -86,7 +86,7 @@ class CapturePanelTest {
     }
 
     private void fillBuffers() {
-        LiveFeed feed = new LiveFeed(gym, 30);
+        LiveFeed feed = new LiveFeed(gym);
         for (int second = 0; second < Court.DEFAULT_CAPTURE_SECONDS; second++) {
             feed.tick(START.plusSeconds(second));
         }
