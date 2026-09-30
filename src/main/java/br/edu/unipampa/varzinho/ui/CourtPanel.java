@@ -60,6 +60,7 @@ final class CourtPanel extends JPanel {
     private final JTextField courtNumberField = new JTextField(4);
     private final JButton addCourt = new JButton("Add court");
     private final List<Runnable> courtAddedListeners = new ArrayList<>();
+    private final List<Runnable> gymChangedListeners = new ArrayList<>();
     // Wider than the head reaches, so an impossible aim reaches the camera and is refused there.
     private final JSpinner panSpinner = new JSpinner(new SpinnerNumberModel(0, -999, 999, 5));
     private final JSpinner tiltSpinner = new JSpinner(new SpinnerNumberModel(0, -999, 999, 5));
@@ -114,6 +115,11 @@ final class CourtPanel extends JPanel {
 
     void onCourtAdded(Runnable listener) {
         courtAddedListeners.add(listener);
+    }
+
+    /** Runs the listener after every change the gym accepted: a court, a camera, a state, an aim. */
+    void onGymChanged(Runnable listener) {
+        gymChangedListeners.add(listener);
     }
 
     void selectCamera(int index) {
@@ -176,6 +182,7 @@ final class CourtPanel extends JPanel {
         courtSelector.setSelectedItem(number);
         courtNumberField.setText("");
         courtAddedListeners.forEach(Runnable::run);
+        gymChangedListeners.forEach(Runnable::run);
     }
 
     private void listCourts() {
@@ -238,6 +245,7 @@ final class CourtPanel extends JPanel {
             return;
         }
         showCameras();
+        gymChangedListeners.forEach(Runnable::run);
     }
 
     private Camera buildCamera() {
@@ -255,14 +263,17 @@ final class CourtPanel extends JPanel {
             errorSink.accept("Select a camera first.");
             return;
         }
+        boolean accepted = true;
         try {
             transition.accept(selectedCourt().getCameras().get(index));
         } catch (IllegalStateException | IllegalArgumentException refusal) {
             // The camera guards its own transitions and range; the panel only relays the refusal.
             errorSink.accept(refusal.getMessage());
+            accepted = false;
         }
         showCameras();
         cameraList.setSelectedIndex(index);
+        if (accepted) gymChangedListeners.forEach(Runnable::run);
     }
 
     private void showCameras() {
