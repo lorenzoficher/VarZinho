@@ -277,4 +277,43 @@ class CourtPanelTest {
         assertEquals(1, changes.size());
         assertEquals(3, errors.size());
     }
+
+    @Test
+    void movingTheSelectedCameraTakesItToTheChosenCourt() {
+        Camera ptz = gym.findCourt(1).getCameras().get(1);
+        List<String> changes = new ArrayList<>();
+        panel.onGymChanged(() -> changes.add("changed"));
+
+        panel.selectCamera(1);
+        panel.moveTargetSelector().setSelectedItem(2);
+        panel.moveToCourtButton().doClick();
+
+        assertEquals(1, panel.cameraLines().size());
+        assertTrue(gym.findCourt(2).getCameras().contains(ptz));
+        assertEquals(CameraStatus.INACTIVE, ptz.getStatus());
+        assertEquals(1, changes.size());
+    }
+
+    @Test
+    void movingACameraToTheCourtItIsOnReportsTheDomainRefusal() {
+        panel.selectCamera(0);
+        panel.moveTargetSelector().setSelectedItem(1);
+
+        panel.moveToCourtButton().doClick();
+
+        assertEquals(List.of("camera fixed-1 is already on court 1"), errors);
+    }
+
+    @Test
+    void aCourtAddedLaterCanReceiveACamera() {
+        panel.courtNumberField().setText("5");
+        panel.addCourtButton().doClick();
+        panel.selectCourt(1);
+
+        panel.selectCamera(0);
+        panel.moveTargetSelector().setSelectedItem(5);
+        panel.moveToCourtButton().doClick();
+
+        assertEquals(1, gym.findCourt(5).getCameras().size());
+    }
 }
