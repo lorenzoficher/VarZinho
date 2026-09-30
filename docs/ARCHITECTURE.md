@@ -79,7 +79,8 @@ Domain errors are signalled with our own exception types, never with raw
 ```
 DomainException (abstract, unchecked)
 ├── NoActiveCameraException
-└── EmptyBufferException
+├── EmptyBufferException
+└── DuplicateCameraException
 
 RepositoryException (checked)
 └── CorruptedRecordException (lives in `repository/`, not `exception/`: it carries `Highlight`s)
@@ -95,6 +96,11 @@ nothing, and they need to know why.
 **`EmptyBufferException`** — a clip is requested from a camera that has not
 recorded enough footage yet, typically right after being switched on. The
 window asked for does not exist.
+
+**`DuplicateCameraException`** — a camera is installed under an id that a court
+of the gym already uses. Clips are named after their camera and the archive
+tells cameras apart by id alone, so ignoring the second camera in silence would
+leave the caller believing it was installed.
 
 **`CorruptedRecordException`** — a line in the CSV cannot be parsed. Checked,
 because the caller can reasonably recover: skip the record, report it, and
