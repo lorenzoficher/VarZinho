@@ -192,7 +192,21 @@ cada conceito foi usado e por que faz sentido no domínio.
 
 ## Capturas de tela
 
-<!-- TODO: adicionar as capturas de tela da interface (issue #34). -->
+![Equipamentos da quadra](docs/screenshots/01-equipamentos-da-quadra.png)
+
+*Equipamentos da quadra: a câmera `ptz-1` está parada e a `fixed-1` está ativa.*
+
+![Captura disparada](docs/screenshots/02-captura-disparada.png)
+
+*Captura disparada: o lance foi salvo e a confirmação aparece abaixo do botão.*
+
+![Acervo listado](docs/screenshots/03-acervo-listado.png)
+
+*Acervo de lances filtrado pela quadra 1.*
+
+![Erro: quadra sem câmera ativa](docs/screenshots/04-erro-quadra-sem-camera-ativa.png)
+
+*Disparo numa quadra sem câmera ativa: a exceção de domínio chega à interface como um aviso ("Court 2 has no active camera."). Demonstra a seção 2.8 do enunciado (tratamento de exceções).*
 
 ## Documentação
 
