@@ -66,6 +66,8 @@ final class CourtPanel extends JPanel {
     private final JSpinner tiltSpinner = new JSpinner(new SpinnerNumberModel(0, -999, 999, 5));
     private final JSpinner zoomSpinner = new JSpinner(new SpinnerNumberModel(1, -99, 99, 1));
     private final JButton move = new JButton("Move");
+    private final JComboBox<Integer> moveTargetSelector = new JComboBox<>();
+    private final JButton moveToCourt = new JButton("Move to court");
 
     CourtPanel(Gym gym, int bufferSeconds, Consumer<String> errorSink) {
         super(new BorderLayout(8, 8));
@@ -93,6 +95,7 @@ final class CourtPanel extends JPanel {
         add(buttons, BorderLayout.EAST);
         JPanel forms = new JPanel();
         forms.setLayout(new BoxLayout(forms, BoxLayout.Y_AXIS));
+        forms.add(buildMoveRow());
         forms.add(buildAimRow());
         forms.add(buildInstallForm());
         add(forms, BorderLayout.SOUTH);
@@ -146,6 +149,8 @@ final class CourtPanel extends JPanel {
     JSpinner tiltSpinner() { return tiltSpinner; }
     JSpinner zoomSpinner() { return zoomSpinner; }
     JButton moveButton() { return move; }
+    JComboBox<Integer> moveTargetSelector() { return moveTargetSelector; }
+    JButton moveToCourtButton() { return moveToCourt; }
 
     private JPanel buildCourtRow() {
         JPanel adder = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
@@ -174,11 +179,8 @@ final class CourtPanel extends JPanel {
             errorSink.accept(refusal.getMessage());
             return;
         }
-        int position = 0;
-        while (position < courtSelector.getItemCount() && courtSelector.getItemAt(position) < number) {
-            position++;
-        }
-        courtSelector.insertItemAt(number, position);
+        insertInOrder(courtSelector, number);
+        insertInOrder(moveTargetSelector, number);
         courtSelector.setSelectedItem(number);
         courtNumberField.setText("");
         courtAddedListeners.forEach(Runnable::run);
@@ -186,7 +188,29 @@ final class CourtPanel extends JPanel {
     }
 
     private void listCourts() {
-        gym.getCourts().stream().map(Court::getNumber).sorted().forEach(courtSelector::addItem);
+        gym.getCourts().stream().map(Court::getNumber).sorted().forEach(number -> {
+            courtSelector.addItem(number);
+            moveTargetSelector.addItem(number);
+        });
+    }
+
+    private static void insertInOrder(JComboBox<Integer> selector, int number) {
+        int position = 0;
+        while (position < selector.getItemCount() && selector.getItemAt(position) < number) {
+            position++;
+        }
+        selector.insertItemAt(number, position);
+    }
+
+    private JPanel buildMoveRow() {
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
+        row.setBorder(BorderFactory.createTitledBorder("Move the selected camera"));
+        row.add(new JLabel("To court"));
+        row.add(moveTargetSelector);
+        row.add(moveToCourt);
+        moveToCourt.addActionListener(event -> onSelectedCamera(
+                camera -> gym.moveCamera(camera, (Integer) moveTargetSelector.getSelectedItem())));
+        return row;
     }
 
     private JPanel buildAimRow() {
