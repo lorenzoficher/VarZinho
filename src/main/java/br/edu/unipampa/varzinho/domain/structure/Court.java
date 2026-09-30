@@ -4,6 +4,7 @@ import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.capture.Frame;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
+import br.edu.unipampa.varzinho.exception.DuplicateCameraException;
 import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
 
 import java.time.Instant;
@@ -22,10 +23,16 @@ public final class Court {
         this.number = number;
     }
 
+    /**
+     * Mounts a camera on this court.
+     *
+     * @throws DuplicateCameraException if a camera with the same id is already here
+     */
     public void installCamera(Camera camera) {
         if (camera == null) throw new IllegalArgumentException("a court cannot install a null camera");
-        if (cameras.stream().anyMatch(item -> item.getId().equals(camera.getId()))) {
-            return;
+        if (hasCamera(camera.getId())) {
+            throw new DuplicateCameraException(
+                    "camera " + camera.getId() + " is already installed on court " + number);
         }
         cameras.add(camera);
     }
@@ -46,6 +53,10 @@ public final class Court {
                         "Court " + number + " has no active camera."));
         VideoClip clip = camera.captureLastSeconds(DEFAULT_CAPTURE_SECONDS);
         return new Highlight("h-" + UUID.randomUUID(), Instant.now(), number, camera.getId(), clip);
+    }
+
+    public boolean hasCamera(String cameraId) {
+        return cameras.stream().anyMatch(camera -> camera.getId().equals(cameraId));
     }
 
     public boolean hasActiveCamera() {
