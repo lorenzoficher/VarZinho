@@ -6,6 +6,7 @@ import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.Resolution;
+import br.edu.unipampa.varzinho.exception.DuplicateCameraException;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
@@ -129,21 +130,11 @@ final class CourtPanel extends JPanel {
     }
 
     private void installCamera() {
-        Court court = selectedCourt();
-        int before = court.getCameras().size();
-        Camera camera;
         try {
-            camera = buildCamera();
-        } catch (IllegalArgumentException refusal) {
-            // The camera constructors validate what was typed; the panel only relays it.
+            gym.installCamera(selectedCourt().getNumber(), buildCamera());
+        } catch (IllegalArgumentException | DuplicateCameraException refusal) {
+            // The camera constructors and the gym validate what was typed; the panel only relays it.
             errorSink.accept(refusal.getMessage());
-            return;
-        }
-        court.installCamera(camera);
-        // Court ignores an id it already has without saying so. Until it throws
-        // instead, the panel tells the user rather than leave a silent button.
-        if (court.getCameras().size() == before) {
-            errorSink.accept("Court " + court.getNumber() + " already has a camera named " + camera.getId() + ".");
             return;
         }
         showCameras();
