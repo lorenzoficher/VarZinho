@@ -12,6 +12,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import java.awt.Font;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.function.Consumer;
 
 /**
@@ -27,14 +29,17 @@ final class CapturePanel extends JPanel {
     private final HighlightRepository repository;
     private final Consumer<String> errorSink;
     private final Consumer<Highlight> onSaved;
+    private final DateTimeFormatter timeFormat;
     private final JButton save = new JButton();
     private final JLabel confirmation = new JLabel(" ");
 
-    CapturePanel(CourtPanel courtPanel, HighlightRepository repository,
+    CapturePanel(CourtPanel courtPanel, HighlightRepository repository, ZoneId zone,
                  Consumer<String> errorSink, Consumer<Highlight> onSaved) {
         super(new BorderLayout(4, 4));
         if (courtPanel == null) throw new IllegalArgumentException("a capture panel needs a court panel");
         if (repository == null) throw new IllegalArgumentException("a capture panel needs a highlight repository");
+        if (zone == null) throw new IllegalArgumentException("a capture panel needs a time zone to show times in");
+        this.timeFormat = ArchivePanel.timeFormatIn(zone);
         if (errorSink == null) throw new IllegalArgumentException("a capture panel needs somewhere to report errors");
         if (onSaved == null) throw new IllegalArgumentException("a capture panel needs someone to tell about saves");
         this.courtPanel = courtPanel;
@@ -59,7 +64,10 @@ final class CapturePanel extends JPanel {
         try {
             Highlight highlight = courtPanel.selectedCourt().triggerCapture();
             repository.save(highlight);
-            confirmation.setText(highlight.describe());
+            confirmation.setText("Saved: court " + highlight.getCourtNumber()
+                    + " · camera " + highlight.getCameraId()
+                    + " · " + timeFormat.format(highlight.getCapturedAt())
+                    + " · " + highlight.getClip().getDurationSeconds() + "s");
             onSaved.accept(highlight);
         } catch (NoActiveCameraException | EmptyBufferException refusal) {
             errorSink.accept(refusal.getMessage());
