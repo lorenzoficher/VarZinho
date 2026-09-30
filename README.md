@@ -93,6 +93,10 @@ Nela o usuário:
 
 - **escolhe a quadra** numa lista e vê as câmeras instaladas, cada uma com o seu
   estado atual;
+- **instala câmeras na quadra escolhida** pela seção *Install camera on this
+  court*: digita o identificador e o modelo, escolhe o tipo (fixa ou PTZ), a
+  resolução e, para a fixa, o ângulo. A câmera nova entra parada, como toda
+  câmera recém-instalada, e passa a gravar ao ser ligada;
 - **seleciona uma câmera e muda seu estado** com *Start*, *Stop* e *Send to
   maintenance*;
 - **aciona *Save highlight***, o equivalente na tela ao botão físico da quadra:
@@ -100,9 +104,9 @@ Nela o usuário:
 - **consulta o acervo** numa tabela, com todos os lances ou filtrados por quadra,
   do mais recente para o mais antigo.
 
-A entrada de dados é feita por seleção e botões, sem campos de texto. Ginásio,
-quadras, câmeras e pessoas não são cadastrados pela janela: a janela usa o
-ginásio de exemplo, e o cadastro de pessoas aparece apenas no `ConsoleDemo`.
+Das entidades, só câmeras são cadastradas pela janela. O ginásio e as quadras
+vêm do ginásio de exemplo, e o cadastro de pessoas aparece apenas no
+`ConsoleDemo`.
 
 Quando o domínio recusa uma operação — capturar numa quadra sem câmera ativa,
 capturar antes de haver segundos suficientes no buffer, ligar uma câmera em
@@ -187,7 +191,7 @@ cada conceito foi usado e por que faz sentido no domínio.
 | Interfaces | [`HighlightRepository`](src/main/java/br/edu/unipampa/varzinho/repository/HighlightRepository.java), implementada por `CsvHighlightRepository` e `InMemoryHighlightRepository` | O formato do acervo pode mudar (o PRD prevê um banco de dados no futuro) sem tocar no domínio nem na interface. A versão em memória permite testar sem arquivo |
 | Enum | [`CameraStatus`](src/main/java/br/edu/unipampa/varzinho/enums/CameraStatus.java) (`ACTIVE`, `INACTIVE`, `MAINTENANCE`) com `canRecord()`. [`Resolution`](src/main/java/br/edu/unipampa/varzinho/enums/Resolution.java) (`HD`, `FULL_HD`, `ULTRA_HD`) com largura, altura e `label()` | Uma câmera só pode estar num desses três estados, e a regra "só `ACTIVE` grava" fica no próprio enum. A resolução carrega as dimensões usadas para estimar o tamanho do clipe |
 | Tratamento de exceções | Exceções próprias em [`exception/`](src/main/java/br/edu/unipampa/varzinho/exception/): `DomainException` (não verificada), com `NoActiveCameraException` e `EmptyBufferException`, e `RepositoryException` (verificada), estendida por `CorruptedRecordException` em `repository/`. São lançadas em `Court.triggerCapture()`, `CircularBuffer.extractLastSeconds()` e `CsvHighlightRepository`, e tratadas em `CapturePanel` e `ArchivePanel`, que mostram a mensagem num `JOptionPane` | Apertar o botão sem câmera ativa é um erro que o atleta precisa ver, não um lance vazio salvo em silêncio. Um arquivo danificado é recuperável: por isso a exceção é verificada e carrega os lances que puderam ser lidos |
-| Interface gráfica com Swing | [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) (`JFrame`), [`CourtPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CourtPanel.java) (`JComboBox`, `JList`, `JButton`), [`CapturePanel`](src/main/java/br/edu/unipampa/varzinho/ui/CapturePanel.java) (`JButton`), [`ArchivePanel`](src/main/java/br/edu/unipampa/varzinho/ui/ArchivePanel.java) (`JTable`), `JOptionPane` para erros e `javax.swing.Timer` como relógio | O usuário escolhe quadra e câmera, muda o estado da câmera, salva o lance e vê o acervo. A entrada é feita por seleção e botões, sem campos de texto, e não há cadastro pela janela (ver [O que a interface faz](#o-que-a-interface-faz)). A interface não contém regra: chama o domínio e mostra o resultado |
+| Interface gráfica com Swing | [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) (`JFrame`), [`CourtPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CourtPanel.java) (`JComboBox`, `JList`, `JButton`, e `JTextField` e `JSpinner` no cadastro de câmera), [`CapturePanel`](src/main/java/br/edu/unipampa/varzinho/ui/CapturePanel.java) (`JButton`), [`ArchivePanel`](src/main/java/br/edu/unipampa/varzinho/ui/ArchivePanel.java) (`JTable`), `JOptionPane` para erros e `javax.swing.Timer` como relógio | O usuário escolhe a quadra, instala câmeras nela digitando os dados, muda o estado da câmera, salva o lance e vê o acervo (ver [O que a interface faz](#o-que-a-interface-faz)). Um dado inválido é recusado pelo construtor da câmera, e a mensagem aparece num `JOptionPane`. A interface não contém regra: chama o domínio e mostra o resultado |
 | Data e hora (`java.time`) | `Instant` em `Frame` e `Highlight`. `LocalDate` e `Period` em `Person.age()`. `ZoneId` e `DateTimeFormatter` em `ArchivePanel`. `Instant.parse()` e `DateTimeParseException` em `CsvHighlightRepository`. As classes `Date` e `Calendar` não são usadas | O lance é procurado pelo horário em que aconteceu, então o instante da captura é o dado central. O acervo guarda o `Instant` em UTC e a tabela o exibe no fuso local |
 
 ## Capturas de tela
