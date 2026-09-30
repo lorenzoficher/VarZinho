@@ -23,6 +23,7 @@ import javax.swing.SpinnerNumberModel;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -53,6 +54,9 @@ final class CourtPanel extends JPanel {
     private final JComboBox<Resolution> resolutionSelector = new JComboBox<>(Resolution.values());
     private final JSpinner angleSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 359, 1));
     private final JButton install = new JButton("Install camera");
+    private final JTextField courtNumberField = new JTextField(4);
+    private final JButton addCourt = new JButton("Add court");
+    private final List<Runnable> courtAddedListeners = new ArrayList<>();
 
     CourtPanel(Gym gym, int bufferSeconds, Consumer<String> errorSink) {
         super(new BorderLayout(8, 8));
@@ -65,9 +69,9 @@ final class CourtPanel extends JPanel {
         this.gym = gym;
         this.bufferSeconds = bufferSeconds;
         this.errorSink = errorSink;
-        gym.getCourts().stream().map(Court::getNumber).sorted().forEach(courtSelector::addItem);
+        listCourts();
         courtSelector.addActionListener(event -> showCameras());
-        add(courtSelector, BorderLayout.NORTH);
+        add(buildCourtRow(), BorderLayout.NORTH);
         add(new JScrollPane(cameraList), BorderLayout.CENTER);
         cameraList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         start.addActionListener(event -> onSelectedCamera(Camera::startRecording));
@@ -92,6 +96,10 @@ final class CourtPanel extends JPanel {
         courtSelector.addActionListener(event -> listener.run());
     }
 
+    void onCourtAdded(Runnable listener) {
+        courtAddedListeners.add(listener);
+    }
+
     void selectCamera(int index) {
         cameraList.setSelectedIndex(index);
     }
@@ -109,6 +117,49 @@ final class CourtPanel extends JPanel {
     JComboBox<Resolution> resolutionSelector() { return resolutionSelector; }
     JSpinner angleSpinner() { return angleSpinner; }
     JButton installButton() { return install; }
+    JTextField courtNumberField() { return courtNumberField; }
+    JButton addCourtButton() { return addCourt; }
+
+    private JPanel buildCourtRow() {
+        JPanel adder = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        adder.add(new JLabel("New court number"));
+        adder.add(courtNumberField);
+        adder.add(addCourt);
+        addCourt.addActionListener(event -> addCourt());
+        JPanel row = new JPanel(new BorderLayout(8, 0));
+        row.add(courtSelector, BorderLayout.CENTER);
+        row.add(adder, BorderLayout.EAST);
+        return row;
+    }
+
+    private void addCourt() {
+        int number;
+        try {
+            number = Integer.parseInt(courtNumberField.getText().trim());
+        } catch (NumberFormatException notANumber) {
+            // Reading digits is the form's job; whether the number is acceptable is the gym's.
+            errorSink.accept("Type the court number as digits.");
+            return;
+        }
+        try {
+            gym.addCourt(new Court(number));
+        } catch (IllegalArgumentException refusal) {
+            errorSink.accept(refusal.getMessage());
+            return;
+        }
+        int position = 0;
+        while (position < courtSelector.getItemCount() && courtSelector.getItemAt(position) < number) {
+            position++;
+        }
+        courtSelector.insertItemAt(number, position);
+        courtSelector.setSelectedItem(number);
+        courtNumberField.setText("");
+        courtAddedListeners.forEach(Runnable::run);
+    }
+
+    private void listCourts() {
+        gym.getCourts().stream().map(Court::getNumber).sorted().forEach(courtSelector::addItem);
+    }
 
     private JPanel buildInstallForm() {
         JPanel identity = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
