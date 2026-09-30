@@ -9,6 +9,7 @@ import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.exception.DuplicateCameraException;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -26,6 +27,7 @@ import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -58,6 +60,11 @@ final class CourtPanel extends JPanel {
     private final JTextField courtNumberField = new JTextField(4);
     private final JButton addCourt = new JButton("Add court");
     private final List<Runnable> courtAddedListeners = new ArrayList<>();
+    // Wider than the head reaches, so an impossible aim reaches the camera and is refused there.
+    private final JSpinner panSpinner = new JSpinner(new SpinnerNumberModel(0, -999, 999, 5));
+    private final JSpinner tiltSpinner = new JSpinner(new SpinnerNumberModel(0, -999, 999, 5));
+    private final JSpinner zoomSpinner = new JSpinner(new SpinnerNumberModel(1, -99, 99, 1));
+    private final JButton move = new JButton("Move");
 
     CourtPanel(Gym gym, int bufferSeconds, Consumer<String> errorSink) {
         super(new BorderLayout(8, 8));
@@ -83,8 +90,14 @@ final class CourtPanel extends JPanel {
         JPanel buttons = new JPanel(new GridLayout(0, 1, 4, 4));
         buttons.add(start); buttons.add(stop); buttons.add(maintenance); buttons.add(remove);
         add(buttons, BorderLayout.EAST);
-        add(buildInstallForm(), BorderLayout.SOUTH);
+        JPanel forms = new JPanel();
+        forms.setLayout(new BoxLayout(forms, BoxLayout.Y_AXIS));
+        forms.add(buildAimRow());
+        forms.add(buildInstallForm());
+        add(forms, BorderLayout.SOUTH);
+        cameraList.addListSelectionListener(event -> offerAimingForSelection());
         showCameras();
+        offerAimingForSelection();
     }
 
     Court selectedCourt() {
@@ -123,6 +136,10 @@ final class CourtPanel extends JPanel {
     JButton installButton() { return install; }
     JTextField courtNumberField() { return courtNumberField; }
     JButton addCourtButton() { return addCourt; }
+    JSpinner panSpinner() { return panSpinner; }
+    JSpinner tiltSpinner() { return tiltSpinner; }
+    JSpinner zoomSpinner() { return zoomSpinner; }
+    JButton moveButton() { return move; }
 
     private JPanel buildCourtRow() {
         JPanel adder = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
@@ -163,6 +180,34 @@ final class CourtPanel extends JPanel {
 
     private void listCourts() {
         gym.getCourts().stream().map(Court::getNumber).sorted().forEach(courtSelector::addItem);
+    }
+
+    private JPanel buildAimRow() {
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
+        row.setBorder(BorderFactory.createTitledBorder("Aim the selected PTZ camera"));
+        row.add(new JLabel("Pan")); row.add(panSpinner);
+        row.add(new JLabel("Tilt")); row.add(tiltSpinner);
+        row.add(new JLabel("Zoom")); row.add(zoomSpinner);
+        row.add(move);
+        move.addActionListener(event -> onSelectedCamera(camera -> ((PtzCamera) camera).moveTo(
+                (Integer) panSpinner.getValue(), (Integer) tiltSpinner.getValue(),
+                (Integer) zoomSpinner.getValue())));
+        return row;
+    }
+
+    private void offerAimingForSelection() {
+        boolean ptzSelected = selectedCamera().filter(PtzCamera.class::isInstance).isPresent();
+        panSpinner.setEnabled(ptzSelected);
+        tiltSpinner.setEnabled(ptzSelected);
+        zoomSpinner.setEnabled(ptzSelected);
+        move.setEnabled(ptzSelected);
+    }
+
+    private Optional<Camera> selectedCamera() {
+        int index = cameraList.getSelectedIndex();
+        List<Camera> cameras = selectedCourt().getCameras();
+        if (index < 0 || index >= cameras.size()) return Optional.empty();
+        return Optional.of(cameras.get(index));
     }
 
     private JPanel buildInstallForm() {
@@ -212,8 +257,8 @@ final class CourtPanel extends JPanel {
         }
         try {
             transition.accept(selectedCourt().getCameras().get(index));
-        } catch (IllegalStateException refusal) {
-            // The camera guards its own transitions; the panel only relays the refusal.
+        } catch (IllegalStateException | IllegalArgumentException refusal) {
+            // The camera guards its own transitions and range; the panel only relays the refusal.
             errorSink.accept(refusal.getMessage());
         }
         showCameras();
