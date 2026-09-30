@@ -2,6 +2,7 @@ package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
+import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.repository.InMemoryHighlightRepository;
 import org.junit.jupiter.api.Test;
@@ -47,7 +48,7 @@ class CapturePanelTest {
         Highlight highlight = repository.findAll().get(0);
         String localTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                 .withZone(BRASILIA).format(highlight.getCapturedAt());
-        assertEquals("Saved: court 1 · camera fixed-1 · " + localTime + " · 5s", panel.confirmation());
+        assertEquals("Saved: court 1 · camera fixed-1 · " + localTime + " · 30s", panel.confirmation());
         assertEquals(List.of(highlight), saved);
     }
 
@@ -86,7 +87,7 @@ class CapturePanelTest {
 
     private void fillBuffers() {
         LiveFeed feed = new LiveFeed(gym, 30);
-        for (int second = 0; second < 5; second++) {
+        for (int second = 0; second < Court.DEFAULT_CAPTURE_SECONDS; second++) {
             feed.tick(START.plusSeconds(second));
         }
     }
