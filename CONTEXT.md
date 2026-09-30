@@ -108,6 +108,12 @@ That makes the relationship **aggregation**, not composition. Contrast with
 the gym and its courts, which is composition: demolish the gym and the court
 ceases to exist.
 
+`Gym.moveCamera()` is that move. The camera arrives switched off, and a camera's
+buffer begins when it is switched on: whatever it held belongs to a moment, or
+a court, it is no longer watching. So a highlight on the new court never holds
+the old court's footage, and a camera stopped and started again never passes
+the seconds before the stop off as the present.
+
 ### A camera does not own its highlights
 
 Removing a broken camera must not delete the goals it recorded last month.
