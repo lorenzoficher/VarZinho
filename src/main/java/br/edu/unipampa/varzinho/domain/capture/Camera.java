@@ -23,6 +23,7 @@ public abstract class Camera {
     private final Resolution resolution;
     private final CircularBuffer buffer;
     private CameraStatus status;
+    private int clipsCut;
 
     protected Camera(String id, String model, Resolution resolution, int bufferSeconds) {
         if (id == null || id.isBlank()) {
@@ -119,6 +120,18 @@ public abstract class Camera {
      *         that many seconds yet
      */
     public abstract VideoClip captureLastSeconds(int seconds);
+
+    /**
+     * The start of a clip's file name, unique for this camera: the id, the second the
+     * window ends on, and how many clips the camera has cut so far. The count is what
+     * keeps two triggers ending on the same second from naming the same file.
+     *
+     * @param last the most recent frame of the window being frozen
+     */
+    protected final String clipName(Frame last) {
+        clipsCut++;
+        return "clips/" + id + "-" + last.getTimestamp().getEpochSecond() + "-" + clipsCut;
+    }
 
     /**
      * Builds the clip for a window this camera has already taken, stamping it with
