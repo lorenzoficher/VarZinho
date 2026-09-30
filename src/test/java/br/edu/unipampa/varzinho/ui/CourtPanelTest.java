@@ -104,14 +104,15 @@ class CourtPanelTest {
     }
 
     @Test
-    void installingAnIdTheCourtAlreadyHasReportsItInsteadOfDoingNothing() {
+    void installingAnIdAnotherCourtAlreadyUsesReportsTheDomainRefusal() {
+        panel.selectCourt(2);
         panel.idField().setText("fixed-1");
         panel.modelField().setText("Fixed Lite");
 
         panel.installButton().doClick();
 
-        assertEquals(List.of("Court 1 already has a camera named fixed-1."), errors);
-        assertEquals(2, gym.findCourt(1).getCameras().size());
+        assertEquals(List.of("camera fixed-1 is already installed on court 1"), errors);
+        assertEquals(1, gym.findCourt(2).getCameras().size());
     }
 
     @Test
