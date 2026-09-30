@@ -26,13 +26,13 @@ public final class SampleGym {
         PtzCamera mainPtz = new PtzCamera("ptz-1", "PTZ Pro", Resolution.HD, 30);
         Court mainCourt = new Court(1);
         gym.addCourt(mainCourt);
-        mainCourt.installCamera(mainFixed);
-        mainCourt.installCamera(mainPtz);
+        gym.installCamera(1, mainFixed);
+        gym.installCamera(1, mainPtz);
 
         FixedCamera sideFixed = new FixedCamera("fixed-2", "Fixed Pro", Resolution.FULL_HD, 30, 45);
         Court sideCourt = new Court(2);
         gym.addCourt(sideCourt);
-        sideCourt.installCamera(sideFixed);
+        gym.installCamera(2, sideFixed);
 
         mainFixed.startRecording();
         mainPtz.startRecording();
