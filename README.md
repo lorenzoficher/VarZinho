@@ -82,6 +82,12 @@ recarrega do CSV e provoca o erro de quadra sem câmera ativa:
 mvn compile exec:java -Dexec.mainClass=br.edu.unipampa.varzinho.ConsoleDemo
 ```
 
+No PowerShell, coloque a propriedade entre aspas:
+
+```powershell
+mvn compile exec:java "-Dexec.mainClass=br.edu.unipampa.varzinho.ConsoleDemo"
+```
+
 ### O que a interface faz
 
 Na primeira execução, a janela abre sobre um ginásio de exemplo já montado
