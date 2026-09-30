@@ -109,3 +109,9 @@ system.
 
 Any link from a person to a highlight. That association does not exist — see
 [CONTEXT.md](../../CONTEXT.md), *A highlight has no author*.
+
+## Verification
+
+`PersonTest` covers B-1, `AthleteTest` covers B-2 and B-3, and
+`OperatorTest` covers B-2 and B-4. Registration and lookup through the common
+`Person` type are covered by `GymTest`.

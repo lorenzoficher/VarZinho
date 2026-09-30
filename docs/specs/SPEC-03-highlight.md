@@ -96,3 +96,10 @@ is and where its file lives; it does not open it.
 Authorship. Nobody is recorded on a highlight — not the player, not whoever
 pressed the button. The button carries no identity, and an athlete who wants a
 clip asks the operator, who searches by court and time.
+
+## Verification
+
+`HighlightTest` covers B-1 and B-2, including constructor validation and the
+absence of personal data in the description. `VideoClipTest` covers every
+metadata and validation criterion in B-3. Unique ids created by the capture
+flow are covered by `CourtTest`.
