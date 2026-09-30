@@ -187,4 +187,23 @@ class CourtPanelTest {
 
         assertEquals(List.of(4), announced);
     }
+
+    @Test
+    void removingTheSelectedCameraTakesItOffTheCourt() {
+        Camera kept = gym.findCourt(1).getCameras().get(0);
+
+        panel.selectCamera(1);
+        panel.removeCameraButton().doClick();
+
+        assertEquals(List.of(kept), gym.findCourt(1).getCameras());
+        assertEquals(List.of(kept.describe()), panel.cameraLines());
+    }
+
+    @Test
+    void removingWithNoCameraSelectedAsksForOneAndRemovesNothing() {
+        panel.removeCameraButton().doClick();
+
+        assertEquals(List.of("Select a camera first."), errors);
+        assertEquals(2, gym.findCourt(1).getCameras().size());
+    }
 }
