@@ -1,7 +1,7 @@
 # Domain Model
 
-The classes, their relationships, and the reasoning behind each one. This is
-the English, corrected successor of the original `MODELO.md` draft.
+The classes, their relationships and the reasons those relationships exist in
+the delivered application.
 
 ## Class diagram
 
@@ -13,7 +13,10 @@ classDiagram
         -List~Court~ courts
         -List~Person~ people
         +addCourt(Court)
+        +installCamera(int, Camera)
+        +moveCamera(Camera, int)
         +findCourt(int) Court
+        +getCourts() List~Court~
         +registerPerson(Person)
         +findPerson(String) Optional~Person~
     }
@@ -23,11 +26,15 @@ classDiagram
         -List~Camera~ cameras
         +installCamera(Camera)
         +removeCamera(Camera)
+        +record(Frame)
         +triggerCapture() Highlight
+        +hasCamera(String) boolean
         +hasActiveCamera() boolean
+        +secondsRecorded() int
     }
 
     class Camera {
+        <<abstract>>
         -String id
         -String model
         -Resolution resolution
@@ -35,13 +42,16 @@ classDiagram
         -CircularBuffer buffer
         +startRecording()
         +stopRecording()
-        +isRecording() boolean
-        +captureLastSeconds(int) VideoClip
+        +sendToMaintenance()
+        +record(Frame)
+        +captureLastSeconds(int) VideoClip*
+        +describe() String*
     }
 
     class FixedCamera {
         -int angle
         +captureLastSeconds(int) VideoClip
+        +describe() String
     }
 
     class PtzCamera {
@@ -50,16 +60,17 @@ classDiagram
         -int zoom
         +moveTo(int, int, int)
         +captureLastSeconds(int) VideoClip
+        +describe() String
     }
 
     class CircularBuffer {
-        -int capacitySeconds
         -Frame[] frames
         -int writePosition
+        -int size
         +record(Frame)
         +extractLastSeconds(int) List~Frame~
-        +isFull() boolean
-        +isEmpty() boolean
+        +capacity() int
+        +size() int
     }
 
     class Frame {
@@ -85,167 +96,98 @@ classDiagram
     }
 
     class Person {
+        <<abstract>>
         -String name
         -String document
         -LocalDate birthDate
         +age() int
-        +identify() String
+        +identify() String*
     }
 
-    class Athlete {
-        -int shirtNumber
-        -String position
-        +identify() String
-    }
-
-    class Operator {
-        -String badge
-        -String shift
-        +identify() String
-    }
-
-    class Triggerable {
-        +trigger() void
-    }
-
-    class PhysicalButton {
-        -int pin
-        +trigger()
-    }
+    class Athlete
+    class Operator
 
     class HighlightRepository {
-        +save(Highlight) void
+        <<interface>>
+        +save(Highlight)
         +findById(String) Optional~Highlight~
         +findAll() List~Highlight~
         +findByCourt(int) List~Highlight~
     }
 
-    class CsvHighlightRepository {
-        -Path file
-        +save(Highlight) void
-        +findById(String) Optional~Highlight~
-        +findAll() List~Highlight~
-        +findByCourt(int) List~Highlight~
+    class GymRepository {
+        <<interface>>
+        +save(Gym)
+        +load() Optional~Gym~
     }
 
-    Gym "1" *-- "1..*" Court
+    class CsvHighlightRepository
+    class InMemoryHighlightRepository
+    class CsvGymRepository
+    class InMemoryGymRepository
+
+    Gym "1" *-- "0..*" Court
     Gym "1" o-- "0..*" Person
     Court "1" o-- "0..*" Camera
     Camera "1" *-- "1" CircularBuffer
     CircularBuffer "1" *-- "0..*" Frame
     Camera <|-- FixedCamera
     Camera <|-- PtzCamera
-    Camera "1" --> "0..*" Highlight
     Highlight "1" *-- "1" VideoClip
     Person <|-- Athlete
     Person <|-- Operator
-    Triggerable <|.. PhysicalButton
-    Court "1" --> "1..*" Triggerable
     HighlightRepository <|.. CsvHighlightRepository
+    HighlightRepository <|.. InMemoryHighlightRepository
+    GymRepository <|.. CsvGymRepository
+    GymRepository <|.. InMemoryGymRepository
     HighlightRepository ..> Highlight
+    GymRepository ..> Gym
 ```
-
-`Camera` and `Person` are **abstract**. `Triggerable` and `HighlightRepository`
-are **interfaces**.
 
 ## Relationships
 
-| Relationship | Cardinality | Type | Why |
-|---|---|---|---|
-| Gym → Court | 1 : 1..* | Composition ◆ | A court cannot exist outside its gym |
-| Gym → Person | 1 : 0..* | **Aggregation ◇** | A person exists before and after being registered |
-| Court → Camera | 1 : 0..* | **Aggregation ◇** | Cameras are movable equipment |
-| Camera → CircularBuffer | 1 : 1 | Composition ◆ | Internal memory of the device |
-| CircularBuffer → Frame | 1 : 0..* | Composition ◆ | Frames exist only inside the buffer |
-| Camera → Highlight | 1 : 0..* | Association → | Highlights outlive the camera |
-| Highlight → VideoClip | 1 : 1 | Composition ◆ | Without a clip there is no highlight |
+| Relationship | Cardinality | Type | Reason |
+|---|---:|---|---|
+| Gym → Court | 1 : 0..* | Composition | Courts belong to one gym; a new gym may start empty. |
+| Gym → Person | 1 : 0..* | Aggregation | Athletes and operators exist independently of registration. |
+| Court → Camera | 1 : 0..* | Aggregation | Cameras can be removed and moved between courts. |
+| Camera → CircularBuffer | 1 : 1 | Composition | The buffer is private memory owned by one camera. |
+| CircularBuffer → Frame | 1 : 0..* | Composition | Frames exist only as entries in a buffer. |
+| Highlight → VideoClip | 1 : 1 | Composition | A highlight cannot exist without its clip metadata. |
 
-### Composition or aggregation?
+Camera identifiers are unique across the whole gym. Installation therefore
+goes through `Gym.installCamera(...)`; `Gym.moveCamera(...)` validates the
+destination before removing the camera from its current court. A moved camera
+arrives inactive and starts with an empty buffer when recording resumes.
 
-The test: *if the whole is removed, does the part still make sense alone?*
+A highlight stores the court number and camera identifier as values, rather
+than keeping mutable references. It can therefore outlive both objects and be
+rebuilt from CSV without reconstructing the capture equipment.
 
-**Gym and court** — demolish the building and the court is gone. Composition.
+## Object-oriented concepts
 
-**Court and camera** — uninstall the camera and it goes to the storeroom, gets
-repaired, gets mounted on another court. It survives. **Aggregation**, drawn
-with a hollow diamond.
+- **Encapsulation:** every field is private. Collections are returned as
+  unmodifiable copies, and `CircularBuffer` never exposes its frame array.
+- **Inheritance:** `FixedCamera` and `PtzCamera` extend `Camera`;
+  `Athlete` and `Operator` extend `Person`.
+- **Polymorphism:** cameras implement `captureLastSeconds()` and
+  `describe()` differently; people implement `identify()` differently.
+- **Abstraction:** `HighlightRepository` and `GymRepository` are contracts
+  with CSV and in-memory implementations.
+- **Domain independence:** no class under `domain/` imports `repository/`
+  or Swing.
 
-**Gym and person** — an athlete existed before joining and goes on existing
-after leaving. Aggregation as well, which is why `Gym` holds one of each kind
-of diamond.
+## Persistence boundaries
 
-Having both in the same model is deliberate: it shows the distinction is
-understood rather than applied by habit.
+`HighlightRepository` stores the permanent highlight archive.
+`GymRepository` stores the gym, courts, cameras, their status and PTZ
+position. `CsvHighlightRepository` can recover valid highlights around a
+damaged line; `CsvGymRepository` rejects a damaged structure as a whole so
+the application never runs with half a gym.
 
-### Why `0..*` cameras on a court
+## Deliberate omissions
 
-A court that was just built has no cameras yet. `1..*` would make that state
-unrepresentable and force the code to lie.
-
-### Why a highlight records nobody
-
-At the moment of capture the system does not know who made the play, and it
-does not know who pressed the button either — there is no login and no
-identification. Recording either would mean inventing data.
-
-`Highlight` is therefore immutable: every field is set at construction and
-nothing changes afterwards. See [CONTEXT.md](../CONTEXT.md), *A highlight has
-no author*.
-
-## Enumerations
-
-| Enum | Values | Behaviour |
-|---|---|---|
-| `CameraStatus` | `ACTIVE`, `INACTIVE`, `MAINTENANCE` | `canRecord()` — only `ACTIVE` does |
-| `Resolution` | `HD`, `FULL_HD`, `ULTRA_HD` | `width()`, `height()`, `label()` |
-
-Both carry behaviour rather than being bare lists of constants.
-`Court.hasActiveCamera()` asks `status.canRecord()` instead of comparing against
-a constant at the call site.
-
-There is no enum for the sport or for the kind of play: the system classifies
-neither. See [CONTEXT.md](../CONTEXT.md), *The system does not classify the
-play*.
-
-## Where the syllabus topics appear
-
-**Encapsulation** — every field is private. The strongest case is
-`CircularBuffer`: nothing outside it touches the frame array, because the
-overwrite policy must hold. Exposing the array would let a caller break the
-invariant.
-
-**Inheritance** — `Person` → `Athlete`, `Operator`. Shared state (name,
-document, birth date) and shared behaviour (`age()`) live in the superclass.
-
-**Polymorphism** — `Camera` is abstract and declares `captureLastSeconds()`.
-`FixedCamera` and `PtzCamera` implement it differently; a PTZ camera must
-settle its position first. `Court` triggers every camera through the same call
-with no type checks. Adding a `Camera360` later changes nothing in `Court`.
-
-**Abstraction** — two interfaces, each with a real reason to exist.
-`HighlightRepository` inverts the dependency on storage. `Triggerable`
-abstracts the capture trigger, which real products implement as both a button
-and a remote control.
-
-**Associations** — all four kinds appear: composition, aggregation, plain
-association and inheritance. See the table above.
-
-**Exception handling** — see [ARCHITECTURE.md](ARCHITECTURE.md).
-
-## Implementation order
-
-Start with what depends on nothing:
-
-1. Enums
-2. `Frame`, `VideoClip`
-3. `Person` → `Athlete`, `Operator`
-4. `CircularBuffer`
-5. `Camera` → `FixedCamera`, `PtzCamera`
-6. `Highlight`
-7. `HighlightRepository` → `CsvHighlightRepository`
-8. `Court`, `Gym`
-9. `ui/` — the Swing windows and `Main`
-
-The interface comes last because it depends on everything else, not because it
-matters least. It is what the brief asks to see working, so it cannot be what
-gets cut when time runs short.
+There is no play type, sport, match or highlight author. The physical capture
+button carries no identity, so the saved highlight contains only the instant,
+court, camera and clip. Real video processing, authentication, scheduling and
+a database are outside the project scope.

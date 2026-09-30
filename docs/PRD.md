@@ -125,18 +125,19 @@ instead.
 
 The project is done when:
 
-- [ ] `mvn test` passes with every spec's criteria covered
-- [ ] `mvn exec:java` opens the interface and demonstrates the full flow:
-      register gym, court and people, install camera, record, trigger, persist,
-      reload, list
-- [ ] A domain exception raised by the model reaches the user as a readable
+- [x] `mvn test` passes with every spec's criteria covered
+- [x] `mvn exec:java` opens the interface and demonstrates the full flow:
+      load the gym, create courts, install and control cameras, record, trigger,
+      persist, reload and list. People registration is demonstrated by
+      `ConsoleDemo`, because people do not participate in capture.
+- [x] A domain exception raised by the model reaches the user as a readable
       message, never as a stack trace
-- [ ] Highlights written in one run are readable in the next
-- [ ] Every syllabus topic appears in the code with a defensible reason
-- [ ] `README.md` carries the brief's checklist, filled in, pointing at where
+- [x] Highlights written in one run are readable in the next
+- [x] Every syllabus topic appears in the code with a defensible reason
+- [x] `README.md` carries the brief's checklist, filled in, pointing at where
       each concept was used or saying why it does not apply
-- [ ] Screenshots of the interface are committed
-- [ ] Every document in `docs/` reflects the code as shipped
+- [x] Screenshots of the interface are committed
+- [x] Every document in `docs/` reflects the code as shipped
 
 ## Future work
 
@@ -147,7 +148,7 @@ Deliberately deferred, recorded so the scope boundary is visible:
 - Database repository implementation
 - Automatic play detection
 - Sponsor and live-streaming features
-- A full archive browser, beyond the minimal interface the brief asks for
+- Advanced archive search and clip playback beyond the delivered court filter
 
 ## Risks
 

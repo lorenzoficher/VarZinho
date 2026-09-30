@@ -39,7 +39,7 @@ This includes identifiers: `Highlight`, not `Lance`. `saveHighlight()`, not
 src/main/java/br/edu/unipampa/varzinho/
 ├── domain/          entities and value objects
 │   ├── structure/   Gym, Court
-│   ├── capture/     Camera, CircularBuffer, Frame, Triggerable
+│   ├── capture/     Camera, FixedCamera, PtzCamera, CircularBuffer, Frame
 │   ├── highlight/   Highlight, VideoClip
 │   └── people/      Person, Athlete, Operator
 ├── repository/      HighlightRepository, CsvHighlightRepository
@@ -100,9 +100,11 @@ Not `testBuffer1()`.
 
 ## Exceptions
 
-Domain errors use our own exceptions, defined in `exception/`. Never throw raw
-`RuntimeException` or `Exception`. Never swallow an exception with an empty
-`catch`. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Capture failures use the domain exceptions defined in `exception/`. Invalid
+arguments use `IllegalArgumentException`, and invalid camera state transitions
+use `IllegalStateException`. Persistence failures use `RepositoryException`.
+Never throw a raw `RuntimeException` or `Exception`, and never swallow an
+exception with an empty `catch`. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Dependencies
 
