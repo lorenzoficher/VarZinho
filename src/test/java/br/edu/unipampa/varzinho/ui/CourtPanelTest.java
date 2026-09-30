@@ -244,4 +244,37 @@ class CourtPanelTest {
         panel.selectCamera(1);
         assertTrue(panel.moveButton().isEnabled());
     }
+
+    @Test
+    void everyChangeToTheGymIsAnnounced() {
+        List<String> changes = new ArrayList<>();
+        panel.onGymChanged(() -> changes.add("changed"));
+
+        panel.courtNumberField().setText("3");
+        panel.addCourtButton().doClick();
+        panel.idField().setText("fixed-3");
+        panel.modelField().setText("Fixed Lite");
+        panel.installButton().doClick();
+        panel.selectCamera(0);
+        panel.startButton().doClick();
+        panel.removeCameraButton().doClick();
+
+        assertEquals(4, changes.size());
+    }
+
+    @Test
+    void aRefusedChangeIsNotAnnounced() {
+        List<String> changes = new ArrayList<>();
+        panel.onGymChanged(() -> changes.add("changed"));
+
+        panel.courtNumberField().setText("1");
+        panel.addCourtButton().doClick();
+        panel.installButton().doClick();
+        panel.selectCamera(0);
+        panel.maintenanceButton().doClick();
+        panel.startButton().doClick();
+
+        assertEquals(1, changes.size());
+        assertEquals(3, errors.size());
+    }
 }
