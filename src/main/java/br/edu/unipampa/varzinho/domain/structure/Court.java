@@ -59,6 +59,15 @@ public final class Court {
         return cameras.stream().anyMatch(camera -> camera.getId().equals(cameraId));
     }
 
+    /**
+     * @return how many seconds a trigger could draw on right now: what the camera a
+     *     capture would use has recorded, or 0 when no camera is recording
+     */
+    public int secondsRecorded() {
+        return cameras.stream().filter(Camera::isRecording).findFirst()
+                .map(Camera::getSecondsRecorded).orElse(0);
+    }
+
     public boolean hasActiveCamera() {
         return cameras.stream().anyMatch(Camera::isRecording);
     }
