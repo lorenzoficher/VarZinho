@@ -40,11 +40,16 @@ public final class CsvHighlightRepository implements HighlightRepository {
         this.file = file;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Here the refused values are the ones the file cannot hold: a comma or a line break
+     * inside a field would split its record in two on reload. The refusal comes before the
+     * file is read, so a refused highlight leaves the archive exactly as it was.
+     */
     @Override
     public void save(Highlight highlight) throws RepositoryException {
-        if (highlight == null) {
-            throw new IllegalArgumentException("there is no highlight to save");
-        }
+        StorableHighlights.requireStorable(highlight);
         String record = format(highlight);
         // Working on the raw lines, not on parsed highlights, so a damaged line neither blocks
         // the save nor is destroyed by it.
@@ -174,12 +179,6 @@ public final class CsvHighlightRepository implements HighlightRepository {
             clip.getResolution().name(),
             Double.toString(clip.getSizeMb())
         };
-        // A separator or line break inside a field would split the record into two on reload.
-        for (String field : fields) {
-            if (field.contains(SEPARATOR) || field.contains("\n") || field.contains("\r")) {
-                throw new IllegalArgumentException("cannot store a value with a comma or line break: " + field);
-            }
-        }
         return String.join(SEPARATOR, fields);
     }
 

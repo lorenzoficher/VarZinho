@@ -99,6 +99,7 @@ operator's access to the archive is wired in `Main`, not in the domain.
 | Malformed CSV line | `CorruptedRecordException` (checked) |
 | Unwritable path | `RepositoryException` |
 | Null highlight passed to `save()` | `IllegalArgumentException` |
+| Id, camera id or clip path holding a comma or line break, passed to `save()` — refused by every implementation, not only the CSV one | `IllegalArgumentException` |
 
 ## Dependencies
 

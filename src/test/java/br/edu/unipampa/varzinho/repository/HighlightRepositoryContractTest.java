@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho.repository;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,6 +15,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * What every {@link HighlightRepository} must do, whatever it stores into. Each
@@ -85,8 +88,38 @@ abstract class HighlightRepositoryContractTest {
         assertThrows(IllegalArgumentException.class, () -> repository.save(null));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {",", "\n", "\r"})
+    void refusesATextFieldHoldingACommaOrLineBreak(String character) {
+        HighlightRepository repository = createRepository();
+        Instant capturedAt = Instant.parse("2026-09-12T20:14:33Z");
+        VideoClip clip = new VideoClip("/clips/a.mp4", 30, Resolution.FULL_HD, 42.5);
+        VideoClip unstorableClip = new VideoClip("/clips/a" + character + "b.mp4", 30, Resolution.FULL_HD, 42.5);
+
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class, () -> repository.save(
+                        new Highlight("h" + character + "001", capturedAt, 3, "cam-a1", clip))),
+                () -> assertThrows(IllegalArgumentException.class, () -> repository.save(
+                        new Highlight("h-001", capturedAt, 3, "cam" + character + "a1", clip))),
+                () -> assertThrows(IllegalArgumentException.class, () -> repository.save(
+                        new Highlight("h-001", capturedAt, 3, "cam-a1", unstorableClip))));
+    }
+
     @Test
-    void findByIdReturnsEmptyForAnUnknownId() throws RepositoryException {
+    void aRefusedHighlightLeavesTheStoredOneInPlace() throws RepositoryException {
+        HighlightRepository repository = createRepository();
+        repository.save(highlight("h-001", 3));
+        VideoClip clip = new VideoClip("/clips/h-001.mp4", 30, Resolution.FULL_HD, 42.5);
+        Highlight unstorable = new Highlight("h-001", Instant.parse("2026-09-12T20:14:33Z"), 4, "cam,a1", clip);
+
+        assertThrows(IllegalArgumentException.class, () -> repository.save(unstorable));
+
+        assertEquals(List.of("h-001"), ids(repository.findAll()));
+        assertEquals("cam-a1", repository.findById("h-001").orElseThrow().getCameraId());
+    }
+
+    @Test
+    void findByIdReturnsEmptyForAnUnknownId()throws RepositoryException {
         assertTrue(createRepository().findById("nobody").isEmpty());
     }
 
