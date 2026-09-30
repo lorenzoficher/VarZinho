@@ -12,7 +12,9 @@ already ended.
 
 So the cameras never stop recording. Each one keeps the most recent 30 seconds
 in memory and throws away everything older. When the button is pressed, those
-30 seconds are frozen and written to disk as a permanent clip.
+30 seconds are frozen and written to disk as a permanent clip, so every clip
+lasts 30 seconds. A camera switched on less than 30 seconds ago has no clip to
+give yet.
 
 The athlete who just played is the one who presses the button. Later they ask
 the operator for the clip, and the operator — who holds the whole archive —
@@ -105,6 +107,12 @@ court's ownership of it.
 That makes the relationship **aggregation**, not composition. Contrast with
 the gym and its courts, which is composition: demolish the gym and the court
 ceases to exist.
+
+`Gym.moveCamera()` is that move. The camera arrives switched off, and a camera's
+buffer begins when it is switched on: whatever it held belongs to a moment, or
+a court, it is no longer watching. So a highlight on the new court never holds
+the old court's footage, and a camera stopped and started again never passes
+the seconds before the stop off as the present.
 
 ### A camera does not own its highlights
 

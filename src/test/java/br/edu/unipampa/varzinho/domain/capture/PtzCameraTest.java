@@ -15,6 +15,17 @@ import org.junit.jupiter.api.Test;
 class PtzCameraTest {
 
     @Test
+    void twoCapturesOfTheSameWindowNeverShareAClipFile() {
+        PtzCamera camera = recordingCamera(30);
+        feed(camera, 10);
+
+        VideoClip first = camera.captureLastSeconds(5);
+        VideoClip second = camera.captureLastSeconds(5);
+
+        assertNotEquals(first.getFilePath(), second.getFilePath());
+    }
+
+    @Test
     void producesAClipCarryingItsResolutionAndTheSecondsAskedFor() {
         PtzCamera camera = recordingCamera(30);
         feed(camera, 10);

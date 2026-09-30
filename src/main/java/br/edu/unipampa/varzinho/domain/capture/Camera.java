@@ -21,8 +21,9 @@ public abstract class Camera {
     private final String id;
     private final String model;
     private final Resolution resolution;
-    private final CircularBuffer buffer;
+    private CircularBuffer buffer;
     private CameraStatus status;
+    private int clipsCut;
 
     protected Camera(String id, String model, Resolution resolution, int bufferSeconds) {
         if (id == null || id.isBlank()) {
@@ -44,6 +45,10 @@ public abstract class Camera {
     /**
      * Puts the camera to work, filling its buffer second by second.
      *
+     * <p>A camera that was not recording starts on an empty buffer: whatever it held from
+     * before belongs to a moment, or a court, it is no longer watching, and a highlight
+     * must never pass that off as the present. A camera already recording keeps going.
+     *
      * @throws IllegalStateException if the camera is under maintenance — equipment on
      *         the bench is not on a court, and nothing but a technician takes it off
      */
@@ -51,6 +56,9 @@ public abstract class Camera {
         if (status == CameraStatus.MAINTENANCE) {
             throw new IllegalStateException(
                     "camera " + id + " is under maintenance and cannot record");
+        }
+        if (status != CameraStatus.ACTIVE) {
+            buffer = new CircularBuffer(buffer.capacity());
         }
         status = CameraStatus.ACTIVE;
     }
@@ -60,8 +68,8 @@ public abstract class Camera {
     }
 
     /**
-     * Takes the camera off duty. What it already holds stays in the buffer; it simply
-     * stops being fed.
+     * Takes the camera off duty. What it already holds stays in the buffer, unreadable,
+     * until it is switched on again and starts afresh.
      *
      * @throws IllegalStateException if the camera is under maintenance — stopping it
      *         would silently report it as merely switched off
@@ -121,6 +129,18 @@ public abstract class Camera {
     public abstract VideoClip captureLastSeconds(int seconds);
 
     /**
+     * The start of a clip's file name, unique for this camera: the id, the second the
+     * window ends on, and how many clips the camera has cut so far. The count is what
+     * keeps two triggers ending on the same second from naming the same file.
+     *
+     * @param last the most recent frame of the window being frozen
+     */
+    protected final String clipName(Frame last) {
+        clipsCut++;
+        return "clips/" + id + "-" + last.getTimestamp().getEpochSecond() + "-" + clipsCut;
+    }
+
+    /**
      * Builds the clip for a window this camera has already taken, stamping it with
      * what every camera knows about its own footage.
      *
@@ -173,5 +193,17 @@ public abstract class Camera {
 
     public Resolution getResolution() {
         return resolution;
+    }
+
+    public int getBufferSeconds() {
+        return buffer.capacity();
+    }
+
+    /**
+     * @return how many seconds the buffer holds since the camera was last switched on,
+     *     never more than its length
+     */
+    public int getSecondsRecorded() {
+        return buffer.size();
     }
 }

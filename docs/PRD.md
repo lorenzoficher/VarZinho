@@ -70,8 +70,8 @@ content when full. An inactive camera does not record.
 
 ### FR-2 — Highlight capture
 
-Triggering a capture on a court produces a highlight from the current buffer
-contents of its cameras. The highlight records the moment of the trigger, the
+Triggering a capture on a court produces a 30-second highlight from its first
+active camera's buffer (`Court.DEFAULT_CAPTURE_SECONDS`). The highlight records the moment of the trigger, the
 originating court and camera, and the resulting clip. It records nothing
 about who played or who pressed.
 

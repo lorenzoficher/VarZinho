@@ -83,10 +83,34 @@ class CameraTest {
     @Test
     void dropsTheFramesFedAfterRecordingStopped() {
         TestCamera camera = recordingCamera(3);
-        camera.record(frame(1));
         camera.stopRecording();
 
         camera.record(frame(2));
+        camera.startRecording();
+        camera.record(frame(3));
+
+        assertEquals(List.of(frame(3)), camera.window(1));
+        assertThrows(EmptyBufferException.class, () -> camera.window(2));
+    }
+
+    @Test
+    void startsAnEmptyBufferEachTimeItIsSwitchedOn() {
+        TestCamera camera = recordingCamera(3);
+        camera.record(frame(1));
+        camera.record(frame(2));
+        camera.stopRecording();
+
+        camera.startRecording();
+
+        assertThrows(EmptyBufferException.class, () -> camera.window(1));
+        assertEquals(3, camera.getBufferSeconds());
+    }
+
+    @Test
+    void keepsItsBufferWhenStartedWhileAlreadyRecording() {
+        TestCamera camera = recordingCamera(3);
+        camera.record(frame(1));
+
         camera.startRecording();
 
         assertEquals(List.of(frame(1)), camera.window(1));
