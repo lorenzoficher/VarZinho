@@ -127,7 +127,7 @@ class CourtPanelTest {
         panel.selectCamera(1);
         panel.startButton().doClick();
 
-        LiveFeed feed = new LiveFeed(gym, 30);
+        LiveFeed feed = new LiveFeed(gym);
         Instant start = Instant.parse("2026-09-30T12:00:00Z");
         for (int second = 0; second < Court.DEFAULT_CAPTURE_SECONDS; second++) {
             feed.tick(start.plusSeconds(second));
