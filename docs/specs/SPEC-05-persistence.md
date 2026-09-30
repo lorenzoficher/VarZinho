@@ -14,10 +14,10 @@ operator searches the archive by court and time.
 
 ```java
 public interface HighlightRepository {
-    void save(Highlight highlight);
-    Optional<Highlight> findById(String id);
-    List<Highlight> findAll();
-    List<Highlight> findByCourt(int courtNumber);
+    void save(Highlight highlight) throws RepositoryException;
+    Optional<Highlight> findById(String id) throws RepositoryException;
+    List<Highlight> findAll() throws RepositoryException;
+    List<Highlight> findByCourt(int courtNumber) throws RepositoryException;
 }
 
 public class CsvHighlightRepository implements HighlightRepository {
