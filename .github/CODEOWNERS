@@ -1,10 +1,21 @@
 # GitHub requests a review from the repository owner on every pull request.
-# Only a pull request into `main` has to wait for that approval; one into
-# `development` merges without it.
+# Only a pull request into `main` has to wait for that approval;
+# one into `development` merges without it.
+
+# Repository owner
 *       @lorenzoficher
 
-# TODO: add the other four team members' GitHub usernames.
-# Once known, ownership can be narrowed per aggregate, for example:
-#
-# /src/main/java/br/edu/unipampa/varzinho/domain/capture/     @lorenzoficher @member2
-# /src/main/java/br/edu/unipampa/varzinho/repository/         @lorenzoficher @member3
+# Capture — Lorenzo Ficher
+/src/main/java/br/edu/unipampa/varzinho/capture/    @lorenzoficher
+
+# Structure — Lara Rios
+/src/main/java/br/edu/unipampa/varzinho/structure/    @lararios27
+
+# Persistence — Rafael Lopes
+/src/main/java/br/edu/unipampa/varzinho/repository/    @rjnlopes03
+
+# Interface — Inaurrara Flores
+/src/main/java/br/edu/unipampa/varzinho/ui/    @Inaurrara
+
+# Documentation and delivery — Artur Kraemer
+/docs/    @ArturKraemer
