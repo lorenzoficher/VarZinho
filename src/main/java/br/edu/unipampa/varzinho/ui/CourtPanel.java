@@ -48,6 +48,7 @@ final class CourtPanel extends JPanel {
     private final JButton start = new JButton("Start");
     private final JButton stop = new JButton("Stop");
     private final JButton maintenance = new JButton("Send to maintenance");
+    private final JButton remove = new JButton("Remove camera");
     private final JTextField idField = new JTextField(8);
     private final JTextField modelField = new JTextField(8);
     private final JComboBox<String> typeSelector = new JComboBox<>(new String[] {FIXED, PTZ});
@@ -77,8 +78,10 @@ final class CourtPanel extends JPanel {
         start.addActionListener(event -> onSelectedCamera(Camera::startRecording));
         stop.addActionListener(event -> onSelectedCamera(Camera::stopRecording));
         maintenance.addActionListener(event -> onSelectedCamera(Camera::sendToMaintenance));
+        // Its highlights stay in the archive: a camera does not own what it recorded.
+        remove.addActionListener(event -> onSelectedCamera(camera -> selectedCourt().removeCamera(camera)));
         JPanel buttons = new JPanel(new GridLayout(0, 1, 4, 4));
-        buttons.add(start); buttons.add(stop); buttons.add(maintenance);
+        buttons.add(start); buttons.add(stop); buttons.add(maintenance); buttons.add(remove);
         add(buttons, BorderLayout.EAST);
         add(buildInstallForm(), BorderLayout.SOUTH);
         showCameras();
@@ -111,6 +114,7 @@ final class CourtPanel extends JPanel {
     JButton startButton() { return start; }
     JButton stopButton() { return stop; }
     JButton maintenanceButton() { return maintenance; }
+    JButton removeCameraButton() { return remove; }
     JTextField idField() { return idField; }
     JTextField modelField() { return modelField; }
     JComboBox<String> typeSelector() { return typeSelector; }
