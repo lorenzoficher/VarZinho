@@ -101,6 +101,19 @@ class CourtTest {
     }
 
     @Test
+    void aHighlightKeepsTheLastFiveSecondsOfAThirtySecondBuffer() {
+        Court court = new Court(1);
+        FixedCamera camera = new FixedCamera("fixed-1", "Fixed", Resolution.HD, 30, 45);
+        court.installCamera(camera);
+        camera.startRecording();
+        for (int second = 0; second < 30; second++) {
+            court.record(new Frame(Instant.EPOCH.plusSeconds(second), second));
+        }
+
+        assertEquals(5, court.triggerCapture().getClip().getDurationSeconds());
+    }
+
+    @Test
     void createsADifferentIdentifierForEveryCapture() {
         Court court = recordingCourtWithBufferedFrames(1);
 
