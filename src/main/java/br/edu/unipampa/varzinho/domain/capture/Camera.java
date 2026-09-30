@@ -187,4 +187,8 @@ public abstract class Camera {
     public Resolution getResolution() {
         return resolution;
     }
+
+    public int getBufferSeconds() {
+        return buffer.capacity();
+    }
 }
