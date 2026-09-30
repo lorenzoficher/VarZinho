@@ -37,7 +37,7 @@ waiting for its classes to exist — that is what the specs are for.
 
 ### Issue tracker
 
-GitHub Issues on `lorenzoficher/VarZinho`, via the `gh` CLI. See
+GitHub Issues on `lorenzoficher/VarZinho-2.0`, via the `gh` CLI. See
 `docs/agents/issue-tracker.md`.
 
 ### Triage labels
