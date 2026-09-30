@@ -165,19 +165,22 @@ was captured — which is the whole reason the exception exists instead of a
 
 ## The interface
 
-`Main` starts the application and hands control to Swing. The windows exist to
-exercise the model end to end, not to be a product: build a gym, register its
-people, install cameras, record, trigger a capture, persist, reload from disk,
-and list the archive as the operator would.
+`Main` starts the application and hands control to Swing. `GymSession` loads
+the saved gym or creates the sample gym on the first run. The court panel
+creates courts, installs and moves cameras, changes camera status and points a
+PTZ camera. The capture panel saves a highlight from the selected court, and
+the archive panel lists persisted highlights with an optional court filter.
+People registration remains in `ConsoleDemo`, because people do not
+participate in the capture operation.
 
 They are deliberately thin. Every rule lives in the domain and the interface
 only calls it. If logic starts accumulating in a window class, it belongs in a
 domain class instead — a screen that decides whether a court can be captured
 has taken a rule away from `Court`.
 
-The brief asks for a minimal interface, and minimal is the target: fields to
-type into, a button that runs a real operation, and somewhere the result and
-the error messages appear. Nothing here is graded on looking good.
+The brief asks for a minimal interface, and minimal is the target. The panels
+expose the real operations required for the demonstration and report domain or
+repository failures through dialogs.
 
 That the domain stays independent of the screen is the part worth defending. A
 `Court` that compiles without `javax.swing` on the classpath is the proof, and
