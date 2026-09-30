@@ -63,6 +63,10 @@ public final class CircularBuffer {
         return List.copyOf(window);
     }
 
+    public int capacity() {
+        return frames.length;
+    }
+
     public int size() {
         return size;
     }
