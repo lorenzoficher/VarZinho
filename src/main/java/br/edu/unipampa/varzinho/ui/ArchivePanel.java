@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 final class ArchivePanel extends JPanel {
     private static final String ALL_COURTS = "All courts";
 
+    private final Gym gym;
     private final HighlightRepository repository;
     private final Consumer<String> errorSink;
     private final List<Integer> courtNumbers = new ArrayList<>();
@@ -51,11 +52,9 @@ final class ArchivePanel extends JPanel {
         this.errorSink = errorSink;
         this.rows = new HighlightTableModel(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(zone));
         this.table = new JTable(rows);
+        this.gym = gym;
         filter.addItem(ALL_COURTS);
-        for (Court court : gym.getCourts()) {
-            courtNumbers.add(court.getNumber());
-            filter.addItem("Court " + court.getNumber());
-        }
+        refreshCourts();
         filter.addActionListener(event -> refresh());
         JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         filterRow.add(new JLabel("Archive:"));
@@ -69,6 +68,19 @@ final class ArchivePanel extends JPanel {
     JComboBox<String> filter() { return filter; }
 
     JTable table() { return table; }
+
+    /**
+     * Offers every court the gym has now as a filter, keeping the current choice. Called
+     * when a court is added after the window opened.
+     */
+    void refreshCourts() {
+        gym.getCourts().stream().map(Court::getNumber).sorted()
+                .filter(number -> !courtNumbers.contains(number))
+                .forEach(number -> {
+                    courtNumbers.add(number);
+                    filter.addItem("Court " + number);
+                });
+    }
 
     /**
      * Reads the archive again for the chosen filter. Damaged lines are reported and the
