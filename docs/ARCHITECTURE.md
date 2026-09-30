@@ -100,8 +100,10 @@ for someone to repair instead of overwriting it.
 
 ## Exceptions
 
-Domain errors are signalled with our own exception types, never with raw
-`RuntimeException`, and never swallowed.
+Failures the application can act on use the project's domain or repository
+exception types and are never swallowed. Constructors reject invalid values
+with `IllegalArgumentException`; a camera rejects an invalid state transition
+with `IllegalStateException`.
 
 ```
 DomainException (abstract, unchecked)
@@ -136,9 +138,9 @@ malformed.
 
 ### Checked or unchecked?
 
-Unchecked for programming and operational errors the caller cannot sensibly
-recover from at the call site. Checked for the one case where recovery is a
-real decision: a damaged file the caller may want to partially read.
+Unchecked exceptions represent invalid arguments, invalid state transitions
+and capture failures. Repository failures are checked because the interface
+can report them to the user or recover from a damaged file.
 
 ### Rules
 

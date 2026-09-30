@@ -122,15 +122,14 @@ highlight as its origin — an association, not ownership.
 
 ### Persistence hides behind an interface
 
-Highlights are stored in a CSV file today. A database would be better later.
-Rather than couple the whole system to CSV, all persistence goes through
-`HighlightRepository`, an interface. `CsvHighlightRepository` implements it now;
-a `DatabaseHighlightRepository` could replace it without touching any other
-class.
+Highlights and the gym structure are stored in CSV files today. A database
+would be better later. Rather than couple the whole system to CSV, persistence
+goes through the `HighlightRepository` and `GymRepository` interfaces. Their
+CSV implementations can be replaced without touching the domain.
 
 This is dependency inversion, and it is the project's strongest justification
-for using an interface — the domain depends on an abstraction, never on a
-concrete storage mechanism.
+for using interfaces — the user interface depends on abstractions rather than
+concrete storage mechanisms, while the domain stays independent of persistence.
 
 ### A minimal Swing interface, because the brief requires one
 
