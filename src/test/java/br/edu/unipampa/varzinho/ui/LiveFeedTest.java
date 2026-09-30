@@ -28,9 +28,9 @@ class LiveFeedTest {
         tick(feed, Court.DEFAULT_CAPTURE_SECONDS);
 
         Instant lastSecond = START.plusSeconds(Court.DEFAULT_CAPTURE_SECONDS - 1L);
-        assertEquals("clips/camera-1-" + lastSecond.getEpochSecond() + ".mp4",
+        assertEquals("clips/camera-1-" + lastSecond.getEpochSecond() + "-1.mp4",
                 first.triggerCapture().getClip().getFilePath());
-        assertEquals("clips/camera-2-" + lastSecond.getEpochSecond() + ".mp4",
+        assertEquals("clips/camera-2-" + lastSecond.getEpochSecond() + "-1.mp4",
                 second.triggerCapture().getClip().getFilePath());
     }
 
