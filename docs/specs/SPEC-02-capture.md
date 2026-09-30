@@ -19,6 +19,9 @@ public abstract class Camera {
     public CameraStatus getStatus();
     public void record(Frame frame);
     public abstract VideoClip captureLastSeconds(int seconds);
+    public abstract String describe();
+    public int getBufferSeconds();
+    public int getSecondsRecorded();
 }
 
 public class FixedCamera extends Camera {
@@ -34,6 +37,7 @@ public class CircularBuffer {
     public CircularBuffer(int capacitySeconds);
     public void record(Frame frame);
     public List<Frame> extractLastSeconds(int seconds);
+    public int capacity();
     public boolean isFull();
     public boolean isEmpty();
     public int size();
@@ -76,6 +80,8 @@ overwritten.
 - **AC-3.4** A camera in `MAINTENANCE` cannot start recording
 - **AC-3.5** An inactive camera ignores frames sent to it
 - **AC-3.6** An active camera stores frames in its buffer
+- **AC-3.7** Starting an already active camera keeps its current buffer
+- **AC-3.8** Starting a stopped camera begins with an empty buffer
 
 Ask `status.canRecord()` rather than comparing against `CameraStatus.ACTIVE`.
 The enum owns that rule, and `Court.hasActiveCamera()` asks the same question.
@@ -91,11 +97,20 @@ calls the same method on every camera with no type checks.
 - **AC-4.4** The produced clip carries the camera's resolution and the
   requested duration
 - **AC-4.5** Capturing from a camera that is not recording throws
+- **AC-4.6** Two captures never produce the same clip path
 
-### B-5 — A PTZ camera can be aimed
+### B-5 — Each camera describes itself
 
-- **AC-5.1** Moving sets pan, tilt and zoom
-- **AC-5.2** Values outside the accepted range are rejected
+- **AC-5.1** Both camera kinds describe id, kind, resolution and current status
+- **AC-5.2** A fixed camera never describes pan, tilt or zoom
+- **AC-5.3** A PTZ description changes when its aim changes
+- **AC-5.4** Both descriptions change when camera status changes
+
+### B-6 — A PTZ camera can be aimed
+
+- **AC-6.1** Moving sets pan, tilt and zoom
+- **AC-6.2** Values outside the accepted range are rejected without changing
+  the previous aim
 
 ## Errors
 
@@ -125,3 +140,10 @@ modulo is simpler and more faithful to the concept than a list you trim.
 ## Out of scope
 
 Real video encoding, frame rates, codecs, audio, streaming.
+
+## Verification
+
+`CircularBufferTest` covers B-1 and B-2. `CameraTest`, `FixedCameraTest` and
+`PtzCameraTest` cover B-3 through B-6, including restart behaviour, unique clip
+paths, polymorphic capture and descriptions. `LiveFeedTest` verifies that the
+UI clock feeds every court and resets its count when a camera restarts.

@@ -122,15 +122,14 @@ highlight as its origin — an association, not ownership.
 
 ### Persistence hides behind an interface
 
-Highlights are stored in a CSV file today. A database would be better later.
-Rather than couple the whole system to CSV, all persistence goes through
-`HighlightRepository`, an interface. `CsvHighlightRepository` implements it now;
-a `DatabaseHighlightRepository` could replace it without touching any other
-class.
+Highlights and the gym structure are stored in CSV files today. A database
+would be better later. Rather than couple the whole system to CSV, persistence
+goes through the `HighlightRepository` and `GymRepository` interfaces. Their
+CSV implementations can be replaced without touching the domain.
 
 This is dependency inversion, and it is the project's strongest justification
-for using an interface — the domain depends on an abstraction, never on a
-concrete storage mechanism.
+for using interfaces — the user interface depends on abstractions rather than
+concrete storage mechanisms, while the domain stays independent of persistence.
 
 ### A minimal Swing interface, because the brief requires one
 
@@ -169,18 +168,16 @@ so nobody mistakes it for an oversight.
 | Brief | [docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md) — free theme, judged against an 18-item checklist |
 | Required syllabus topics | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling, a minimal Swing interface and `java.time` |
 
-## Open questions
+## Resolved questions
 
-These are unresolved and marked deliberately. Do not silently assume an answer.
+No product question remains open for this delivery. The decisions below are
+recorded so they are not silently reopened.
 
-- **GitHub usernames of the four other members** are unknown. `CODEOWNERS`
-  and issue assignment are incomplete until they are filled in.
-- **How far the interface has to reach.** The brief asks for a minimal one:
-  enter data, run at least one operation, see the result. Whether the archive
-  listing also deserves a screen, or the capture flow alone is enough, is a
-  judgement nobody has made yet.
-
-Answered by the brief. Kept so nobody reopens them:
+- **GitHub ownership.** Every team member's username is known, and
+  `.github/CODEOWNERS` identifies the owners of each area.
+- **Interface scope.** The delivered window manages courts and cameras,
+  captures highlights and lists the persisted archive. This is enough to
+  exercise the required flow without moving business rules into Swing.
 
 - ~~The official assignment brief has not been read.~~ It is now
   [docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md), and it required a
