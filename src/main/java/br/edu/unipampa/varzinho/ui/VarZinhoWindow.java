@@ -46,7 +46,7 @@ public final class VarZinhoWindow extends JFrame {
         if (session == null) throw new IllegalArgumentException("a window needs a gym session");
         if (repository == null) throw new IllegalArgumentException("a window needs a highlight repository");
         this.gym = session.gym();
-        this.liveFeed = new LiveFeed(gym, BUFFER_SECONDS);
+        this.liveFeed = new LiveFeed(gym);
         this.clock = new Timer(ONE_SECOND_MILLIS, event -> recordOneSecond());
         this.courtPanel = new CourtPanel(gym, BUFFER_SECONDS, this::showError);
         this.archivePanel = new ArchivePanel(gym, repository, ZoneId.systemDefault(), this::showError);
