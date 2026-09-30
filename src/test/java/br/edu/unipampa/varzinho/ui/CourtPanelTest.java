@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -205,5 +206,42 @@ class CourtPanelTest {
 
         assertEquals(List.of("Select a camera first."), errors);
         assertEquals(2, gym.findCourt(1).getCameras().size());
+    }
+
+    @Test
+    void movingTheSelectedPtzAimsItAndItsLineFollows() {
+        PtzCamera ptz = (PtzCamera) gym.findCourt(1).getCameras().get(1);
+        panel.selectCamera(1);
+        panel.panSpinner().setValue(90);
+        panel.tiltSpinner().setValue(-10);
+        panel.zoomSpinner().setValue(3);
+
+        panel.moveButton().doClick();
+
+        assertEquals(90, ptz.getPan());
+        assertEquals(-10, ptz.getTilt());
+        assertEquals(3, ptz.getZoom());
+        assertEquals(ptz.describe(), panel.cameraLines().get(1));
+    }
+
+    @Test
+    void aimingPastTheHeadsReachIsRefusedWithTheDomainMessage() {
+        PtzCamera ptz = (PtzCamera) gym.findCourt(1).getCameras().get(1);
+        panel.selectCamera(1);
+        panel.panSpinner().setValue(400);
+
+        panel.moveButton().doClick();
+
+        assertEquals(List.of("pan runs from 0 to 359, not 400"), errors);
+        assertEquals(0, ptz.getPan());
+    }
+
+    @Test
+    void aimingIsOnlyOfferedWhileAPtzIsSelected() {
+        panel.selectCamera(0);
+        assertFalse(panel.moveButton().isEnabled());
+
+        panel.selectCamera(1);
+        assertTrue(panel.moveButton().isEnabled());
     }
 }
