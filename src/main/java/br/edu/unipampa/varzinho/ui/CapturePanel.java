@@ -64,14 +64,20 @@ final class CapturePanel extends JPanel {
         try {
             Highlight highlight = courtPanel.selectedCourt().triggerCapture();
             repository.save(highlight);
+
             confirmation.setText("Saved: court " + highlight.getCourtNumber()
                     + " · camera " + highlight.getCameraId()
                     + " · " + timeFormat.format(highlight.getCapturedAt())
                     + " · " + highlight.getClip().getDurationSeconds() + "s");
+
             onSaved.accept(highlight);
-        } catch (NoActiveCameraException | EmptyBufferException refusal) {
-            errorSink.accept(refusal.getMessage());
+
+        } catch (NoActiveCameraException | EmptyBufferException failure) {
+            confirmation.setText(" ");
+            errorSink.accept(failure.getMessage());
+
         } catch (RepositoryException failure) {
+            confirmation.setText(" ");
             errorSink.accept("Archive error: " + failure.getMessage());
         }
     }
