@@ -135,4 +135,56 @@ class CourtPanelTest {
 
         assertEquals("fixed-3", highlight.getCameraId());
     }
+
+    @Test
+    void addingACourtListsItAndSelectsIt() {
+        panel.courtNumberField().setText("3");
+
+        panel.addCourtButton().doClick();
+
+        assertEquals(3, panel.selectedCourt().getNumber());
+        assertTrue(panel.cameraLines().isEmpty());
+        assertEquals(3, gym.getCourts().size());
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    void aRepeatedCourtNumberIsRefusedWithTheDomainMessage() {
+        panel.courtNumberField().setText("2");
+
+        panel.addCourtButton().doClick();
+
+        assertEquals(List.of("court number is already registered"), errors);
+        assertEquals(2, gym.getCourts().size());
+    }
+
+    @Test
+    void aCourtNumberBelowOneIsRefusedWithTheDomainMessage() {
+        panel.courtNumberField().setText("0");
+
+        panel.addCourtButton().doClick();
+
+        assertEquals(List.of("a court number must be positive"), errors);
+    }
+
+    @Test
+    void textThatIsNotANumberAsksForOne() {
+        panel.courtNumberField().setText("three");
+
+        panel.addCourtButton().doClick();
+
+        assertEquals(List.of("Type the court number as digits."), errors);
+        assertEquals(2, gym.getCourts().size());
+    }
+
+    @Test
+    void addingACourtTellsWhoeverListensForNewCourts() {
+        List<Integer> announced = new ArrayList<>();
+        panel.onCourtAdded(() -> announced.add(panel.selectedCourt().getNumber()));
+        panel.courtNumberField().setText("4");
+
+        panel.addCourtButton().doClick();
+
+        assertEquals(List.of(4), announced);
+    }
 }
