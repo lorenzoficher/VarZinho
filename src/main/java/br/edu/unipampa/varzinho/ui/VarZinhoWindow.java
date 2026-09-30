@@ -48,7 +48,7 @@ public final class VarZinhoWindow extends JFrame {
         this.clock = new Timer(ONE_SECOND_MILLIS, event -> recordOneSecond());
         this.courtPanel = new CourtPanel(gym, BUFFER_SECONDS, this::showError);
         this.archivePanel = new ArchivePanel(gym, repository, ZoneId.systemDefault(), this::showError);
-        this.capturePanel = new CapturePanel(courtPanel, repository, this::showError,
+        this.capturePanel = new CapturePanel(courtPanel, repository, ZoneId.systemDefault(), this::showError,
                 highlight -> archivePanel.refresh());
         courtPanel.onCourtAdded(archivePanel::refreshCourts);
         setTitle("VarZinho - " + gym.getName());
