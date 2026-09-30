@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 public final class Court {
-    public static final int DEFAULT_CAPTURE_SECONDS = 5;
+    public static final int DEFAULT_CAPTURE_SECONDS = 30;
 
     private final int number;
     private final List<Camera> cameras = new ArrayList<>();
