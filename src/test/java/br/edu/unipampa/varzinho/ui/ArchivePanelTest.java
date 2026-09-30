@@ -2,6 +2,7 @@ package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
+import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.exception.RepositoryException;
@@ -46,6 +47,21 @@ class ArchivePanelTest {
         assertEquals(2, panel.table().getRowCount());
         assertEquals("camera-h-2", panel.table().getValueAt(0, 2));
         assertEquals("camera-h-1", panel.table().getValueAt(1, 2));
+    }
+
+    @Test
+    void aCourtAddedAfterTheWindowOpenedCanBeFilteredBy() throws RepositoryException {
+        InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
+        repository.save(highlight("h-1", EARLY, 1));
+        repository.save(highlight("h-3", LATE, 3));
+        ArchivePanel panel = new ArchivePanel(gym, repository, BRASILIA, errors::add);
+        gym.addCourt(new Court(3));
+
+        panel.refreshCourts();
+        panel.filter().setSelectedItem("Court 3");
+
+        assertEquals(1, panel.table().getRowCount());
+        assertEquals("camera-h-3", panel.table().getValueAt(0, 2));
     }
 
     @Test
