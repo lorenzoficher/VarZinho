@@ -5,8 +5,6 @@ import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * The gym's clock as the window sees it: every tick is one second of footage handed
@@ -19,17 +17,11 @@ import java.util.Map;
 final class LiveFeed {
 
     private final Gym gym;
-    private final int bufferSeconds;
-    private final Map<Integer, Integer> secondsHeldByCourt = new HashMap<>();
     private int sequence;
 
-    LiveFeed(Gym gym, int bufferSeconds) {
+    LiveFeed(Gym gym) {
         if (gym == null) throw new IllegalArgumentException("a live feed needs a gym");
-        if (bufferSeconds <= 0) {
-            throw new IllegalArgumentException("a buffer holds at least one second, not " + bufferSeconds);
-        }
         this.gym = gym;
-        this.bufferSeconds = bufferSeconds;
     }
 
     /**
@@ -39,19 +31,14 @@ final class LiveFeed {
         Frame frame = new Frame(now, sequence++);
         for (Court court : gym.getCourts()) {
             court.record(frame);
-            // The domain keeps its buffer size to itself, so the window counts the
-            // seconds it handed to a court that could keep them.
-            if (court.hasActiveCamera()) {
-                secondsHeldByCourt.merge(court.getNumber(), 1,
-                        (held, added) -> Math.min(held + added, bufferSeconds));
-            }
         }
     }
 
     /**
-     * @return how many seconds the court's buffer holds, never more than its capacity
+     * @return how many seconds the court could capture from right now, as the court
+     *     itself counts them
      */
     int secondsHeld(Court court) {
-        return secondsHeldByCourt.getOrDefault(court.getNumber(), 0);
+        return court.secondsRecorded();
     }
 }

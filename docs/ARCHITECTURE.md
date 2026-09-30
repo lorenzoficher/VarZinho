@@ -13,6 +13,8 @@ persistence behind an abstraction, and errors as domain exceptions.
 │  repository/                         │
 │  HighlightRepository (interface)     │
 │  CsvHighlightRepository              │
+│  GymRepository (interface)           │
+│  CsvGymRepository                    │
 ├──────────────────────────────────────┤
 │  domain/                             │
 │  structure · capture · highlight ·   │
@@ -71,6 +73,31 @@ No column names a person: a highlight records nobody. The columns after
 The format is an implementation detail of `CsvHighlightRepository`. No other
 class parses or produces it.
 
+### The gym's structure
+
+Courts and cameras created in the window are kept by a second interface,
+`GymRepository` (`save(Gym)` and `Optional<Gym> load()`), implemented by
+`CsvGymRepository` in `data/gym.csv`:
+
+```csv
+kind,values
+gym,VarZinho Arena,100 Sports Avenue
+court,1
+fixed,1,fixed-1,Fixed Pro,FULL_HD,30,ACTIVE,45
+ptz,1,ptz-1,PTZ Pro,HD,30,ACTIVE,0,0,1
+```
+
+A camera line holds its court, id, model, resolution, buffer length and status,
+then the angle (fixed) or pan, tilt and zoom (PTZ). Loading rebuilds the gym
+only through the domain's own behaviour (`addCourt`, `installCamera`,
+`startRecording`, `sendToMaintenance`, `moveTo`), so the file cannot produce a
+gym the domain would have refused.
+
+Unlike the highlight archive, one unreadable line fails the whole load: half a
+gym would be a gym nobody built. The window then opens on the sample gym and
+keeps its changes in memory (`InMemoryGymRepository`), leaving the damaged file
+for someone to repair instead of overwriting it.
+
 ## Exceptions
 
 Domain errors are signalled with our own exception types, never with raw
@@ -79,7 +106,8 @@ Domain errors are signalled with our own exception types, never with raw
 ```
 DomainException (abstract, unchecked)
 ├── NoActiveCameraException
-└── EmptyBufferException
+├── EmptyBufferException
+└── DuplicateCameraException
 
 RepositoryException (checked)
 └── CorruptedRecordException (lives in `repository/`, not `exception/`: it carries `Highlight`s)
@@ -95,6 +123,11 @@ nothing, and they need to know why.
 **`EmptyBufferException`** — a clip is requested from a camera that has not
 recorded enough footage yet, typically right after being switched on. The
 window asked for does not exist.
+
+**`DuplicateCameraException`** — a camera is installed under an id that a court
+of the gym already uses. Clips are named after their camera and the archive
+tells cameras apart by id alone, so ignoring the second camera in silence would
+leave the caller believing it was installed.
 
 **`CorruptedRecordException`** — a line in the CSV cannot be parsed. Checked,
 because the caller can reasonably recover: skip the record, report it, and

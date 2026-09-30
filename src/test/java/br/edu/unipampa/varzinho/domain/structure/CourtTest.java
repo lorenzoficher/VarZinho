@@ -14,6 +14,7 @@ import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.capture.Frame;
 import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
 import br.edu.unipampa.varzinho.enums.Resolution;
+import br.edu.unipampa.varzinho.exception.DuplicateCameraException;
 import br.edu.unipampa.varzinho.exception.EmptyBufferException;
 import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
 
@@ -39,13 +40,15 @@ class CourtTest {
     }
 
     @Test
-    void installsEachCameraOnlyOnceAndRemovesInstalledEquipment() {
+    void refusesACameraIdAlreadyInstalledAndRemovesInstalledEquipment() {
         Court court = new Court(1);
         FixedCamera camera = new FixedCamera("fixed-1", "Fixed", Resolution.HD, 30, 45);
-
-        court.installCamera(camera);
         court.installCamera(camera);
 
+        DuplicateCameraException refusal = assertThrows(DuplicateCameraException.class,
+                () -> court.installCamera(new PtzCamera("fixed-1", "PTZ", Resolution.HD, 30)));
+
+        assertEquals("camera fixed-1 is already installed on court 1", refusal.getMessage());
         assertEquals(1, court.getCameras().size());
         assertThrows(UnsupportedOperationException.class, () -> court.getCameras().clear());
         court.removeCamera(camera);
@@ -95,6 +98,19 @@ class CourtTest {
         assertEquals(3, highlight.getCourtNumber());
         assertEquals("fixed-1", highlight.getCameraId());
         assertEquals(Court.DEFAULT_CAPTURE_SECONDS, highlight.getClip().getDurationSeconds());
+    }
+
+    @Test
+    void aHighlightFreezesTheWholeThirtySecondBuffer() {
+        Court court = new Court(1);
+        FixedCamera camera = new FixedCamera("fixed-1", "Fixed", Resolution.HD, 30, 45);
+        court.installCamera(camera);
+        camera.startRecording();
+        for (int second = 0; second < 30; second++) {
+            court.record(new Frame(Instant.EPOCH.plusSeconds(second), second));
+        }
+
+        assertEquals(30, court.triggerCapture().getClip().getDurationSeconds());
     }
 
     @Test

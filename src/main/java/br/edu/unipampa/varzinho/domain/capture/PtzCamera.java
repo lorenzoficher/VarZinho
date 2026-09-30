@@ -65,8 +65,7 @@ public final class PtzCamera extends Camera {
 
     private String clipPath(List<Frame> window) {
         Frame last = window.get(window.size() - 1);
-        return "clips/" + getId() + "-" + last.getTimestamp().getEpochSecond()
-                + "-p" + pan + "t" + tilt + "z" + zoom + ".mp4";
+        return clipName(last) + "-p" + pan + "t" + tilt + "z" + zoom + ".mp4";
     }
 
     public int getPan() {

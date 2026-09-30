@@ -41,8 +41,8 @@ public final class ConsoleDemo {
 
         FixedCamera fixed = new FixedCamera("fixed-1", "Fixed Pro", Resolution.FULL_HD, 30, 45);
         PtzCamera ptz = new PtzCamera("ptz-1", "PTZ Pro", Resolution.HD, 30);
-        court.installCamera(fixed);
-        court.installCamera(ptz);
+        gym.installCamera(court.getNumber(), fixed);
+        gym.installCamera(court.getNumber(), ptz);
         fixed.startRecording();
         ptz.startRecording();
         Instant lastFrameAt = Instant.now();

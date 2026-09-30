@@ -2,6 +2,7 @@ package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
+import br.edu.unipampa.varzinho.repository.CsvGymRepository;
 import br.edu.unipampa.varzinho.repository.CsvHighlightRepository;
 import br.edu.unipampa.varzinho.repository.HighlightRepository;
 
@@ -34,22 +35,25 @@ public final class VarZinhoWindow extends JFrame {
         SwingUtilities.invokeLater(() -> {
             HighlightRepository repository = new CsvHighlightRepository(
                     Path.of("data", "highlights.csv"));
-            new VarZinhoWindow(SampleGym.build(), repository).setVisible(true);
+            GymSession session = GymSession.start(new CsvGymRepository(Path.of("data", "gym.csv")),
+                    VarZinhoWindow::showStartupError);
+            new VarZinhoWindow(session, repository).setVisible(true);
         });
     }
 
-    public VarZinhoWindow(Gym gym, HighlightRepository repository) {
+    VarZinhoWindow(GymSession session, HighlightRepository repository) {
         super("VarZinho - Highlight Capture");
-        if (gym == null) throw new IllegalArgumentException("a window needs a gym");
-        if (gym.getCourts().isEmpty()) throw new IllegalArgumentException("a window needs a gym with a court");
+        if (session == null) throw new IllegalArgumentException("a window needs a gym session");
         if (repository == null) throw new IllegalArgumentException("a window needs a highlight repository");
-        this.gym = gym;
-        this.liveFeed = new LiveFeed(gym, BUFFER_SECONDS);
+        this.gym = session.gym();
+        this.liveFeed = new LiveFeed(gym);
         this.clock = new Timer(ONE_SECOND_MILLIS, event -> recordOneSecond());
-        this.courtPanel = new CourtPanel(gym, this::showError);
+        this.courtPanel = new CourtPanel(gym, BUFFER_SECONDS, this::showError);
         this.archivePanel = new ArchivePanel(gym, repository, ZoneId.systemDefault(), this::showError);
-        this.capturePanel = new CapturePanel(courtPanel, repository, this::showError,
+        this.capturePanel = new CapturePanel(courtPanel, repository, ZoneId.systemDefault(), this::showError,
                 highlight -> archivePanel.refresh());
+        courtPanel.onCourtAdded(archivePanel::refreshCourts);
+        courtPanel.onGymChanged(() -> session.save(this::showError));
         setTitle("VarZinho - " + gym.getName());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(8, 8));
@@ -82,6 +86,10 @@ public final class VarZinhoWindow extends JFrame {
         Court court = courtPanel.selectedCourt();
         bufferStatus.setText("Court " + court.getNumber() + " buffer: "
                 + liveFeed.secondsHeld(court) + " of " + BUFFER_SECONDS + " seconds.");
+    }
+
+    private static void showStartupError(String message) {
+        JOptionPane.showMessageDialog(null, message, "Saved gym not loaded", JOptionPane.WARNING_MESSAGE);
     }
 
     private void showError(String message) {
