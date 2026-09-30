@@ -11,8 +11,11 @@ time anyone reacts, it is over. Nobody can start recording a moment that
 already ended.
 
 So the cameras never stop recording. Each one keeps the most recent 30 seconds
-in memory and throws away everything older. When the button is pressed, those
-30 seconds are frozen and written to disk as a permanent clip.
+in memory and throws away everything older. When the button is pressed, the
+last 5 seconds of that window are frozen and written to disk as a permanent
+clip. The buffer is longer than the clip on purpose: a camera switched on a
+moment ago can already be captured, and the 30 seconds are the most the gym
+can ever go back, not the length of every clip.
 
 The athlete who just played is the one who presses the button. Later they ask
 the operator for the clip, and the operator — who holds the whole archive —
