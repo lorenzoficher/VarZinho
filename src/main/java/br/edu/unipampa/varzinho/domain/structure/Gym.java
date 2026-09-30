@@ -53,6 +53,34 @@ public final class Gym {
         court.installCamera(camera);
     }
 
+    /**
+     * Takes a camera off its court and mounts it on another. A camera is equipment, not
+     * part of the court, so it can change courts and keep its id.
+     *
+     * <p>A camera that was recording arrives switched off. Switching it on in its new
+     * court starts an empty buffer, so no highlight there holds the old court's footage.
+     * A camera under maintenance stays under maintenance.
+     *
+     * @throws IllegalArgumentException if the gym does not hold the camera, has no court
+     *         with that number, or the camera is already on it; nothing moves
+     */
+    public void moveCamera(Camera camera, int toCourt) {
+        if (camera == null) throw new IllegalArgumentException("there is no camera to move");
+        Court from = courts.values().stream()
+                .filter(court -> court.getCameras().contains(camera))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "camera " + camera.getId() + " is not installed in this gym"));
+        Court to = courts.get(toCourt);
+        if (to == null) throw new IllegalArgumentException("court " + toCourt + " is not registered");
+        if (to == from) {
+            throw new IllegalArgumentException("camera " + camera.getId() + " is already on court " + toCourt);
+        }
+        if (camera.isRecording()) camera.stopRecording();
+        from.removeCamera(camera);
+        to.installCamera(camera);
+    }
+
     public Court findCourt(int number) {
         return courts.get(number);
     }
