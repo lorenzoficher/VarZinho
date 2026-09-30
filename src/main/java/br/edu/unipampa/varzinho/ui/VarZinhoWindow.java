@@ -50,6 +50,7 @@ public final class VarZinhoWindow extends JFrame {
         this.archivePanel = new ArchivePanel(gym, repository, ZoneId.systemDefault(), this::showError);
         this.capturePanel = new CapturePanel(courtPanel, repository, this::showError,
                 highlight -> archivePanel.refresh());
+        courtPanel.onCourtAdded(archivePanel::refreshCourts);
         setTitle("VarZinho - " + gym.getName());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(8, 8));
