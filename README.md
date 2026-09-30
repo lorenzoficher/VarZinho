@@ -144,9 +144,9 @@ O que torna o sistema mais do que um cadastro:
 3. **Capturar exige câmera ativa.** Acionar a captura numa quadra sem nenhuma
    câmera gravando lança `NoActiveCameraException`, e nenhum lance vazio é
    criado (`Court.triggerCapture()`).
-4. **Capturar exige passado gravado.** O lance corresponde aos últimos 5
-   segundos do buffer (`Court.DEFAULT_CAPTURE_SECONDS`). Se a câmera ainda não
-   gravou esse tempo, lança `EmptyBufferException`.
+4. **Capturar exige passado gravado.** O lance corresponde aos 30 segundos do
+   buffer (`Court.DEFAULT_CAPTURE_SECONDS`). Se a câmera ainda não gravou esse
+   tempo, lança `EmptyBufferException`.
 5. **Câmera parada não entrega gravação antiga.** Uma câmera desligada mantém o
    que tinha no buffer, mas se recusa a transformá-lo em clipe, para não
    apresentar o passado como se fosse o presente (`Camera.recordedWindow()`).
