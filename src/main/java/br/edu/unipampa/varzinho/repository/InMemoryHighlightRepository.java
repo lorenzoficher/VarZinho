@@ -19,9 +19,7 @@ public final class InMemoryHighlightRepository implements HighlightRepository {
 
     @Override
     public void save(Highlight highlight) {
-        if (highlight == null) {
-            throw new IllegalArgumentException("there is no highlight to save");
-        }
+        StorableHighlights.requireStorable(highlight);
         highlightsById.put(highlight.getId(), highlight);
     }
 
