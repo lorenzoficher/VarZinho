@@ -13,6 +13,8 @@ persistence behind an abstraction, and errors as domain exceptions.
 │  repository/                         │
 │  HighlightRepository (interface)     │
 │  CsvHighlightRepository              │
+│  GymRepository (interface)           │
+│  CsvGymRepository                    │
 ├──────────────────────────────────────┤
 │  domain/                             │
 │  structure · capture · highlight ·   │
@@ -70,6 +72,31 @@ No column names a person: a highlight records nobody. The columns after
 
 The format is an implementation detail of `CsvHighlightRepository`. No other
 class parses or produces it.
+
+### The gym's structure
+
+Courts and cameras created in the window are kept by a second interface,
+`GymRepository` (`save(Gym)` and `Optional<Gym> load()`), implemented by
+`CsvGymRepository` in `data/gym.csv`:
+
+```csv
+kind,values
+gym,VarZinho Arena,100 Sports Avenue
+court,1
+fixed,1,fixed-1,Fixed Pro,FULL_HD,30,ACTIVE,45
+ptz,1,ptz-1,PTZ Pro,HD,30,ACTIVE,0,0,1
+```
+
+A camera line holds its court, id, model, resolution, buffer length and status,
+then the angle (fixed) or pan, tilt and zoom (PTZ). Loading rebuilds the gym
+only through the domain's own behaviour (`addCourt`, `installCamera`,
+`startRecording`, `sendToMaintenance`, `moveTo`), so the file cannot produce a
+gym the domain would have refused.
+
+Unlike the highlight archive, one unreadable line fails the whole load: half a
+gym would be a gym nobody built. The window then opens on the sample gym and
+keeps its changes in memory (`InMemoryGymRepository`), leaving the damaged file
+for someone to repair instead of overwriting it.
 
 ## Exceptions
 
