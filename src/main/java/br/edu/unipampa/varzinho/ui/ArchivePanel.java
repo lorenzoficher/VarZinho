@@ -50,7 +50,7 @@ final class ArchivePanel extends JPanel {
         if (errorSink == null) throw new IllegalArgumentException("an archive panel needs somewhere to report errors");
         this.repository = repository;
         this.errorSink = errorSink;
-        this.rows = new HighlightTableModel(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(zone));
+        this.rows = new HighlightTableModel(timeFormatIn(zone));
         this.table = new JTable(rows);
         this.gym = gym;
         filter.addItem(ALL_COURTS);
@@ -63,6 +63,14 @@ final class ArchivePanel extends JPanel {
         table.setPreferredScrollableViewportSize(new Dimension(640, 160));
         add(new JScrollPane(table), BorderLayout.CENTER);
         refresh();
+    }
+
+    /**
+     * How the window writes a capture time, so the table and the save confirmation
+     * show the same moment the same way.
+     */
+    static DateTimeFormatter timeFormatIn(ZoneId zone) {
+        return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(zone);
     }
 
     JComboBox<String> filter() { return filter; }
