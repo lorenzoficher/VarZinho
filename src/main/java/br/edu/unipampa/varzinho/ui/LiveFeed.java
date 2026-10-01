@@ -14,7 +14,9 @@ import java.time.Instant;
  * decision; this class only produces the seconds, so the window can drive it from a
  * Swing timer and a test can drive it from fixed instants.
  */
-final class LiveFeed {
+final class LiveFeed implements Feed {
+
+    private static final int ONE_SECOND_MILLIS = 1000;
 
     private final Gym gym;
     private int sequence;
@@ -24,10 +26,16 @@ final class LiveFeed {
         this.gym = gym;
     }
 
+    @Override
+    public int periodMillis() {
+        return ONE_SECOND_MILLIS;
+    }
+
     /**
      * Records one second, captured at {@code now}, into every court of the gym.
      */
-    void tick(Instant now) {
+    @Override
+    public void tick(Instant now) {
         Frame frame = new Frame(now, sequence++);
         for (Court court : gym.getCourts()) {
             court.record(frame);
