@@ -2,11 +2,15 @@ package br.edu.unipampa.varzinho.stream;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -30,14 +34,24 @@ public final class FfmpegRecorder {
 
     private static final long STOP_GRACE_SECONDS = 3;
 
+    private static final Set<String> STREAM_PROTOCOLS = Set.of("http", "https", "rtsp");
+
     private final String streamUrl;
     private final Path bufferFolder;
     private Process process;
     private volatile boolean stopRequested;
 
+    /**
+     * @throws IllegalArgumentException if the address is not an http, https or rtsp
+     *         address with a host, or the folder is missing
+     */
     public FfmpegRecorder(String streamUrl, Path bufferFolder) {
         if (streamUrl == null || streamUrl.isBlank()) {
             throw new IllegalArgumentException("a recorder needs the address it records from");
+        }
+        if (!isStreamAddress(streamUrl)) {
+            throw new IllegalArgumentException("\"" + streamUrl + "\" is not a stream address; it needs"
+                    + " the protocol and the host, as in http://192.168.0.42:8080/video");
         }
         if (bufferFolder == null) {
             throw new IllegalArgumentException("a recorder needs a folder for its segments");
@@ -127,6 +141,19 @@ public final class FfmpegRecorder {
                 "-segment_list", segmentList().toString(), "-segment_list_type", "csv",
                 "-segment_list_size", "0",
                 bufferFolder.resolve("seg-%02d.ts").toString());
+    }
+
+    // Without a protocol FFmpeg reads the address as a file name, fails at once and
+    // leaves the phone's court silent with nothing on screen to say why.
+    private static boolean isStreamAddress(String streamUrl) {
+        try {
+            URI address = new URI(streamUrl.strip());
+            return address.getScheme() != null
+                    && STREAM_PROTOCOLS.contains(address.getScheme().toLowerCase(Locale.ROOT))
+                    && address.getHost() != null;
+        } catch (URISyntaxException notAnAddress) {
+            return false;
+        }
     }
 
     private void clearBufferFolder() throws IOException {
