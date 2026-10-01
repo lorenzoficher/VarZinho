@@ -26,12 +26,16 @@ is their single source of truth. Read it; do not restate it here.
 
 ## Current state
 
-`src/` does not exist yet: the repository holds documentation, specs and the Maven
-build only. Every class named in `AGENTS.md` and `docs/specs/` is still to be
-written, tracked as 23 open issues across three milestones.
+This is VarZinho 2.0, in its own repository (`lorenzoficher/VarZinho-2.0`). It
+starts from the delivered 1.0 — the full model, the Swing window and both CSV
+repositories — and adds real capture from a phone, following
+[docs/PLAN-REAL-CAPTURE.md](docs/PLAN-REAL-CAPTURE.md): `StreamCamera` and the
+`ClipAssembler` interface in the domain, the FFmpeg adapter in `stream/`, and the
+window wiring in `ui/`.
 
-Write against the interface described in another aggregate's spec rather than
-waiting for its classes to exist — that is what the specs are for.
+The phone path runs only when `VARZINHO_STREAM_URL` is set; without it the
+application is 1.0. It has been verified by the test suite, not yet end to end
+with a real phone.
 
 ## Agent skills
 
