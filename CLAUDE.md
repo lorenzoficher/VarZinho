@@ -34,8 +34,10 @@ repositories — and adds real capture from a phone, following
 window wiring in `ui/`.
 
 The phone path runs only when `VARZINHO_STREAM_URL` is set; without it the
-application is 1.0. It has been verified by the test suite, not yet end to end
-with a real phone.
+application is 1.0. It was run end to end on 2026-10-01 with a phone streaming
+through DroidCam: the ring kept one segment per second, every capture wrote a
+playable 30-second `.mp4`, and closing the window left no FFmpeg process behind.
+The phone dropping mid-session has not been exercised yet.
 
 ## Agent skills
 
