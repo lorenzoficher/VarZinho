@@ -22,6 +22,15 @@ class FfmpegRecorderTest {
     }
 
     @Test
+    void givesUpOnAStreamThatStopsSendingInsteadOfWaitingForever() {
+        List<String> command = new FfmpegRecorder(URL, BUFFER).command();
+
+        int timeout = command.indexOf("-rw_timeout");
+        assertTrue(timeout >= 0 && timeout < command.indexOf("-i"));
+        assertEquals(String.valueOf(FfmpegRecorder.READ_TIMEOUT_MICROSECONDS), command.get(timeout + 1));
+    }
+
+    @Test
     void writesTheRingAndItsListInsideTheBufferFolder() {
         List<String> command = new FfmpegRecorder(URL, BUFFER).command();
 
