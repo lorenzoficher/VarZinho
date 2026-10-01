@@ -10,7 +10,9 @@ continuously into a 30-second circular buffer; pressing a button persists that
 window as a permanent clip.
 
 Academic project for AL0330 (Object-Oriented Programming). The goal is
-**domain modelling**, not video processing. No frames are ever decoded.
+**domain modelling**, not video processing. Since 2.0 a phone's clips are real
+`.mp4` files, but Java still decodes no frame: FFmpeg, an external program,
+does all the video work behind the `ClipAssembler` interface.
 
 ## Build and run
 
@@ -39,10 +41,13 @@ This includes identifiers: `Highlight`, not `Lance`. `saveHighlight()`, not
 src/main/java/br/edu/unipampa/varzinho/
 ├── domain/          entities and value objects
 │   ├── structure/   Gym, Court
-│   ├── capture/     Camera, FixedCamera, PtzCamera, CircularBuffer, Frame
+│   ├── capture/     Camera, FixedCamera, PtzCamera, StreamCamera, CircularBuffer,
+│   │                Frame, ClipAssembler
 │   ├── highlight/   Highlight, VideoClip
 │   └── people/      Person, Athlete, Operator
 ├── repository/      HighlightRepository, CsvHighlightRepository
+├── stream/          FFmpeg adapter: SegmentLog, SegmentIndex, FfmpegRecorder,
+│                    FfmpegClipAssembler — knows the domain, never the reverse
 ├── exception/       domain exceptions
 ├── enums/           CameraStatus, Resolution
 ├── ui/              Swing windows — the only package that imports javax.swing
@@ -115,6 +120,10 @@ domain knows nothing.
 Adding a third-party library requires agreement from the team — open an issue
 first. Right now the only dependency is JUnit 5.
 
+FFmpeg is a **runtime** dependency, not a library: an external program on the
+`PATH`, needed only when `VARZINHO_STREAM_URL` is set. The build and every test
+pass without it; the one test that runs it is skipped where it is missing.
+
 ## Git
 
 Branches: `feature/<short-description>`, `docs/<short-description>`,
@@ -132,8 +141,10 @@ without approval; one into `main` needs one approval. See
 
 The deadline is 2026-09-30 and the team has five people. Before adding
 anything not in [docs/PRD.md](docs/PRD.md), open an issue and get agreement.
-Features listed as out of scope stay out of scope — including a real database
-and actual video capture.
+Features listed as out of scope stay out of scope — including a real database.
+
+Real video capture used to be on that list too. VarZinho 2.0 took it off, for
+one phone and through FFmpeg only; the reasoning is in `CONTEXT.md`.
 
 The graphical interface used to be on that list and no longer is:
 [docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md) requires one. It stays
