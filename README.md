@@ -34,14 +34,18 @@ encapsulamento, herança, polimorfismo e tratamento de exceções. O sistema é
 operado por uma interface gráfica mínima em Swing, exigida pelo enunciado, e
 verificado por testes automatizados.
 
-Não há captura real de vídeo: o `VideoClip` guarda apenas os metadados do
-arquivo — caminho, duração, resolução e tamanho. Nenhum quadro é decodificado.
+Na versão 2.0, um celular pode servir de câmera: o lance capturado por ele vira
+um arquivo `.mp4` de verdade, que abre no player. Quem grava e corta o vídeo é o
+FFmpeg, um programa externo — o Java não decodifica nenhum quadro. As câmeras
+fixa e PTZ continuam guardando só os metadados do clipe: caminho, duração,
+resolução e tamanho.
 
 ## Tecnologias
 
 - Java 17 (LTS)
 - Maven
 - JUnit 5
+- FFmpeg — opcional, só para a captura com o celular
 
 ## Instalando o Maven
 
@@ -87,6 +91,33 @@ No PowerShell, coloque a propriedade entre aspas:
 ```powershell
 mvn compile exec:java "-Dexec.mainClass=br.edu.unipampa.varzinho.ConsoleDemo"
 ```
+
+### Captura real com o celular
+
+Precisa do FFmpeg e de um celular na mesma rede Wi-Fi do computador.
+
+1. Instale o FFmpeg (`winget install Gyan.FFmpeg`) e **abra um terminal novo**.
+   Confira com `ffmpeg -version`.
+2. No celular, instale um app que transmita a câmera por HTTP — *IP Webcam*
+   (Android) ou *DroidCam* (Android/iOS) — e inicie o servidor. Anote o
+   endereço, por exemplo `http://192.168.0.42:8080/video`.
+3. Teste no computador: `ffplay http://192.168.0.42:8080/video` precisa mostrar
+   a imagem. Se não abrir, confira o firewall; redes de universidade costumam
+   isolar os aparelhos — use o roteador do próprio celular.
+4. Rode com o endereço na variável `VARZINHO_STREAM_URL`:
+
+```powershell
+$env:VARZINHO_STREAM_URL = "http://192.168.0.42:8080/video"
+mvn exec:java
+```
+
+O celular aparece como a câmera `phone-1`, numa quadra só dele. Depois de 30
+segundos gravando, **Save highlight** grava o `.mp4` em `clips/`, e **Open clip**,
+no acervo, abre o vídeo. **Open live view** mostra a imagem do celular no
+navegador. Se o celular sair da rede, a janela avisa e a quadra dele deixa de
+capturar; para reconectar, reinicie o programa.
+
+Sem a variável, o programa funciona como na versão 1.0, com as câmeras simuladas.
 
 ### O que a interface faz
 
@@ -138,6 +169,8 @@ Caminhos relativos a `src/main/java/br/edu/unipampa/varzinho/`.
 | [`Court`](src/main/java/br/edu/unipampa/varzinho/domain/structure/Court.java) | `domain.structure` | A quadra: instala e remove câmeras e dispara a captura (`triggerCapture()`) |
 | [`Camera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/Camera.java) | `domain.capture` | Abstrata. Controla o estado da câmera e o seu buffer; cada subtipo produz o clipe à sua maneira |
 | [`FixedCamera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/FixedCamera.java), [`PtzCamera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/PtzCamera.java) | `domain.capture` | Câmera fixa, com ângulo definido na instalação; câmera de cabeça móvel (*pan-tilt-zoom*), com giro, inclinação e zoom validados |
+| [`StreamCamera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/StreamCamera.java) | `domain.capture` | O celular no tripé. Grava como as outras câmeras, mas o seu lance vira um arquivo de vídeo real, escrito pelo `ClipAssembler` |
+| [`ClipAssembler`](src/main/java/br/edu/unipampa/varzinho/domain/capture/ClipAssembler.java) | `domain.capture` | Interface: transforma os segundos guardados num arquivo de vídeo. É tudo o que o domínio sabe sobre vídeo real |
 | [`CircularBuffer`](src/main/java/br/edu/unipampa/varzinho/domain/capture/CircularBuffer.java) | `domain.capture` | Memória de tamanho fixo que sobrescreve o quadro mais antigo |
 | [`Frame`](src/main/java/br/edu/unipampa/varzinho/domain/capture/Frame.java) | `domain.capture` | Um segundo de gravação: instante e posição na sequência, sem imagem |
 | [`Highlight`](src/main/java/br/edu/unipampa/varzinho/domain/highlight/Highlight.java) | `domain.highlight` | O lance salvo, imutável: quando, em que quadra, por qual câmera e qual clipe |
@@ -147,6 +180,7 @@ Caminhos relativos a `src/main/java/br/edu/unipampa/varzinho/`.
 | [`HighlightRepository`](src/main/java/br/edu/unipampa/varzinho/repository/HighlightRepository.java) | `repository` | Interface do acervo. `CsvHighlightRepository` grava em arquivo; `InMemoryHighlightRepository` guarda em memória |
 | [`GymRepository`](src/main/java/br/edu/unipampa/varzinho/repository/GymRepository.java) | `repository` | Interface da estrutura do ginásio. `CsvGymRepository` grava quadras e câmeras em arquivo; `InMemoryGymRepository` guarda em memória |
 | [`DomainException`](src/main/java/br/edu/unipampa/varzinho/exception/DomainException.java), [`RepositoryException`](src/main/java/br/edu/unipampa/varzinho/exception/RepositoryException.java) | `exception` | Raízes das exceções próprias do domínio e da persistência |
+| [`FfmpegRecorder`](src/main/java/br/edu/unipampa/varzinho/stream/FfmpegRecorder.java), [`FfmpegClipAssembler`](src/main/java/br/edu/unipampa/varzinho/stream/FfmpegClipAssembler.java) | `stream` | Usam o FFmpeg: um grava o celular em segmentos de 1 segundo que se sobrescrevem; o outro junta os segmentos do lance num `.mp4` |
 | [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) | `ui` | A janela. Monta `CourtPanel`, `CapturePanel` e `ArchivePanel` e mostra os erros. `GymSession` carrega o ginásio salvo e grava cada mudança |
 
 ## Regras de negócio
