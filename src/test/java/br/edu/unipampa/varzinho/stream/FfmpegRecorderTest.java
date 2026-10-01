@@ -47,6 +47,26 @@ class FfmpegRecorderTest {
     }
 
     @Test
+    void refusesAnAddressWithoutItsProtocol() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new FfmpegRecorder("10.2.168.102:4747/video", BUFFER));
+    }
+
+    @Test
+    void refusesAnAddressWithoutAHost() {
+        assertThrows(IllegalArgumentException.class, () -> new FfmpegRecorder("http:///video", BUFFER));
+    }
+
+    @Test
+    void acceptsAnRtspStream() {
+        String rtsp = "rtsp://192.168.0.42:8554/live";
+
+        List<String> command = new FfmpegRecorder(rtsp, BUFFER).command();
+
+        assertEquals(rtsp, command.get(command.indexOf("-i") + 1));
+    }
+
+    @Test
     void refusesABlankStreamUrl() {
         assertThrows(IllegalArgumentException.class, () -> new FfmpegRecorder(" ", BUFFER));
     }
