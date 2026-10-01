@@ -45,6 +45,7 @@ public final class VarZinhoWindow extends JFrame {
     private final CapturePanel capturePanel;
     private final JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
     private final JLabel bufferStatus = new JLabel();
+    private boolean phoneDropReported;
 
     /**
      * Opens the window on the simulated cameras, or, when {@value #STREAM_URL_VARIABLE}
@@ -91,27 +92,21 @@ public final class VarZinhoWindow extends JFrame {
         gym.installCamera(phoneCourt, phone);
         phone.startRecording();
         // Two feeds, so the simulated courts keep their clock whatever the phone does.
-        VarZinhoWindow window = new VarZinhoWindow(session, repository,
-                new LiveFeed(gym, court),
-                new SegmentFeed(court, new SegmentLog(recorder.segmentList()), index));
+        VarZinhoWindow window = new VarZinhoWindow(session, repository, new LiveFeed(gym, court));
+        window.followPhone(phone, new SegmentLog(recorder.segmentList()), index);
         window.courtPanel.selectCourt(phoneCourt);
         window.offerLiveView(streamUrl);
         recorder.onExit(() -> SwingUtilities.invokeLater(() -> window.phoneDropped(phone)));
         window.setVisible(true);
     }
 
-    VarZinhoWindow(GymSession session, HighlightRepository repository, Feed... feeds) {
+    VarZinhoWindow(GymSession session, HighlightRepository repository, Feed feed) {
         super("VarZinho - Highlight Capture");
         if (session == null) throw new IllegalArgumentException("a window needs a gym session");
         if (repository == null) throw new IllegalArgumentException("a window needs a highlight repository");
-        if (feeds == null || feeds.length == 0) {
-            throw new IllegalArgumentException("a window needs a feed of footage");
-        }
+        if (feed == null) throw new IllegalArgumentException("a window needs a feed of footage");
         this.gym = session.gym();
-        for (Feed feed : feeds) {
-            if (feed == null) throw new IllegalArgumentException("a window needs a feed of footage");
-            clocks.add(new Timer(feed.periodMillis(), event -> advance(feed)));
-        }
+        clocks.add(new Timer(feed.periodMillis(), event -> advance(feed)));
         this.courtPanel = new CourtPanel(gym, BUFFER_SECONDS, this::showError);
         this.archivePanel = new ArchivePanel(gym, repository, ZoneId.systemDefault(), this::showError);
         this.capturePanel = new CapturePanel(courtPanel, repository, ZoneId.systemDefault(), this::showError,
@@ -142,6 +137,13 @@ public final class VarZinhoWindow extends JFrame {
         return title;
     }
 
+    private void followPhone(Camera phone, SegmentLog segments, SegmentIndex index) {
+        Feed phoneFeed = new SegmentFeed(phone, segments, index, () -> phoneDropped(phone));
+        Timer clock = new Timer(phoneFeed.periodMillis(), event -> advance(phoneFeed));
+        clocks.add(clock);
+        clock.start();
+    }
+
     // Watching the phone in the browser is the whole preview: showing video inside
     // Swing would need a decoding library, which this project does not take on.
     private void offerLiveView(String streamUrl) {
@@ -160,8 +162,13 @@ public final class VarZinhoWindow extends JFrame {
     }
 
     // From here on the domain answers by itself: a capture on the phone's court finds no
-    // recording camera and says so.
+    // recording camera and says so. FFmpeg exiting and the phone going silent are two
+    // signs of the same drop, and the operator hears of it once.
     private void phoneDropped(Camera phone) {
+        if (phoneDropReported) {
+            return;
+        }
+        phoneDropReported = true;
         if (phone.isRecording()) {
             phone.stopRecording();
         }
