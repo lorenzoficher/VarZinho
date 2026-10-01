@@ -21,6 +21,13 @@ public final class FfmpegRecorder {
 
     public static final int RING_SEGMENTS = 40;
 
+    /**
+     * How long FFmpeg waits on a stream that sends nothing before it gives up and exits.
+     * A phone that leaves the Wi-Fi closes no connection, so without this the read
+     * would block forever and nobody would learn the phone is gone.
+     */
+    public static final long READ_TIMEOUT_MICROSECONDS = 5_000_000;
+
     private static final long STOP_GRACE_SECONDS = 3;
 
     private final String streamUrl;
@@ -110,6 +117,7 @@ public final class FfmpegRecorder {
     List<String> command() {
         // No -nostdin here, unlike the assembler: stdin is how stop() asks for a clean exit.
         return List.of("ffmpeg", "-hide_banner", "-loglevel", "warning",
+                "-rw_timeout", String.valueOf(READ_TIMEOUT_MICROSECONDS),
                 "-i", streamUrl,
                 "-an", "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
                 "-pix_fmt", "yuv420p",
