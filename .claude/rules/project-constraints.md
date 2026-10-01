@@ -25,6 +25,11 @@
   Persistence knows the domain; the domain knows nothing about persistence.
 - **All persistence goes through the `HighlightRepository` interface.** CSV is
   today's implementation (`CsvHighlightRepository`), not the contract.
+- **FFmpeg is a runtime dependency, never a build one.** It is an external program
+  on the `PATH`, used only when `VARZINHO_STREAM_URL` names a phone stream. `mvn
+  compile` and `mvn test` must keep passing on a machine without it.
+- **All video work goes through the `ClipAssembler` interface.** `domain/` never
+  imports from `stream/`, exactly as it never imports from `repository/`.
 
 ## Model invariants
 
@@ -45,7 +50,11 @@
 Stated so nobody mistakes them for oversights — each is argued in `CONTEXT.md`:
 
 - No real database.
-- No real video capture: `VideoClip` is metadata only, and no frame is ever decoded.
+- No frame decoded in Java, and no video library on the classpath.
+
+**Real video capture was on this list until 2026-09-30.** VarZinho 2.0 records a
+phone through FFmpeg and writes real `.mp4` clips for it; fixed and PTZ cameras stay
+metadata only. The reversal and its reasoning are in `CONTEXT.md`.
 
 **A graphical interface was on this list until 2026-09-18.** Section 2.9 of
 [`docs/ASSIGNMENT-BRIEF.md`](../../docs/ASSIGNMENT-BRIEF.md) requires one, so it is
