@@ -29,22 +29,21 @@ class SegmentFeedTest {
     private final SegmentIndex index = new SegmentIndex(40);
 
     @Test
-    void recordsOneSecondIntoEveryCourtForEachFinishedSegment() throws IOException {
-        Court first = courtWithActiveCamera(1);
-        Court second = courtWithActiveCamera(2);
-        SegmentFeed feed = feed();
+    void recordsEachFinishedSegmentOnlyIntoThePhonesCourt() throws IOException {
+        Court phoneCourt = courtWithActiveCamera(1);
+        Court simulated = courtWithActiveCamera(2);
+        SegmentFeed feed = feedFor(phoneCourt);
         Files.writeString(list(), "seg-00.ts,0,1\nseg-01.ts,1,2\nseg-02.ts,2,3\n");
 
         feed.tick(NOW);
 
-        assertEquals(3, first.secondsRecorded());
-        assertEquals(3, second.secondsRecorded());
+        assertEquals(3, phoneCourt.secondsRecorded());
+        assertEquals(0, simulated.secondsRecorded());
     }
 
     @Test
     void remembersWhichSegmentHoldsEachSecond() throws IOException {
-        courtWithActiveCamera(1);
-        SegmentFeed feed = feed();
+        SegmentFeed feed = feedFor(courtWithActiveCamera(1));
         Files.writeString(list(), "seg-00.ts,0,1\nseg-01.ts,1,2\n");
 
         feed.tick(NOW);
@@ -55,15 +54,15 @@ class SegmentFeedTest {
     @Test
     void recordsNothingUntilTheFirstSegmentIsFinished() throws IOException {
         Court court = courtWithActiveCamera(1);
-        SegmentFeed feed = feed();
+        SegmentFeed feed = feedFor(court);
 
         feed.tick(NOW);
 
         assertEquals(0, court.secondsRecorded());
     }
 
-    private SegmentFeed feed() {
-        return new SegmentFeed(gym, new SegmentLog(list()), index);
+    private SegmentFeed feedFor(Court phoneCourt) {
+        return new SegmentFeed(phoneCourt, new SegmentLog(list()), index);
     }
 
     private Path list() {
