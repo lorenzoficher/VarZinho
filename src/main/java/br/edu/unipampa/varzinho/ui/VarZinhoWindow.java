@@ -72,10 +72,11 @@ public final class VarZinhoWindow extends JFrame {
      * that would be whichever camera was installed first.
      */
     private static void openWithPhone(GymSession session, HighlightRepository repository, String streamUrl) {
-        FfmpegRecorder recorder = new FfmpegRecorder(streamUrl, SEGMENT_FOLDER);
+        FfmpegRecorder recorder;
         try {
+            recorder = new FfmpegRecorder(streamUrl, SEGMENT_FOLDER);
             recorder.start();
-        } catch (IOException cause) {
+        } catch (IOException | IllegalArgumentException cause) {
             JOptionPane.showMessageDialog(null, "The phone stream could not start (" + cause.getMessage()
                     + "). Opening with the simulated cameras only.", "Phone not connected",
                     JOptionPane.WARNING_MESSAGE);
