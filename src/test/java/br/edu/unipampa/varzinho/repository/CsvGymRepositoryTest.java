@@ -3,6 +3,7 @@ package br.edu.unipampa.varzinho.repository;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
+import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.CameraStatus;
@@ -125,6 +126,40 @@ class CsvGymRepositoryTest {
 
         assertEquals(before, Files.readAllLines(directory.resolve("gym.csv")));
         assertNull(repository.load().orElseThrow().findCourt(1));
+    }
+
+    @Test
+    void aCourtHoldingOnlyAPhoneIsNotStored() throws RepositoryException {
+        Gym gym = new Gym("Arena", "Rua A");
+        gym.addCourt(new Court(1));
+        gym.addCourt(new Court(2));
+        gym.installCamera(1, new FixedCamera("fixed-1", "Bullet", Resolution.FULL_HD, 30, 45));
+        gym.installCamera(2, phone());
+        CsvGymRepository repository = repository();
+
+        repository.save(gym);
+
+        assertEquals(List.of(1), repository.load().orElseThrow().getCourts().stream()
+                .map(Court::getNumber).toList());
+    }
+
+    @Test
+    void aPhoneSharingACourtLeavesTheOtherCamerasStored() throws RepositoryException {
+        Gym gym = new Gym("Arena", "Rua A");
+        gym.addCourt(new Court(1));
+        gym.installCamera(1, new FixedCamera("fixed-1", "Bullet", Resolution.FULL_HD, 30, 45));
+        gym.installCamera(1, phone());
+        CsvGymRepository repository = repository();
+
+        repository.save(gym);
+
+        List<Camera> stored = repository.load().orElseThrow().findCourt(1).getCameras();
+        assertEquals(List.of("fixed-1"), stored.stream().map(Camera::getId).toList());
+    }
+
+    private static StreamCamera phone() {
+        return new StreamCamera("phone-1", "Phone", Resolution.HD, 30, "http://phone/video",
+                (window, target) -> { });
     }
 
     private CsvGymRepository repository() {
