@@ -26,6 +26,7 @@ public final class FfmpegRecorder {
     private final String streamUrl;
     private final Path bufferFolder;
     private Process process;
+    private volatile boolean stopRequested;
 
     public FfmpegRecorder(String streamUrl, Path bufferFolder) {
         if (streamUrl == null || streamUrl.isBlank()) {
@@ -49,6 +50,7 @@ public final class FfmpegRecorder {
         if (process != null && process.isAlive()) {
             throw new IllegalStateException("the recorder is already running");
         }
+        stopRequested = false;
         clearBufferFolder();
         // FFmpeg's output goes to a file: an unread pipe fills up and freezes it.
         process = new ProcessBuilder(command())
@@ -63,6 +65,7 @@ public final class FfmpegRecorder {
      * once, and on a recorder that never started.
      */
     public void stop() {
+        stopRequested = true;
         if (process == null || !process.isAlive()) {
             return;
         }
@@ -83,8 +86,9 @@ public final class FfmpegRecorder {
     }
 
     /**
-     * Runs the action once FFmpeg exits, for whatever reason — typically the phone
-     * dropping off the network. It runs on a background thread.
+     * Runs the action if FFmpeg exits without being asked to — typically the phone
+     * dropping off the network. An exit {@link #stop} asked for is not reported. The
+     * action runs on a background thread.
      *
      * @throws IllegalStateException if the recorder was never started
      */
@@ -92,7 +96,11 @@ public final class FfmpegRecorder {
         if (process == null) {
             throw new IllegalStateException("the recorder has not started");
         }
-        process.onExit().thenRun(action);
+        process.onExit().thenRun(() -> {
+            if (!stopRequested) {
+                action.run();
+            }
+        });
     }
 
     public Path segmentList() {
