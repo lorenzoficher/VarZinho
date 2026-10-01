@@ -38,7 +38,7 @@ Stated explicitly so they are not mistaken for omissions:
 
 | Not doing | Why |
 |---|---|
-| Real video capture or encoding | Would consume the entire schedule and demonstrate no OOP |
+| Video decoding or encoding in Java | No video library on the classpath. Since 2.0 a phone's clips are real files, but FFmpeg — an external program — writes them; see `CONTEXT.md` |
 | A polished or complete interface | Section 2.9 of the brief asks for a minimal one; every rule stays in the domain, never on the screen |
 | Database | CSV is sufficient at this scale; the interface allows a later swap |
 | User accounts, login, authentication | No identity exists in the capture flow |
