@@ -30,6 +30,8 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class VarZinhoWindow extends JFrame {
     private static final int BUFFER_SECONDS = 30;
@@ -37,8 +39,7 @@ public final class VarZinhoWindow extends JFrame {
     private static final Path SEGMENT_FOLDER = Path.of("buffer");
 
     private final Gym gym;
-    private final Feed feed;
-    private final Timer clock;
+    private final List<Timer> clocks = new ArrayList<>();
     private final CourtPanel courtPanel;
     private final ArchivePanel archivePanel;
     private final CapturePanel capturePanel;
@@ -85,25 +86,32 @@ public final class VarZinhoWindow extends JFrame {
         StreamCamera phone = new StreamCamera("phone-1", "Phone", Resolution.HD, BUFFER_SECONDS,
                 streamUrl, new FfmpegClipAssembler(index));
         int phoneCourt = gym.getCourts().stream().mapToInt(Court::getNumber).max().orElse(0) + 1;
-        gym.addCourt(new Court(phoneCourt));
+        Court court = new Court(phoneCourt);
+        gym.addCourt(court);
         gym.installCamera(phoneCourt, phone);
         phone.startRecording();
+        // Two feeds, so the simulated courts keep their clock whatever the phone does.
         VarZinhoWindow window = new VarZinhoWindow(session, repository,
-                new SegmentFeed(gym, new SegmentLog(recorder.segmentList()), index));
+                new LiveFeed(gym, court),
+                new SegmentFeed(court, new SegmentLog(recorder.segmentList()), index));
         window.courtPanel.selectCourt(phoneCourt);
         window.offerLiveView(streamUrl);
         recorder.onExit(() -> SwingUtilities.invokeLater(() -> window.phoneDropped(phone)));
         window.setVisible(true);
     }
 
-    VarZinhoWindow(GymSession session, HighlightRepository repository, Feed feed) {
+    VarZinhoWindow(GymSession session, HighlightRepository repository, Feed... feeds) {
         super("VarZinho - Highlight Capture");
         if (session == null) throw new IllegalArgumentException("a window needs a gym session");
         if (repository == null) throw new IllegalArgumentException("a window needs a highlight repository");
-        if (feed == null) throw new IllegalArgumentException("a window needs a feed of footage");
+        if (feeds == null || feeds.length == 0) {
+            throw new IllegalArgumentException("a window needs a feed of footage");
+        }
         this.gym = session.gym();
-        this.feed = feed;
-        this.clock = new Timer(feed.periodMillis(), event -> advanceFeed());
+        for (Feed feed : feeds) {
+            if (feed == null) throw new IllegalArgumentException("a window needs a feed of footage");
+            clocks.add(new Timer(feed.periodMillis(), event -> advance(feed)));
+        }
         this.courtPanel = new CourtPanel(gym, BUFFER_SECONDS, this::showError);
         this.archivePanel = new ArchivePanel(gym, repository, ZoneId.systemDefault(), this::showError);
         this.capturePanel = new CapturePanel(courtPanel, repository, ZoneId.systemDefault(), this::showError,
@@ -125,7 +133,7 @@ public final class VarZinhoWindow extends JFrame {
         getRootPane().setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         pack();
         setLocationRelativeTo(null);
-        clock.start();
+        clocks.forEach(Timer::start);
     }
 
     private JLabel buildTitle() {
@@ -162,7 +170,7 @@ public final class VarZinhoWindow extends JFrame {
                 + "Restart VarZinho to reconnect.");
     }
 
-    private void advanceFeed() {
+    private void advance(Feed feed) {
         try {
             feed.tick(Instant.now());
             showBufferStatus();
