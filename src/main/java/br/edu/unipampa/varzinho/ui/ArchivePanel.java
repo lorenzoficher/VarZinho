@@ -7,6 +7,7 @@ import br.edu.unipampa.varzinho.exception.RepositoryException;
 import br.edu.unipampa.varzinho.repository.CorruptedRecordException;
 import br.edu.unipampa.varzinho.repository.HighlightRepository;
 
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -14,8 +15,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 import java.awt.BorderLayout;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -41,6 +46,7 @@ final class ArchivePanel extends JPanel {
     private final JComboBox<String> filter = new JComboBox<>();
     private final HighlightTableModel rows;
     private final JTable table;
+    private final JButton openClip = new JButton("Open clip");
 
     ArchivePanel(Gym gym, HighlightRepository repository, ZoneId zone, Consumer<String> errorSink) {
         super(new BorderLayout(4, 4));
@@ -59,6 +65,8 @@ final class ArchivePanel extends JPanel {
         JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         filterRow.add(new JLabel("Archive:"));
         filterRow.add(filter);
+        openClip.addActionListener(event -> openSelectedClip());
+        filterRow.add(openClip);
         add(filterRow, BorderLayout.NORTH);
         table.setPreferredScrollableViewportSize(new Dimension(640, 160));
         add(new JScrollPane(table), BorderLayout.CENTER);
@@ -76,6 +84,29 @@ final class ArchivePanel extends JPanel {
     JComboBox<String> filter() { return filter; }
 
     JTable table() { return table; }
+
+    JButton openClipButton() { return openClip; }
+
+    // Only a stream camera writes a real file; the other kinds name one that nothing
+    // ever writes, so a missing file is expected and said plainly rather than failed on.
+    private void openSelectedClip() {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            errorSink.accept("Choose a highlight in the archive to open its clip.");
+            return;
+        }
+        Path clip = Path.of(rows.clipAt(table.convertRowIndexToModel(row)));
+        if (!Files.exists(clip)) {
+            errorSink.accept("There is no video file at " + clip
+                    + ": only highlights from a stream camera are recorded to disk.");
+            return;
+        }
+        try {
+            Desktop.getDesktop().open(clip.toFile());
+        } catch (IOException | UnsupportedOperationException failure) {
+            errorSink.accept("The clip could not be opened: " + failure.getMessage());
+        }
+    }
 
     /**
      * Offers every court the gym has now as a filter, keeping the current choice. Called
@@ -122,6 +153,10 @@ final class ArchivePanel extends JPanel {
 
         private final DateTimeFormatter timeFormat;
         private List<Highlight> highlights = List.of();
+
+        String clipAt(int row) {
+            return highlights.get(row).getClip().getFilePath();
+        }
 
         HighlightTableModel(DateTimeFormatter timeFormat) {
             this.timeFormat = timeFormat;
