@@ -3,6 +3,7 @@ package br.edu.unipampa.varzinho.repository;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
+import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.CameraStatus;
@@ -61,16 +62,27 @@ public final class CsvGymRepository implements GymRepository {
         lines.add(HEADER);
         lines.add(line(GYM, gym.getName(), gym.getAddress()));
         List<Court> courts = new ArrayList<>(gym.getCourts());
+        courts.removeIf(CsvGymRepository::holdsOnlyStreams);
         courts.sort(Comparator.comparingInt(Court::getNumber));
         for (Court court : courts) {
             lines.add(line(COURT, String.valueOf(court.getNumber())));
         }
         for (Court court : courts) {
             for (Camera camera : court.getCameras()) {
-                lines.add(format(court.getNumber(), camera));
+                if (!(camera instanceof StreamCamera)) {
+                    lines.add(format(court.getNumber(), camera));
+                }
             }
         }
         write(lines);
+    }
+
+    // A stream camera is runtime equipment: it is installed afresh on every start, and
+    // storing it would make this repository build the tool that writes its clips. A
+    // court that exists only to hold one goes with it, or every start would add another.
+    private static boolean holdsOnlyStreams(Court court) {
+        List<Camera> cameras = court.getCameras();
+        return !cameras.isEmpty() && cameras.stream().allMatch(StreamCamera.class::isInstance);
     }
 
     @Override
