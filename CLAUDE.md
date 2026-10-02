@@ -26,9 +26,9 @@ is their single source of truth. Read it; do not restate it here.
 
 ## Current state
 
-This is VarZinho 2.0, in its own repository (`lorenzoficher/VarZinho-2.0`). It
-starts from the delivered 1.0 — the full model, the Swing window and both CSV
-repositories — and adds real capture from a phone, following
+This is VarZinho 2.0, continuing the delivered 1.0 (tag `VarZinho1.0.0`) in this
+same repository. It starts from that release — the full model, the Swing window
+and both CSV repositories — and adds real capture from a phone, following
 [docs/PLAN-REAL-CAPTURE.md](docs/PLAN-REAL-CAPTURE.md): `StreamCamera` and the
 `ClipAssembler` interface in the domain, the FFmpeg adapter in `stream/`, and the
 window wiring in `ui/`.
@@ -43,7 +43,7 @@ The phone dropping mid-session has not been exercised yet.
 
 ### Issue tracker
 
-GitHub Issues on `lorenzoficher/VarZinho-2.0`, via the `gh` CLI. See
+GitHub Issues on `lorenzoficher/VarZinho`, via the `gh` CLI. See
 `docs/agents/issue-tracker.md`.
 
 ### Triage labels
