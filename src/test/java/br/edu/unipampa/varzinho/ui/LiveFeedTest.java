@@ -36,6 +36,35 @@ class LiveFeedTest {
     }
 
     @Test
+    void leavesOutTheCourtAnotherFeedRecords() {
+        Gym gym = new Gym("Arena", "100 Sports Avenue");
+        Court simulated = courtWithActiveCamera(1);
+        Court phoneCourt = courtWithActiveCamera(2);
+        gym.addCourt(simulated);
+        gym.addCourt(phoneCourt);
+        LiveFeed feed = new LiveFeed(gym, phoneCourt);
+
+        tick(feed, 3);
+
+        assertEquals(3, feed.secondsHeld(simulated));
+        assertEquals(0, feed.secondsHeld(phoneCourt));
+    }
+
+    @Test
+    void feedsACourtAddedAfterTheFeedStarted() {
+        Gym gym = new Gym("Arena", "100 Sports Avenue");
+        Court phoneCourt = courtWithActiveCamera(1);
+        gym.addCourt(phoneCourt);
+        LiveFeed feed = new LiveFeed(gym, phoneCourt);
+        Court added = courtWithActiveCamera(2);
+        gym.addCourt(added);
+
+        tick(feed, 2);
+
+        assertEquals(2, feed.secondsHeld(added));
+    }
+
+    @Test
     void secondsHeldGrowWithEachTickUntilTheBufferIsFull() {
         Gym gym = new Gym("Arena", "100 Sports Avenue");
         Court court = courtWithActiveCamera(1);

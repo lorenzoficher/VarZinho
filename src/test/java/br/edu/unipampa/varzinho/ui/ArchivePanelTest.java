@@ -145,6 +145,28 @@ class ArchivePanelTest {
         assertTrue(errors.get(0).contains("line 3"));
     }
 
+    @Test
+    void openingAClipWithNoHighlightChosenAsksForOne() {
+        ArchivePanel panel = new ArchivePanel(gym, new InMemoryHighlightRepository(), BRASILIA, errors::add);
+
+        panel.openClipButton().doClick();
+
+        assertEquals(1, errors.size());
+    }
+
+    @Test
+    void aClipWithNoFileBehindItIsReportedInsteadOfOpened() throws RepositoryException {
+        InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
+        repository.save(highlight("h-never-written", EARLY, 1));
+        ArchivePanel panel = new ArchivePanel(gym, repository, BRASILIA, errors::add);
+        panel.table().setRowSelectionInterval(0, 0);
+
+        panel.openClipButton().doClick();
+
+        assertEquals(1, errors.size());
+        assertTrue(errors.get(0).contains("h-never-written.mp4"));
+    }
+
     private static Highlight highlight(String id, Instant capturedAt, int court) {
         VideoClip clip = new VideoClip("clips/" + id + ".mp4", 30, Resolution.FULL_HD, 12.5);
         return new Highlight(id, capturedAt, court, "camera-" + id, clip);

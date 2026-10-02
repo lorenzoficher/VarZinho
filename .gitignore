@@ -37,3 +37,6 @@ Desktop.ini
 .claude/settings.local.json
 .claude/current-issue
 .claude/board.env
+
+# Segment ring the recorder keeps overwriting
+buffer/

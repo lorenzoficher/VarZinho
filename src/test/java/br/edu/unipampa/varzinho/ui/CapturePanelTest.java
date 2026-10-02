@@ -1,9 +1,12 @@
 package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.domain.capture.Camera;
+import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
+import br.edu.unipampa.varzinho.enums.Resolution;
+import br.edu.unipampa.varzinho.exception.ClipAssemblyException;
 import br.edu.unipampa.varzinho.repository.InMemoryHighlightRepository;
 import org.junit.jupiter.api.Test;
 
@@ -96,6 +99,29 @@ class CapturePanelTest {
         assertEquals(1, errors.size());
         assertTrue(repository.findAll().isEmpty());
         assertTrue(saved.isEmpty());
+    }
+
+    @Test
+    void phoneThatCannotWriteItsClipReportsTheFailureAndSavesNothing() {
+        Gym phoneGym = SampleGym.build();
+        phoneGym.addCourt(new Court(3));
+        StreamCamera phone = new StreamCamera("phone-1", "Phone", Resolution.HD, 30, "http://phone/video",
+                (window, target) -> { throw new ClipAssemblyException("ffmpeg is not installed"); });
+        phoneGym.installCamera(3, phone);
+        phone.startRecording();
+        CourtPanel phoneCourts = new CourtPanel(phoneGym, 30, errors::add);
+        CapturePanel phonePanel = new CapturePanel(phoneCourts, repository, BRASILIA, errors::add, saved::add);
+        LiveFeed feed = new LiveFeed(phoneGym);
+        for (int second = 0; second < Court.DEFAULT_CAPTURE_SECONDS; second++) {
+            feed.tick(START.plusSeconds(second));
+        }
+        phoneCourts.selectCourt(3);
+
+        phonePanel.saveButton().doClick();
+
+        assertEquals(List.of("ffmpeg is not installed"), errors);
+        assertTrue(repository.findAll().isEmpty());
+        assertEquals("", phonePanel.confirmation());
     }
 
     private void fillBuffers() {

@@ -2,6 +2,7 @@ package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.structure.Court;
+import br.edu.unipampa.varzinho.exception.ClipAssemblyException;
 import br.edu.unipampa.varzinho.exception.EmptyBufferException;
 import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
 import br.edu.unipampa.varzinho.exception.RepositoryException;
@@ -72,7 +73,7 @@ final class CapturePanel extends JPanel {
 
             onSaved.accept(highlight);
 
-        } catch (NoActiveCameraException | EmptyBufferException failure) {
+        } catch (NoActiveCameraException | EmptyBufferException | ClipAssemblyException failure) {
             confirmation.setText(" ");
             errorSink.accept(failure.getMessage());
 
