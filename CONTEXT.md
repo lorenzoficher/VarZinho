@@ -37,9 +37,19 @@ overwritten.
 a `VideoClip` and produces a `Highlight`. The system has no concept of who
 triggered it.
 
-**Video clip** — the persisted file produced by a trigger. In this project it
-is metadata only: path, duration, resolution, size. No bytes are read or
-written.
+**Video clip** — the persisted file produced by a trigger: path, duration,
+resolution, size. A clip from a stream camera is a real `.mp4` on disk; a clip
+from a fixed or PTZ camera is metadata only, naming a file nothing writes.
+Java reads and writes no video bytes either way.
+
+**Stream camera** — a camera that is not mounted on the court but streams to
+it over the network: a phone on a tripod. It records like any other camera;
+the difference is that its trigger writes a real file.
+
+**Segment** — one second of a stream camera's footage, as a file FFmpeg
+writes into a ring that overwrites itself. A finished segment is one `Frame`,
+so the circular buffer counts segments exactly as it counted simulated
+seconds.
 
 **Court** — a playing surface inside a gym. Owns its cameras.
 
@@ -150,11 +160,32 @@ about the domain — it was wrong about what was being asked. What survives from
 it is the part that still holds: the domain stays independent of the interface,
 and the screen calls the model without owning a single rule.
 
-### No real video capture
+### Real video capture, from a phone
 
-`VideoClip` stores metadata. Integrating a camera library would consume the
-entire schedule and demonstrate nothing about OOP. This is stated explicitly
-so nobody mistakes it for an oversight.
+**Reversed on 2026-09-30, in VarZinho 2.0.** The delivered 1.0 said:
+
+> `VideoClip` stores metadata. Integrating a camera library would consume the
+> entire schedule and demonstrate nothing about OOP.
+
+That held for the graded delivery, and 1.0 stays that way in its own
+repository. 2.0 starts from it with one goal: a clip you can open. It gets
+there without the cost the old reasoning feared, because Java still touches no
+video:
+
+- **FFmpeg does all the video work, as an external program.** One process
+  records the phone into a ring of one-second segment files; another joins a
+  window of them into an `.mp4` without re-encoding. No Java library is added.
+- **A segment is a `Frame`.** The buffer already counted footage in whole
+  seconds, so `CircularBuffer`, `Court`, `Highlight` and `VideoClip` did not
+  change.
+- **The domain sees only an interface.** `StreamCamera` hands its window to a
+  `ClipAssembler`; the FFmpeg implementation lives in `stream/`, outside the
+  domain, the same way persistence lives behind a repository.
+- **The phone is runtime equipment.** It is installed on a court of its own at
+  every start and never stored in `gym.csv`, so a court captures from it and
+  nothing else, and persistence never has to build an FFmpeg process.
+
+Without `VARZINHO_STREAM_URL` the application behaves exactly like 1.0.
 
 ## Constraints
 
