@@ -23,7 +23,7 @@ Run `gh issue view <number> --comments`.
 
 ## This repository
 
-Issues live at `lorenzoficher/VarZinho-2.0`. `gh` is authenticated; the repo is inferred
+Issues live at `lorenzoficher/VarZinho`. `gh` is authenticated; the repo is inferred
 from `git remote -v`.
 
 **Labels mark the aggregate**, which is how work is divided — see
