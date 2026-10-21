@@ -68,6 +68,19 @@ class SegmentLogTest {
     }
 
     @Test
+    void neverRereadsWhatAnEarlierCallConsumed() throws IOException {
+        Path list = buffer.resolve("segments.csv");
+        SegmentLog log = new SegmentLog(list);
+        append(list, "seg-00.ts,0.000000,1.000000\n");
+        log.readNew();
+
+        Files.writeString(list, "seg-99.ts,0.000000,1.000000\n");
+        append(list, "seg-01.ts,1.000000,2.000000\n");
+
+        assertEquals(List.of(buffer.resolve("seg-01.ts")), log.readNew());
+    }
+
+    @Test
     void findsNothingBeforeTheRecorderHasWrittenTheList() throws IOException {
         SegmentLog log = new SegmentLog(buffer.resolve("segments.csv"));
 
