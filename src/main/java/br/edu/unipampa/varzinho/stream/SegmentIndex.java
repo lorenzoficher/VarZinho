@@ -12,6 +12,9 @@ import java.util.Map;
  *
  * <p>The ring reuses file names, so an entry older than the ring points at a file that
  * now holds a different second. Those entries are forgotten rather than trusted.
+ *
+ * <p>Safe to share between threads: the feed registers seconds while a clip being written
+ * elsewhere looks its own seconds up.
  */
 public final class SegmentIndex {
 
@@ -29,7 +32,7 @@ public final class SegmentIndex {
         };
     }
 
-    public void register(int sequence, Path segment) {
+    public synchronized void register(int sequence, Path segment) {
         if (segment == null) {
             throw new IllegalArgumentException("second " + sequence + " needs a segment file");
         }
@@ -40,7 +43,7 @@ public final class SegmentIndex {
      * @throws ClipAssemblyException if the second was never registered or the ring has
      *         already overwritten it
      */
-    public Path segmentOf(Frame frame) {
+    public synchronized Path segmentOf(Frame frame) {
         Path segment = segments.get(frame.getSequence());
         if (segment == null) {
             throw new ClipAssemblyException("no segment on disk for second " + frame.getSequence());
