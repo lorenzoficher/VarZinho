@@ -1,6 +1,9 @@
 package br.edu.unipampa.varzinho.stream;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,8 +18,10 @@ import java.util.List;
  */
 public final class SegmentLog {
 
+    private static final int CHUNK_BYTES = 8192;
+
     private final Path listFile;
-    private int linesRead;
+    private long bytesConsumed;
 
     public SegmentLog(Path listFile) {
         if (listFile == null) {
@@ -40,16 +45,41 @@ public final class SegmentLog {
         if (!Files.exists(listFile)) {
             return List.of();
         }
-        String content = Files.readString(listFile, StandardCharsets.UTF_8);
-        String[] finished = content.substring(0, content.lastIndexOf('\n') + 1).split("\n");
+        byte[] appended = readAppended();
+        int finishedLength = lastLineBreak(appended) + 1;
+        bytesConsumed += finishedLength;
+        String finished = new String(appended, 0, finishedLength, StandardCharsets.UTF_8);
         List<Path> segments = new ArrayList<>();
-        for (int line = linesRead; line < finished.length; line++) {
-            if (!finished[line].isBlank()) {
-                segments.add(segmentOn(finished[line]));
+        for (String line : finished.split("\n")) {
+            if (!line.isBlank()) {
+                segments.add(segmentOn(line));
             }
         }
-        linesRead = Math.max(linesRead, finished.length);
         return segments;
+    }
+
+    private byte[] readAppended() throws IOException {
+        try (SeekableByteChannel channel = Files.newByteChannel(listFile)) {
+            channel.position(bytesConsumed);
+            ByteArrayOutputStream appended = new ByteArrayOutputStream();
+            ByteBuffer chunk = ByteBuffer.allocate(CHUNK_BYTES);
+            while (channel.read(chunk) > 0) {
+                appended.write(chunk.array(), 0, chunk.position());
+                chunk.clear();
+            }
+            return appended.toByteArray();
+        }
+    }
+
+    // A line break is a single byte in UTF-8 and never part of a wider character, so
+    // cutting the bytes there never splits a file name.
+    private static int lastLineBreak(byte[] bytes) {
+        for (int index = bytes.length - 1; index >= 0; index--) {
+            if (bytes[index] == '\n') {
+                return index;
+            }
+        }
+        return -1;
     }
 
     // FFmpeg may write the name with the folder it was given; every segment lives
