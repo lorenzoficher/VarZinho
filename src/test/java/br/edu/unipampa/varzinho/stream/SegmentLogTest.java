@@ -43,6 +43,31 @@ class SegmentLogTest {
     }
 
     @Test
+    void yieldsTheFirstSegmentWhenTheListStartedEmpty() throws IOException {
+        Path list = buffer.resolve("segments.csv");
+        SegmentLog log = new SegmentLog(list);
+        append(list, "");
+        log.readNew();
+
+        append(list, "seg-00.ts,0.000000,1.000000\n");
+
+        assertEquals(List.of(buffer.resolve("seg-00.ts")), log.readNew());
+    }
+
+    @Test
+    void yieldsAHalfWrittenFirstLineOnceItIsFinished() throws IOException {
+        Path list = buffer.resolve("segments.csv");
+        SegmentLog log = new SegmentLog(list);
+        append(list, "seg-00.ts,0.0000");
+
+        List<Path> first = log.readNew();
+        append(list, "00,1.000000\n");
+
+        assertTrue(first.isEmpty());
+        assertEquals(List.of(buffer.resolve("seg-00.ts")), log.readNew());
+    }
+
+    @Test
     void findsNothingBeforeTheRecorderHasWrittenTheList() throws IOException {
         SegmentLog log = new SegmentLog(buffer.resolve("segments.csv"));
 
