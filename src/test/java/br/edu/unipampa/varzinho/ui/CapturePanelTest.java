@@ -1,6 +1,7 @@
 package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.domain.capture.Camera;
+import br.edu.unipampa.varzinho.domain.capture.ClipAssembler;
 import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.structure.Court;
@@ -10,13 +11,23 @@ import br.edu.unipampa.varzinho.exception.ClipAssemblyException;
 import br.edu.unipampa.varzinho.repository.InMemoryHighlightRepository;
 import org.junit.jupiter.api.Test;
 
+import javax.swing.SwingUtilities;
+import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CapturePanelTest {
@@ -28,7 +39,9 @@ class CapturePanelTest {
     private final List<String> errors = new ArrayList<>();
     private final List<Highlight> saved = new ArrayList<>();
     private final CourtPanel courtPanel = new CourtPanel(gym, 30, errors::add);
-    private final CapturePanel panel = new CapturePanel(courtPanel, repository, BRASILIA, errors::add, saved::add);
+    private final PendingClipWrites pending = new PendingClipWrites();
+    private final CapturePanel panel =
+            new CapturePanel(courtPanel, repository, BRASILIA, pending, errors::add, saved::add);
 
     @Test
     void onePressSavesExactlyOneHighlightForTheSelectedCourt() {
@@ -103,25 +116,98 @@ class CapturePanelTest {
 
     @Test
     void phoneThatCannotWriteItsClipReportsTheFailureAndSavesNothing() {
+        CapturePanel phonePanel = phonePanelWritingWith(
+                (window, target) -> { throw new ClipAssemblyException("ffmpeg is not installed"); });
+
+        phonePanel.saveButton().doClick();
+        awaitSwingThread(() -> !errors.isEmpty());
+
+        assertEquals(List.of("ffmpeg is not installed"), errors);
+        assertTrue(repository.findAll().isEmpty());
+        assertEquals("", phonePanel.confirmation());
+    }
+
+    @Test
+    void pressReturnsWhileThePhoneClipIsStillBeingWritten() {
+        CountDownLatch release = new CountDownLatch(1);
+        CapturePanel phonePanel = phonePanelWritingWith((window, target) -> awaitQuietly(release));
+
+        phonePanel.saveButton().doClick();
+
+        assertTrue(repository.findAll().isEmpty());
+        assertTrue(saved.isEmpty());
+        assertEquals("Saving: court 3 · camera phone-1…", phonePanel.confirmation());
+        release.countDown();
+    }
+
+    @Test
+    void phoneClipIsArchivedOnceItsFileIsWritten() {
+        CountDownLatch release = new CountDownLatch(1);
+        CapturePanel phonePanel = phonePanelWritingWith((window, target) -> awaitQuietly(release));
+        phonePanel.saveButton().doClick();
+
+        release.countDown();
+        awaitSwingThread(() -> !saved.isEmpty());
+
+        assertEquals(1, repository.findByCourt(3).size());
+        assertTrue(phonePanel.confirmation().startsWith("Saved: court 3 · camera phone-1 · "));
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    void secondPressWhileTheFirstIsWritingKeepsBothClipsApart() {
+        CountDownLatch release = new CountDownLatch(1);
+        List<Path> targets = Collections.synchronizedList(new ArrayList<>());
+        CapturePanel phonePanel = phonePanelWritingWith((window, target) -> {
+            targets.add(target);
+            awaitQuietly(release);
+        });
+
+        phonePanel.saveButton().doClick();
+        phonePanel.saveButton().doClick();
+        release.countDown();
+        awaitSwingThread(() -> saved.size() == 2);
+
+        assertEquals(2, new HashSet<>(targets).size());
+        assertEquals(2, repository.findByCourt(3).size());
+        assertTrue(errors.isEmpty());
+    }
+
+    private CapturePanel phonePanelWritingWith(ClipAssembler writer) {
         Gym phoneGym = SampleGym.build();
         phoneGym.addCourt(new Court(3));
         StreamCamera phone = new StreamCamera("phone-1", "Phone", Resolution.HD, 30, "http://phone/video",
-                (window, target) -> { throw new ClipAssemblyException("ffmpeg is not installed"); });
+                pending.deferring(writer));
         phoneGym.installCamera(3, phone);
         phone.startRecording();
         CourtPanel phoneCourts = new CourtPanel(phoneGym, 30, errors::add);
-        CapturePanel phonePanel = new CapturePanel(phoneCourts, repository, BRASILIA, errors::add, saved::add);
+        CapturePanel phonePanel =
+                new CapturePanel(phoneCourts, repository, BRASILIA, pending, errors::add, saved::add);
         LiveFeed feed = new LiveFeed(phoneGym);
         for (int second = 0; second < Court.DEFAULT_CAPTURE_SECONDS; second++) {
             feed.tick(START.plusSeconds(second));
         }
         phoneCourts.selectCourt(3);
+        return phonePanel;
+    }
 
-        phonePanel.saveButton().doClick();
+    private static void awaitQuietly(CountDownLatch release) {
+        try {
+            assertTrue(release.await(5, TimeUnit.SECONDS), "the test never released the clip");
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new ClipAssemblyException("interrupted while waiting to be released", interrupted);
+        }
+    }
 
-        assertEquals(List.of("ffmpeg is not installed"), errors);
-        assertTrue(repository.findAll().isEmpty());
-        assertEquals("", phonePanel.confirmation());
+    // The panel reports from the Swing thread, so the test waits there for what it expects.
+    private static void awaitSwingThread(BooleanSupplier condition) {
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            AtomicBoolean met = new AtomicBoolean();
+            while (!met.get()) {
+                SwingUtilities.invokeAndWait(() -> met.set(condition.getAsBoolean()));
+            }
+        });
     }
 
     private void fillBuffers() {
