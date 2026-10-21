@@ -59,7 +59,8 @@ public final class VarZinhoWindow extends JFrame {
                     VarZinhoWindow::showStartupError);
             String streamUrl = System.getenv(STREAM_URL_VARIABLE);
             if (streamUrl == null || streamUrl.isBlank()) {
-                new VarZinhoWindow(session, repository, new LiveFeed(session.gym())).setVisible(true);
+                new VarZinhoWindow(session, repository, new LiveFeed(session.gym()), new PendingClipWrites())
+                        .setVisible(true);
             } else {
                 openWithPhone(session, repository, streamUrl);
             }
@@ -80,20 +81,22 @@ public final class VarZinhoWindow extends JFrame {
             JOptionPane.showMessageDialog(null, "The phone stream could not start (" + cause.getMessage()
                     + "). Opening with the simulated cameras only.", "Phone not connected",
                     JOptionPane.WARNING_MESSAGE);
-            new VarZinhoWindow(session, repository, new LiveFeed(session.gym())).setVisible(true);
+            new VarZinhoWindow(session, repository, new LiveFeed(session.gym()), new PendingClipWrites())
+                    .setVisible(true);
             return;
         }
         Gym gym = session.gym();
         SegmentIndex index = new SegmentIndex(FfmpegRecorder.RING_SEGMENTS);
+        PendingClipWrites pendingWrites = new PendingClipWrites();
         StreamCamera phone = new StreamCamera("phone-1", "Phone", Resolution.HD, BUFFER_SECONDS,
-                streamUrl, new FfmpegClipAssembler(index));
+                streamUrl, pendingWrites.deferring(new FfmpegClipAssembler(index)));
         int phoneCourt = gym.getCourts().stream().mapToInt(Court::getNumber).max().orElse(0) + 1;
         Court court = new Court(phoneCourt);
         gym.addCourt(court);
         gym.installCamera(phoneCourt, phone);
         phone.startRecording();
         // Two feeds, so the simulated courts keep their clock whatever the phone does.
-        VarZinhoWindow window = new VarZinhoWindow(session, repository, new LiveFeed(gym, court));
+        VarZinhoWindow window = new VarZinhoWindow(session, repository, new LiveFeed(gym, court), pendingWrites);
         window.followPhone(phone, new SegmentLog(recorder.segmentList()), index);
         window.courtPanel.selectCourt(phoneCourt);
         window.offerLiveView(streamUrl);
@@ -101,7 +104,7 @@ public final class VarZinhoWindow extends JFrame {
         window.setVisible(true);
     }
 
-    VarZinhoWindow(GymSession session, HighlightRepository repository, Feed feed) {
+    VarZinhoWindow(GymSession session, HighlightRepository repository, Feed feed, PendingClipWrites pendingWrites) {
         super("VarZinho - Highlight Capture");
         if (session == null) throw new IllegalArgumentException("a window needs a gym session");
         if (repository == null) throw new IllegalArgumentException("a window needs a highlight repository");
@@ -110,8 +113,8 @@ public final class VarZinhoWindow extends JFrame {
         clocks.add(new Timer(feed.periodMillis(), event -> advance(feed)));
         this.courtPanel = new CourtPanel(gym, BUFFER_SECONDS, this::showError);
         this.archivePanel = new ArchivePanel(gym, repository, ZoneId.systemDefault(), this::showError);
-        this.capturePanel = new CapturePanel(courtPanel, repository, ZoneId.systemDefault(), this::showError,
-                highlight -> archivePanel.refresh());
+        this.capturePanel = new CapturePanel(courtPanel, repository, ZoneId.systemDefault(), pendingWrites,
+                this::showError, highlight -> archivePanel.refresh());
         courtPanel.onCourtAdded(archivePanel::refreshCourts);
         courtPanel.onGymChanged(() -> session.save(this::showError));
         setTitle("VarZinho - " + gym.getName());
