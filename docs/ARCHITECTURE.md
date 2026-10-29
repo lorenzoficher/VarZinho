@@ -15,6 +15,9 @@ persistence behind an abstraction, and errors as domain exceptions.
 │  CsvHighlightRepository              │
 │  GymRepository (interface)           │
 │  CsvGymRepository                    │
+│                                      │
+│  stream/                             │
+│  FFmpeg adapter behind ClipAssembler │
 ├──────────────────────────────────────┤
 │  domain/                             │
 │  structure · capture · highlight ·   │
@@ -26,6 +29,11 @@ persistence behind an abstraction, and errors as domain exceptions.
 repository knows the domain; the domain knows nothing about either. No class
 under `domain/` imports from `repository/`, and no class under `domain/`
 imports anything from `javax.swing`.
+
+`stream/` sits beside `repository/` for the same reason: it is the FFmpeg
+adapter that records the phone and writes its clips, and the domain reaches it
+only through the `ClipAssembler` interface in `domain/capture/`, exactly as it
+reaches storage only through the repository interfaces.
 
 This is what allows the storage mechanism — or the interface — to change
 without touching the model.
@@ -93,6 +101,21 @@ only through the domain's own behaviour (`addCourt`, `installCamera`,
 `startRecording`, `sendToMaintenance`, `moveTo`), so the file cannot produce a
 gym the domain would have refused.
 
+A stream camera is never written to this file. It is runtime equipment,
+installed afresh on every start, and a court that holds only stream cameras is
+left out with it, or every start would add another.
+
+**One kind of camera, one branch.** `CsvGymRepository` tells the kinds apart
+with `instanceof` when it writes and with the `kind` column when it reads, so a
+new kind of camera means editing the repository as well as adding the class.
+That is a deliberate exception to the open/closed principle, not an oversight.
+The alternatives cost more than they save here: a `toCsv()` on `Camera` would
+make the domain know the storage format, which the dependency rule above
+forbids, and a visitor in `domain/capture/` would add an interface and a method
+to every camera for the sake of three kinds. The branching is confined to the
+one class that owns the format, and each kind it does not know is refused
+explicitly rather than written wrong.
+
 Unlike the highlight archive, one unreadable line fails the whole load: half a
 gym would be a gym nobody built. The window then opens on the sample gym and
 keeps its changes in memory (`InMemoryGymRepository`), leaving the damaged file
@@ -109,7 +132,8 @@ with `IllegalStateException`.
 DomainException (abstract, unchecked)
 ├── NoActiveCameraException
 ├── EmptyBufferException
-└── DuplicateCameraException
+├── DuplicateCameraException
+└── ClipAssemblyException
 
 RepositoryException (checked)
 └── CorruptedRecordException (lives in `repository/`, not `exception/`: it carries `Highlight`s)
@@ -130,6 +154,12 @@ window asked for does not exist.
 of the gym already uses. Clips are named after their camera and the archive
 tells cameras apart by id alone, so ignoring the second camera in silence would
 leave the caller believing it was installed.
+
+**`ClipAssemblyException`** — a stream camera's clip file could not be written:
+a second the ring has already overwritten, or FFmpeg failing or timing out.
+The highlight is not archived, because a record pointing at a file that was
+never written would promise a clip nobody can open. It carries the cause, so
+the I/O error behind it is not lost.
 
 **`CorruptedRecordException`** — a line in the CSV cannot be parsed. Checked,
 because the caller can reasonably recover: skip the record, report it, and
