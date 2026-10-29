@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,16 +27,25 @@ import java.util.stream.Stream;
  */
 public final class FfmpegClipAssembler implements ClipAssembler {
 
-    private static final long TIMEOUT_SECONDS = 10;
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final int OUTPUT_LINES_KEPT = 5;
 
     private final SegmentIndex index;
+    private final String executable;
+    private final Duration timeout;
 
     public FfmpegClipAssembler(SegmentIndex index) {
+        this(index, "ffmpeg", TIMEOUT);
+    }
+
+    // Lets a test stand a script in for FFmpeg, so the failure paths run where it is missing.
+    FfmpegClipAssembler(SegmentIndex index, String executable, Duration timeout) {
         if (index == null) {
             throw new IllegalArgumentException("an assembler needs to know where the seconds are");
         }
         this.index = index;
+        this.executable = executable;
+        this.timeout = timeout;
     }
 
     @Override
@@ -47,7 +58,7 @@ public final class FfmpegClipAssembler implements ClipAssembler {
             Path list = Files.writeString(workspace.resolve("list.txt"), concatList(frozen), StandardCharsets.UTF_8);
             Path parent = target.toAbsolutePath().getParent();
             Files.createDirectories(parent);
-            join(list, target, workspace.resolve("ffmpeg.log"));
+            writeInPlace(list, target, workspace.resolve("ffmpeg.log"));
         } catch (IOException cause) {
             throw new ClipAssemblyException("could not write " + target, cause);
         } catch (InterruptedException cause) {
@@ -83,15 +94,28 @@ public final class FfmpegClipAssembler implements ClipAssembler {
         return frozen;
     }
 
-    private static void join(Path list, Path target, Path log) throws IOException, InterruptedException {
-        Process ffmpeg = new ProcessBuilder("ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
+    // FFmpeg writes beside the target and the file is moved in only once it is whole:
+    // a clip that failed or timed out halfway must not sit in clips/ looking playable.
+    private void writeInPlace(Path list, Path target, Path log) throws IOException, InterruptedException {
+        Path partial = target.resolveSibling(".writing-" + target.getFileName());
+        try {
+            join(list, partial, log);
+            Files.move(partial, target, StandardCopyOption.ATOMIC_MOVE);
+        } finally {
+            Files.deleteIfExists(partial);
+        }
+    }
+
+    private void join(Path list, Path target, Path log) throws IOException, InterruptedException {
+        Process ffmpeg = new ProcessBuilder(executable, "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
                 "-f", "concat", "-safe", "0", "-i", list.toString(), "-c", "copy", target.toString())
                 .redirectErrorStream(true)
                 .redirectOutput(log.toFile())
                 .start();
-        if (!ffmpeg.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-            ffmpeg.destroyForcibly();
-            throw new ClipAssemblyException("ffmpeg took longer than " + TIMEOUT_SECONDS + " s to write " + target);
+        if (!ffmpeg.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+            // Waited for, so the half-written file is no longer held open when it is deleted.
+            ffmpeg.destroyForcibly().waitFor();
+            throw new ClipAssemblyException("ffmpeg took longer than " + timeout.toMillis() + " ms to write " + target);
         }
         if (ffmpeg.exitValue() != 0) {
             throw new ClipAssemblyException("ffmpeg could not write " + target + ": " + lastLines(log));
