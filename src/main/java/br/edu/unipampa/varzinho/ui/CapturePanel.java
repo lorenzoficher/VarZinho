@@ -77,7 +77,7 @@ final class CapturePanel extends JPanel {
             refuse(failure.getMessage());
             return;
         }
-        Optional<Runnable> write = pendingWrites.take();
+        Optional<Runnable> write = pendingWrites.take(highlight.getClip());
         if (write.isEmpty()) {
             archive(highlight);
             return;
