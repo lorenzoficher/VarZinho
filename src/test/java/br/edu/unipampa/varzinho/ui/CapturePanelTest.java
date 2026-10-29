@@ -4,6 +4,7 @@ import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.capture.ClipAssembler;
 import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
+import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.Resolution;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -170,7 +172,31 @@ class CapturePanelTest {
 
         assertEquals(2, new HashSet<>(targets).size());
         assertEquals(2, repository.findByCourt(3).size());
+        assertEquals(new HashSet<>(targets), savedPaths());
         assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    void courtWithNoPhoneArchivesAtOnceAndLeavesThePhoneWriteAlone() {
+        List<Path> written = new ArrayList<>();
+        pending.deferring((window, target) -> written.add(target))
+                .assemble(List.of(), Path.of("clips/phone-1-1000-1.mp4"));
+        fillBuffers();
+
+        panel.saveButton().doClick();
+
+        assertEquals(1, saved.size());
+        assertEquals(1, repository.findByCourt(1).size());
+        assertTrue(written.isEmpty());
+        assertTrue(pending.take(new VideoClip("clips/phone-1-1000-1.mp4", 30, Resolution.HD, 1.0)).isPresent());
+    }
+
+    private Set<Path> savedPaths() {
+        Set<Path> paths = new HashSet<>();
+        for (Highlight highlight : saved) {
+            paths.add(Path.of(highlight.getClip().getFilePath()));
+        }
+        return paths;
     }
 
     private CapturePanel phonePanelWritingWith(ClipAssembler writer) {
