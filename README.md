@@ -74,6 +74,7 @@ mvn exec:java
 ```
 
 `mvn exec:java` abre a janela Swing ([Main](src/main/java/br/edu/unipampa/varzinho/Main.java)
+→ [Launcher](src/main/java/br/edu/unipampa/varzinho/ui/Launcher.java)
 → [VarZinhoWindow](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java)).
 Os lances salvos ficam em `data/highlights.csv`, e as quadras e câmeras em
 `data/gym.csv`. Os dois reaparecem na próxima execução.
@@ -181,7 +182,8 @@ Caminhos relativos a `src/main/java/br/edu/unipampa/varzinho/`.
 | [`GymRepository`](src/main/java/br/edu/unipampa/varzinho/repository/GymRepository.java) | `repository` | Interface da estrutura do ginásio. `CsvGymRepository` grava quadras e câmeras em arquivo; `InMemoryGymRepository` guarda em memória |
 | [`DomainException`](src/main/java/br/edu/unipampa/varzinho/exception/DomainException.java), [`RepositoryException`](src/main/java/br/edu/unipampa/varzinho/exception/RepositoryException.java) | `exception` | Raízes das exceções próprias do domínio e da persistência |
 | [`FfmpegRecorder`](src/main/java/br/edu/unipampa/varzinho/stream/FfmpegRecorder.java), [`FfmpegClipAssembler`](src/main/java/br/edu/unipampa/varzinho/stream/FfmpegClipAssembler.java) | `stream` | Usam o FFmpeg: um grava o celular em segmentos de 1 segundo que se sobrescrevem; o outro junta os segmentos do lance num `.mp4` |
-| [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) | `ui` | A janela. Monta `CourtPanel`, `CapturePanel` e `ArchivePanel` e mostra os erros. `GymSession` carrega o ginásio salvo e grava cada mudança |
+| [`Launcher`](src/main/java/br/edu/unipampa/varzinho/ui/Launcher.java), [`PhoneConnection`](src/main/java/br/edu/unipampa/varzinho/ui/PhoneConnection.java) | `ui` | Montam a aplicação: os repositórios, o ginásio salvo e, se `VARZINHO_STREAM_URL` estiver definida, o celular. `PhoneConnection` é a única classe da interface que sabe que o celular chega pelo FFmpeg |
+| [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) | `ui` | A janela. Recebe tudo pronto do `Launcher`, monta `CourtPanel`, `CapturePanel` e `ArchivePanel` e mostra os erros. `GymSession` carrega o ginásio salvo e grava cada mudança |
 
 ## Regras de negócio
 
