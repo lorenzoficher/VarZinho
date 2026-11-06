@@ -3,7 +3,7 @@ package br.edu.unipampa.varzinho.ui;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.enums.Resolution;
-import br.edu.unipampa.varzinho.repository.CsvGymRepository;
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvGymRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

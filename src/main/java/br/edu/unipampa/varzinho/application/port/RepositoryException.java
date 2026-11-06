@@ -1,4 +1,4 @@
-package br.edu.unipampa.varzinho.exception;
+package br.edu.unipampa.varzinho.application.port;
 
 /**
  * Root of the errors raised while reading or writing the highlight archive.

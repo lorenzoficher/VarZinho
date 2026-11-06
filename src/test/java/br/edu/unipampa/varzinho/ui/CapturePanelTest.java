@@ -9,7 +9,7 @@ import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.exception.ClipAssemblyException;
-import br.edu.unipampa.varzinho.repository.InMemoryHighlightRepository;
+import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryHighlightRepository;
 import org.junit.jupiter.api.Test;
 
 import javax.swing.SwingUtilities;

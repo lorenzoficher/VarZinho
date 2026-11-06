@@ -1,4 +1,4 @@
-package br.edu.unipampa.varzinho.repository;
+package br.edu.unipampa.varzinho.application.port;
 
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 
@@ -8,7 +8,7 @@ import br.edu.unipampa.varzinho.domain.highlight.Highlight;
  * <p>It lives here, not in each implementation, so that a highlight one repository accepts
  * is a highlight any other accepts too — even one whose storage could hold more.
  */
-final class StorableHighlights {
+public final class StorableHighlights {
 
     private StorableHighlights() {
     }
@@ -17,7 +17,7 @@ final class StorableHighlights {
      * @throws IllegalArgumentException if the highlight is {@code null}, or its id, camera id
      *     or clip path holds a comma or a line break
      */
-    static void requireStorable(Highlight highlight) {
+    public static void requireStorable(Highlight highlight) {
         if (highlight == null) {
             throw new IllegalArgumentException("there is no highlight to save");
         }

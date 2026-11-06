@@ -1,6 +1,6 @@
 package br.edu.unipampa.varzinho;
 
-import br.edu.unipampa.varzinho.repository.CsvHighlightRepository;
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

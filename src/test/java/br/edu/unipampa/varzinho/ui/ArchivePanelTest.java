@@ -5,10 +5,10 @@ import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.Resolution;
-import br.edu.unipampa.varzinho.exception.RepositoryException;
-import br.edu.unipampa.varzinho.repository.CsvHighlightRepository;
-import br.edu.unipampa.varzinho.repository.HighlightRepository;
-import br.edu.unipampa.varzinho.repository.InMemoryHighlightRepository;
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
+import br.edu.unipampa.varzinho.application.port.HighlightRepository;
+import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryHighlightRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

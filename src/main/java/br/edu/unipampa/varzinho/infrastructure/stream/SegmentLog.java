@@ -1,4 +1,4 @@
-package br.edu.unipampa.varzinho.stream;
+package br.edu.unipampa.varzinho.infrastructure.stream;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

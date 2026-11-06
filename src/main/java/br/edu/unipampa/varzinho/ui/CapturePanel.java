@@ -5,8 +5,8 @@ import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.exception.ClipAssemblyException;
 import br.edu.unipampa.varzinho.exception.EmptyBufferException;
 import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
-import br.edu.unipampa.varzinho.exception.RepositoryException;
-import br.edu.unipampa.varzinho.repository.HighlightRepository;
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
+import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
