@@ -53,7 +53,7 @@ public final class Launcher {
         VarZinhoWindow window = new VarZinhoWindow(session, repository, new LiveFeed(gym, court), pendingWrites,
                 BUFFER_SECONDS);
         Runnable dropped = () -> window.phoneDropped(phone.camera());
-        window.followPhone(phone.camera(), phone.feed(dropped), court.getNumber(), phone.streamUrl());
+        window.followPhone(phone.feed(dropped), court.getNumber(), phone.streamUrl());
         phone.onDrop(() -> SwingUtilities.invokeLater(dropped));
         window.setVisible(true);
     }
