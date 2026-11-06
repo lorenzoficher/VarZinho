@@ -251,7 +251,8 @@ that path is real.
 - `CapturePanel`: add `ClipAssemblyException` to the existing
   `catch (NoActiveCameraException | EmptyBufferException …)`.
 - `ArchivePanel`: an **Open clip** button → `Desktop.getDesktop().open(file)`
-  when `clip.exists()`, an error message when it does not.
+  when the file at the clip's path exists, an error message when it does not.
+  The panel checks the disk itself; the domain never does.
 - Header: an **Open live view** button → `Desktop.getDesktop().browse(url)`.
   This is the whole preview. Showing video inside Swing needs a decoding
   library and is out of tonight's scope.
