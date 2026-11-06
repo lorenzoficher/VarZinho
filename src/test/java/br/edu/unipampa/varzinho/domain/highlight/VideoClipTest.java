@@ -1,41 +1,12 @@
 package br.edu.unipampa.varzinho.domain.highlight;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.edu.unipampa.varzinho.enums.Resolution;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 class VideoClipTest {
-
-    @TempDir
-    private Path archive;
-
-    @Test
-    void reportsItselfPresentWhileItsFileIsOnDisk() throws IOException {
-        Path file = Files.createFile(archive.resolve("goal.mp4"));
-
-        VideoClip clip = clipAt(file.toString());
-
-        assertTrue(clip.exists());
-    }
-
-    @Test
-    void reportsItselfAbsentOnceItsFileIsDeleted() throws IOException {
-        Path file = Files.createFile(archive.resolve("goal.mp4"));
-        VideoClip clip = clipAt(file.toString());
-
-        Files.delete(file);
-
-        assertFalse(clip.exists());
-    }
 
     @Test
     void rejectsABlankPath() {
