@@ -187,6 +187,26 @@ video:
 
 Without `VARZINHO_STREAM_URL` the application behaves exactly like 1.0.
 
+### Use cases between the window and the model
+
+**Reversed on 2026-11-06, for the second assignment.** `ARCHITECTURE.md` said
+the business rules live in the domain classes "rather than in a separate
+service layer", and the window called the model and the repositories
+directly.
+
+The second assignment ([docs/Trabalho 2.md](docs/Trabalho%202.md)) asks for
+Clean Architecture, and its central circle is the one this project skipped: the
+application's use cases. Without it the window decided the order of a capture —
+trigger, write the file, archive — and held entities it could change behind
+any rule's back.
+
+What changes is where the *sequence* lives, not where the *rules* live. The
+domain stays rich: a court still picks its camera, a camera still guards its
+transitions. A use case only orders those calls with the ports, and hands the
+window read models instead of entities, so the boundary is something a test can
+check rather than something everyone has to remember. The plan is in
+[docs/PLAN-CLEAN-ARCHITECTURE.md](docs/PLAN-CLEAN-ARCHITECTURE.md).
+
 ## Constraints
 
 | | |
