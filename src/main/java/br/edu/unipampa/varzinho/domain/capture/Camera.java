@@ -149,9 +149,8 @@ public abstract class Camera {
      * what every camera knows about its own footage.
      *
      * <p>The size is an estimate, not a measurement: no frame is ever encoded in Java,
-     * and for most cameras no file is written at all, so megapixels times seconds is as
-     * close to the truth as this model gets — even for a stream camera, whose real file
-     * is written outside the domain.
+     * so megapixels times seconds is as close to the truth as this model gets. A stream
+     * camera's real file is written outside the domain, and its size is still estimated.
      *
      * @param filePath where the subclass decided the clip belongs
      * @param seconds the length of the window being frozen
