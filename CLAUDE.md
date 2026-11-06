@@ -21,6 +21,7 @@ is their single source of truth. Read it; do not restate it here.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layers, persistence, exception hierarchy |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | Branches, commits, pull requests, division of work |
 | [docs/TESTING.md](docs/TESTING.md) | How tests are written (TDD) |
+| [docs/PLAN-CLEAN-ARCHITECTURE.md](docs/PLAN-CLEAN-ARCHITECTURE.md) | Second assignment: SOLID and Clean Architecture — the target layers and the work items |
 | [docs/specs/](docs/specs/) | Per-aggregate specifications — the contract agreed before the code exists |
 | [.claude/rules/](.claude/rules/) | Project constraints, work calibration, Java conventions |
 
@@ -38,6 +39,11 @@ application is 1.0. It was run end to end on 2026-10-01 with a phone streaming
 through DroidCam: the ring kept one segment per second, every capture wrote a
 playable 30-second `.mp4`, and closing the window left no FFmpeg process behind.
 The phone dropping mid-session has not been exercised yet.
+
+The second assignment ([docs/Trabalho 2.md](docs/Trabalho%202.md)) asks for SOLID and
+Clean Architecture. The target and the work items are in
+[docs/PLAN-CLEAN-ARCHITECTURE.md](docs/PLAN-CLEAN-ARCHITECTURE.md), one issue each;
+until they land, the other documents describe the code as it is today.
 
 ## Agent skills
 
