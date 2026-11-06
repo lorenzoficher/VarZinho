@@ -15,7 +15,7 @@ persistence behind an abstraction, and errors as domain exceptions.
 │  CsvHighlightRepository              │
 │  GymRepository (interface)           │
 │  CsvGymRepository                    │
-│                                      │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
 │  stream/                             │
 │  FFmpeg adapter behind ClipAssembler │
 ├──────────────────────────────────────┤
@@ -27,8 +27,8 @@ persistence behind an abstraction, and errors as domain exceptions.
 
 **Dependencies point inward.** The interface knows the repository; the
 repository knows the domain; the domain knows nothing about either. No class
-under `domain/` imports from `repository/`, and no class under `domain/`
-imports anything from `javax.swing`.
+under `domain/` imports from `repository/` or `stream/`, nor anything from
+`javax.swing`.
 
 `stream/` sits beside `repository/` for the same reason: it is the FFmpeg
 adapter that records the phone and writes its clips, and the domain reaches it
@@ -41,7 +41,8 @@ without touching the model.
 Section 2.4 of the brief asks the packages to distinguish three
 responsibilities, and these three layers are that split: `domain/` is the
 model, `repository/` is the service that stores and retrieves it, and `ui/` is
-the interaction. The business rules live in the domain classes rather than in a
+the interaction. `stream/`, like `repository/`, is an infrastructure adapter
+behind a domain interface, not a fourth responsibility. The business rules live in the domain classes rather than in a
 separate service layer, which is where a rich object model puts them.
 
 ## Persistence
@@ -156,10 +157,13 @@ tells cameras apart by id alone, so ignoring the second camera in silence would
 leave the caller believing it was installed.
 
 **`ClipAssemblyException`** — a stream camera's clip file could not be written:
-a second the ring has already overwritten, or FFmpeg failing or timing out.
-The highlight is not archived, because a record pointing at a file that was
-never written would promise a clip nobody can open. It carries the cause, so
-the I/O error behind it is not lost.
+a second with no segment on disk, because it was never registered or the ring
+has already overwritten it, or FFmpeg failing or timing out. The highlight is
+not archived, because a record pointing at a file that was never written would
+promise a clip nobody can open. When the failure comes from an I/O error or an
+interruption, it carries that cause. When FFmpeg exits with an error, the
+message carries the last lines of its log. When FFmpeg times out, the message
+says how long it was waited for.
 
 **`CorruptedRecordException`** — a line in the CSV cannot be parsed. Checked,
 because the caller can reasonably recover: skip the record, report it, and
