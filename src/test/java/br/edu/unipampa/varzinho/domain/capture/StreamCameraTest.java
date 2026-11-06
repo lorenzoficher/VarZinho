@@ -13,6 +13,7 @@ import br.edu.unipampa.varzinho.exception.EmptyBufferException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -35,14 +36,14 @@ class StreamCameraTest {
     }
 
     @Test
-    void returnsAClipAtThePathItAskedTheAssemblerToWrite() {
+    void returnsAClipWhoseFileIsAlreadyWritten() {
         RecordingAssembler assembler = new RecordingAssembler();
         StreamCamera camera = recordingCamera(assembler);
         feed(camera, 30);
 
         VideoClip clip = camera.captureLastSeconds(30);
 
-        assertEquals(Path.of(clip.getFilePath()), assembler.target);
+        assertEquals(List.of(Path.of(clip.getFilePath())), assembler.written);
     }
 
     @Test
@@ -95,13 +96,13 @@ class StreamCameraTest {
 
     private static final class RecordingAssembler implements ClipAssembler {
 
+        private final List<Path> written = new ArrayList<>();
         private List<Frame> window;
-        private Path target;
 
         @Override
         public void assemble(List<Frame> window, Path target) {
             this.window = window;
-            this.target = target;
+            written.add(target);
         }
     }
 }
