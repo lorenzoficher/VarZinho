@@ -28,9 +28,8 @@ import java.util.List;
  * the feeds it is handed. It builds none of what it shows — {@link Launcher} does.
  */
 final class VarZinhoWindow extends JFrame {
-    static final int BUFFER_SECONDS = 30;
-
     private final Gym gym;
+    private final int bufferSeconds;
     private final List<Timer> clocks = new ArrayList<>();
     private final CourtPanel courtPanel;
     private final ArchivePanel archivePanel;
@@ -39,14 +38,17 @@ final class VarZinhoWindow extends JFrame {
     private final JLabel bufferStatus = new JLabel();
     private boolean phoneDropReported;
 
-    VarZinhoWindow(GymSession session, HighlightRepository repository, Feed feed, PendingClipWrites pendingWrites) {
+    VarZinhoWindow(GymSession session, HighlightRepository repository, Feed feed, PendingClipWrites pendingWrites,
+                   int bufferSeconds) {
         super("VarZinho - Highlight Capture");
         if (session == null) throw new IllegalArgumentException("a window needs a gym session");
         if (repository == null) throw new IllegalArgumentException("a window needs a highlight repository");
         if (feed == null) throw new IllegalArgumentException("a window needs a feed of footage");
+        if (bufferSeconds <= 0) throw new IllegalArgumentException("a window needs a positive buffer length");
         this.gym = session.gym();
+        this.bufferSeconds = bufferSeconds;
         clocks.add(new Timer(feed.periodMillis(), event -> advance(feed)));
-        this.courtPanel = new CourtPanel(gym, BUFFER_SECONDS, this::showError);
+        this.courtPanel = new CourtPanel(gym, bufferSeconds, this::showError);
         this.archivePanel = new ArchivePanel(gym, repository, ZoneId.systemDefault(), this::showError);
         this.capturePanel = new CapturePanel(courtPanel, repository, ZoneId.systemDefault(), pendingWrites,
                 this::showError, highlight -> archivePanel.refresh());
@@ -83,6 +85,9 @@ final class VarZinhoWindow extends JFrame {
     void followPhone(Camera phone, Feed phoneFeed, int phoneCourt, String streamUrl) {
         if (phone == null) throw new IllegalArgumentException("a followed phone needs its camera");
         if (phoneFeed == null) throw new IllegalArgumentException("a followed phone needs its feed");
+        if (streamUrl == null || streamUrl.isBlank()) {
+            throw new IllegalArgumentException("a followed phone needs its stream address");
+        }
         Timer clock = new Timer(phoneFeed.periodMillis(), event -> advance(phoneFeed));
         clocks.add(clock);
         clock.start();
@@ -135,7 +140,7 @@ final class VarZinhoWindow extends JFrame {
     private void showBufferStatus() {
         Court court = courtPanel.selectedCourt();
         bufferStatus.setText("Court " + court.getNumber() + " buffer: "
-                + court.secondsRecorded() + " of " + BUFFER_SECONDS + " seconds.");
+                + court.secondsRecorded() + " of " + bufferSeconds + " seconds.");
     }
 
     private void showError(String message) {

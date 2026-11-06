@@ -33,13 +33,14 @@ final class PhoneConnection {
     /**
      * Starts recording the phone at {@code streamUrl} into {@code segmentFolder}.
      *
+     * @param bufferSeconds how many seconds the phone's camera keeps, and so how long its clips are
      * @param pendingWrites where the camera leaves its clip writes for the capture panel
      * @param onFailure told why, in words for the operator, when an address was given but
      *     the phone could not be reached
      * @return the connected phone; empty when no address was given, or when it failed
      */
-    static Optional<PhoneConnection> open(String streamUrl, Path segmentFolder, PendingClipWrites pendingWrites,
-                                          Consumer<String> onFailure) {
+    static Optional<PhoneConnection> open(String streamUrl, Path segmentFolder, int bufferSeconds,
+                                          PendingClipWrites pendingWrites, Consumer<String> onFailure) {
         if (streamUrl == null || streamUrl.isBlank()) {
             return Optional.empty();
         }
@@ -53,7 +54,7 @@ final class PhoneConnection {
             return Optional.empty();
         }
         SegmentIndex index = new SegmentIndex(FfmpegRecorder.RING_SEGMENTS);
-        StreamCamera camera = new StreamCamera("phone-1", "Phone", Resolution.HD, VarZinhoWindow.BUFFER_SECONDS,
+        StreamCamera camera = new StreamCamera("phone-1", "Phone", Resolution.HD, bufferSeconds,
                 streamUrl, pendingWrites.deferring(new FfmpegClipAssembler(index)));
         return Optional.of(new PhoneConnection(streamUrl, recorder, index, camera));
     }
