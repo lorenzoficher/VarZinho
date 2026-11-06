@@ -22,7 +22,8 @@ public class Gym {
 }
 
 public class Court {
-    public Court(int number);
+    public Court(int number);                // system clock, random "h-<uuid>" ids
+    public Court(int number, Clock clock, Supplier<String> highlightIds);
     public void installCamera(Camera camera);
     public void removeCamera(Camera camera);
     public void record(Frame frame);
