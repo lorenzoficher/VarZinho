@@ -20,6 +20,11 @@ import java.util.Optional;
  * <p>Each note is filed under the file it writes, and every capture names a file of its
  * own, so a highlight can only ever take the write that makes its clip — however many
  * captures, cameras or courts came in between.
+ *
+ * <p>Noting a write and taking it both happen on the Swing thread: the note during the
+ * capture, the take right after it. Only the taken write runs on a worker, and it never
+ * touches this object. That confinement is why the map needs no locking — taking a note
+ * from the worker instead would race with the next capture's note.
  */
 final class PendingClipWrites {
     private final Map<Path, Runnable> byTarget = new HashMap<>();
