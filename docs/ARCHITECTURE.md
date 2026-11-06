@@ -106,16 +106,16 @@ A stream camera is never written to this file. It is runtime equipment,
 installed afresh on every start, and a court that holds only stream cameras is
 left out with it, or every start would add another.
 
-**One kind of camera, one branch.** `CsvGymRepository` tells the kinds apart
-with `instanceof` when it writes and with the `kind` column when it reads, so a
-new kind of camera means editing the repository as well as adding the class.
-That is a deliberate exception to the open/closed principle, not an oversight.
-The alternatives cost more than they save here: a `toCsv()` on `Camera` would
-make the domain know the storage format, which the dependency rule above
-forbids, and a visitor in `domain/capture/` would add an interface and a method
-to every camera for the sake of three kinds. The branching is confined to the
-one class that owns the format, and each kind it does not know is refused
-explicitly rather than written wrong.
+**One kind of camera, one format.** `CsvGymRepository` knows no camera kind by
+name. Each kind is written and read by its own `CameraCsvFormat` — a
+`FixedCameraCsvFormat` for the angle, a `PtzCameraCsvFormat` for pan, tilt and
+zoom — looked up by the camera's class when saving and by the `kind` column when
+loading. The repository handles only the columns every camera shares. A new
+kind of camera is stored by writing one format class and adding it to
+`CameraCsvFormats.standard()`, without editing the repository: the open/closed
+principle. The format stays in the persistence adapter, so the domain still
+knows nothing about CSV, and a camera whose kind has no format is refused
+rather than written wrong.
 
 Unlike the highlight archive, one unreadable line fails the whole load: half a
 gym would be a gym nobody built. The window then opens on the sample gym and

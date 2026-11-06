@@ -2,8 +2,6 @@ package br.edu.unipampa.varzinho.infrastructure.persistence;
 
 import br.edu.unipampa.varzinho.application.port.GymRepository;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
-import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
-import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
 import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
@@ -18,8 +16,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -29,6 +30,10 @@ import java.util.Optional;
  * domain's own behaviour — adding courts, installing cameras, switching and aiming them —
  * so a file cannot produce a gym the domain would have refused. A line that cannot be
  * read fails the whole load: half a gym would be a gym nobody built.
+ *
+ * <p>It knows no kind of camera by name. Each kind is written and read by its own
+ * {@link CameraCsvFormat}, looked up by the camera's class on save and by the line's
+ * first column on load.
  */
 public final class CsvGymRepository implements GymRepository {
 
@@ -36,16 +41,40 @@ public final class CsvGymRepository implements GymRepository {
     private static final String SEPARATOR = ",";
     private static final String GYM = "gym";
     private static final String COURT = "court";
-    private static final String FIXED = "fixed";
-    private static final String PTZ = "ptz";
+    // kind, court, id, model, resolution, buffer seconds, status
+    private static final int SHARED_CAMERA_COLUMNS = 7;
 
     private final Path file;
+    private final Map<String, CameraCsvFormat<?>> formatsByKind = new HashMap<>();
+    private final Map<Class<?>, CameraCsvFormat<?>> formatsByClass = new HashMap<>();
 
+    /** A gym file holding the camera kinds of {@link CameraCsvFormats#standard()}. */
     public CsvGymRepository(Path file) {
+        this(file, CameraCsvFormats.standard());
+    }
+
+    /**
+     * @param formats one per kind of camera this file stores
+     * @throws IllegalArgumentException if two formats claim the same kind or camera class,
+     *     or a kind is a word the file already uses for something else
+     */
+    public CsvGymRepository(Path file, List<CameraCsvFormat<?>> formats) {
         if (file == null) {
             throw new IllegalArgumentException("the gym needs a file to live in");
         }
+        if (formats == null) {
+            throw new IllegalArgumentException("the gym file needs to know how to store its cameras");
+        }
         this.file = file;
+        for (CameraCsvFormat<?> format : formats) {
+            String kind = format.kind();
+            if (GYM.equals(kind) || COURT.equals(kind) || formatsByKind.containsKey(kind)
+                    || formatsByClass.containsKey(format.cameraClass())) {
+                throw new IllegalArgumentException("two ways to store the camera kind '" + kind + "'");
+            }
+            formatsByKind.put(kind, format);
+            formatsByClass.put(format.cameraClass(), format);
+        }
     }
 
     /**
@@ -136,21 +165,14 @@ public final class CsvGymRepository implements GymRepository {
         return Optional.of(gym);
     }
 
-    private static void install(Gym gym, String[] fields, int lineNumber) throws RepositoryException {
-        Camera camera;
-        if (FIXED.equals(fields[0])) {
-            require(fields, 8, lineNumber);
-            camera = new FixedCamera(fields[2], fields[3], Resolution.valueOf(fields[4]),
-                    Integer.parseInt(fields[5]), Integer.parseInt(fields[7]));
-        } else if (PTZ.equals(fields[0])) {
-            require(fields, 10, lineNumber);
-            PtzCamera ptz = new PtzCamera(fields[2], fields[3], Resolution.valueOf(fields[4]),
-                    Integer.parseInt(fields[5]));
-            ptz.moveTo(Integer.parseInt(fields[7]), Integer.parseInt(fields[8]), Integer.parseInt(fields[9]));
-            camera = ptz;
-        } else {
+    private void install(Gym gym, String[] fields, int lineNumber) throws RepositoryException {
+        CameraCsvFormat<?> format = formatsByKind.get(fields[0]);
+        if (format == null) {
             throw unreadable(lineNumber, "an unknown kind '" + fields[0] + "'");
         }
+        require(fields, SHARED_CAMERA_COLUMNS + format.ownColumns(), lineNumber);
+        Camera camera = format.build(fields[2], fields[3], Resolution.valueOf(fields[4]),
+                Integer.parseInt(fields[5]), Arrays.asList(fields).subList(SHARED_CAMERA_COLUMNS, fields.length));
         int courtNumber = Integer.parseInt(fields[1]);
         if (gym.findCourt(courtNumber) == null) {
             throw unreadable(lineNumber, "a camera on court " + courtNumber + ", which the file never declared");
@@ -168,21 +190,21 @@ public final class CsvGymRepository implements GymRepository {
         }
     }
 
-    private static String format(int courtNumber, Camera camera) {
-        String court = String.valueOf(courtNumber);
-        String resolution = camera.getResolution().name();
-        String buffer = String.valueOf(camera.getBufferSeconds());
-        String status = camera.getStatus().name();
-        if (camera instanceof PtzCamera) {
-            PtzCamera ptz = (PtzCamera) camera;
-            return line(PTZ, court, camera.getId(), camera.getModel(), resolution, buffer, status,
-                    String.valueOf(ptz.getPan()), String.valueOf(ptz.getTilt()), String.valueOf(ptz.getZoom()));
+    private String format(int courtNumber, Camera camera) {
+        CameraCsvFormat<?> format = formatsByClass.get(camera.getClass());
+        if (format == null) {
+            throw new IllegalArgumentException("cannot store a camera of kind " + camera.getClass().getSimpleName());
         }
-        if (camera instanceof FixedCamera) {
-            return line(FIXED, court, camera.getId(), camera.getModel(), resolution, buffer, status,
-                    String.valueOf(((FixedCamera) camera).getAngle()));
-        }
-        throw new IllegalArgumentException("cannot store a camera of kind " + camera.getClass().getSimpleName());
+        List<String> fields = new ArrayList<>(List.of(format.kind(), String.valueOf(courtNumber), camera.getId(),
+                camera.getModel(), camera.getResolution().name(), String.valueOf(camera.getBufferSeconds()),
+                camera.getStatus().name()));
+        fields.addAll(ownFields(format, camera));
+        return line(fields.toArray(new String[0]));
+    }
+
+    // The format was found by this camera's class, so the cast cannot fail.
+    private static <C extends Camera> List<String> ownFields(CameraCsvFormat<C> format, Camera camera) {
+        return format.ownFields(format.cameraClass().cast(camera));
     }
 
     private static String line(String... fields) {
