@@ -7,20 +7,46 @@ import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
 import br.edu.unipampa.varzinho.exception.DuplicateCameraException;
 import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 
+/**
+ * A playing area of the gym, with the cameras mounted on it and the button that turns
+ * their recent footage into a highlight.
+ *
+ * <p>The court decides which camera a capture uses; it does not keep the highlights it
+ * produces, and it knows nothing of the sport played on it.
+ */
 public final class Court {
     public static final int DEFAULT_CAPTURE_SECONDS = 30;
 
     private final int number;
+    private final Clock clock;
+    private final Supplier<String> highlightIds;
     private final List<Camera> cameras = new ArrayList<>();
 
     public Court(int number) {
+        this(number, Clock.systemUTC(), () -> "h-" + UUID.randomUUID());
+    }
+
+    /**
+     * Builds a court that stamps its highlights with the given clock and ids, so the
+     * moment and identity of a capture can be chosen rather than taken from the machine.
+     *
+     * @param highlightIds hands out one id per capture, in the order captures happen
+     * @throws IllegalArgumentException if the number is not positive or a source is null
+     */
+    public Court(int number, Clock clock, Supplier<String> highlightIds) {
         if (number <= 0) throw new IllegalArgumentException("a court number must be positive");
+        if (clock == null) throw new IllegalArgumentException("a court needs a clock");
+        if (highlightIds == null) throw new IllegalArgumentException("a court needs a source of highlight ids");
         this.number = number;
+        this.clock = clock;
+        this.highlightIds = highlightIds;
     }
 
     /**
@@ -52,7 +78,7 @@ public final class Court {
                 .orElseThrow(() -> new NoActiveCameraException(
                         "Court " + number + " has no active camera."));
         VideoClip clip = camera.captureLastSeconds(DEFAULT_CAPTURE_SECONDS);
-        return new Highlight("h-" + UUID.randomUUID(), Instant.now(), number, camera.getId(), clip);
+        return new Highlight(highlightIds.get(), Instant.now(clock), number, camera.getId(), clip);
     }
 
     public boolean hasCamera(String cameraId) {
