@@ -121,8 +121,12 @@ public abstract class Camera {
      * Freezes the most recent seconds into a clip. Each kind of camera produces one
      * its own way, and a court triggers them all through this single call.
      *
+     * <p>Every kind keeps one promise: the clip is finished when this returns. A kind
+     * that writes a file has written it, so whoever holds the clip may archive it at
+     * once, without knowing which kind of camera cut it.
+     *
      * @param seconds how much of the recent past to keep
-     * @return the clip that stands for those seconds
+     * @return the finished clip that stands for those seconds
      * @throws EmptyBufferException if the camera is not recording, or has not recorded
      *         that many seconds yet
      */

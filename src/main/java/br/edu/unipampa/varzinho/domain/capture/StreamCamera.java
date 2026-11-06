@@ -34,10 +34,9 @@ public final class StreamCamera extends Camera {
     /**
      * {@inheritDoc}
      *
-     * <p>The file exists once the assembler has written it. With an assembler that
-     * writes straight away, that is before this returns; one that defers the write
-     * hands back a clip whose file is still to come, and whoever runs that write
-     * decides when the clip can be archived.
+     * <p>The file is written before this returns: the camera waits for its assembler
+     * however long the write takes, and never hands back a clip whose file is still to
+     * come.
      *
      * @throws br.edu.unipampa.varzinho.exception.ClipAssemblyException if the file could
      *         not be written
