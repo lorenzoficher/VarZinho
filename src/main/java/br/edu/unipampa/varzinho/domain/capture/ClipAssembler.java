@@ -13,7 +13,9 @@ import java.util.List;
 public interface ClipAssembler {
 
     /**
-     * Writes the window as one video file at the target.
+     * Writes the window as one video file at the target, and returns only once the
+     * file is there. An assembler that only notes the write for later breaks the
+     * promise a stream camera makes to every caller of its capture.
      *
      * @param window the seconds to keep, oldest first
      * @param target where the file must end up

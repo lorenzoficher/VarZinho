@@ -118,7 +118,8 @@ Constructor `(String message, Throwable cause)`: always chain the cause.
 
 ```java
 /**
- * Turns the seconds a camera kept into a playable file.
+ * Turns the seconds a camera kept into a playable file, and returns only once
+ * the file is there.
  *
  * @throws ClipAssemblyException if the file could not be written
  */
@@ -135,14 +136,15 @@ doing real work now, not just a different `describe()`.
 - Fields: `streamUrl` (validated non-blank), `assembler` (non-null).
 - `captureLastSeconds(seconds)`: `recordedWindow(seconds)` → path
   `clipName(last) + ".mp4"` → `assembler.assemble(window, Path.of(path))` →
-  `clipFrom(path, seconds)`.
+  `clipFrom(path, seconds)`. The file exists when this returns, the same promise
+  every camera kind keeps (#106).
 - `describe()` → `describeAs("stream")`.
 
 **Tests (`StreamCameraTest`, with a hand-written fake assembler):**
 
 - `handsTheRecordedWindowToTheAssembler` — records 30 frames, captures, the
   fake saw those 30 frames in order.
-- `returnsAClipAtThePathItAskedTheAssemblerToWrite`
+- `returnsAClipWhoseFileIsAlreadyWritten`
 - `propagatesAssemblyFailureWithoutCountingAClip` — fake throws; the exception
   reaches the caller.
 - `refusesToCaptureWhenNotRecording` — `EmptyBufferException`, assembler never
