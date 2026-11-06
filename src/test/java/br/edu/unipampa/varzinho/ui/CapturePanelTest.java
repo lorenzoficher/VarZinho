@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CapturePanelTest {
     private static final ZoneId BRASILIA = ZoneId.of("America/Sao_Paulo");
     private static final Instant START = Instant.parse("2026-09-29T20:00:00Z");
+    private static final String PHONE_CLIP = "clips/phone-1-1000-1.mp4";
 
     private final Gym gym = SampleGym.build();
     private final InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
@@ -180,7 +181,7 @@ class CapturePanelTest {
     void courtWithNoPhoneArchivesAtOnceAndLeavesThePhoneWriteAlone() {
         List<Path> written = new ArrayList<>();
         pending.deferring((window, target) -> written.add(target))
-                .assemble(List.of(), Path.of("clips/phone-1-1000-1.mp4"));
+                .assemble(List.of(), Path.of(PHONE_CLIP));
         fillBuffers();
 
         panel.saveButton().doClick();
@@ -188,7 +189,11 @@ class CapturePanelTest {
         assertEquals(1, saved.size());
         assertEquals(1, repository.findByCourt(1).size());
         assertTrue(written.isEmpty());
-        assertTrue(pending.take(new VideoClip("clips/phone-1-1000-1.mp4", 30, Resolution.HD, 1.0)).isPresent());
+        assertTrue(pending.take(clipAt(PHONE_CLIP)).isPresent());
+    }
+
+    private static VideoClip clipAt(String path) {
+        return new VideoClip(path, 30, Resolution.HD, 1.0);
     }
 
     private Set<Path> savedPaths() {
