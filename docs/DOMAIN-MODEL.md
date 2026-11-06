@@ -92,7 +92,6 @@ classDiagram
         -int durationSeconds
         -Resolution resolution
         -double sizeMb
-        +exists() boolean
     }
 
     class Person {

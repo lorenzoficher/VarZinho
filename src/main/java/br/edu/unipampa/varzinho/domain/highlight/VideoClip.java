@@ -2,15 +2,14 @@ package br.edu.unipampa.varzinho.domain.highlight;
 
 import br.edu.unipampa.varzinho.enums.Resolution;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 /**
  * The record of a saved clip file: where it lives, how long it runs, what it was
  * recorded at and how much room it takes.
  *
- * <p>Not the footage. No byte of the file is ever read — the only question this
- * model asks the disk is whether the file is still there.
+ * <p>Not the footage, and not a window onto the disk: the domain never asks the file
+ * system anything. Whether the file is still there is a question for the layers
+ * that already touch files, because the archive keeps the record even after
+ * somebody deletes the footage.
  */
 public final class VideoClip {
 
@@ -37,16 +36,6 @@ public final class VideoClip {
         this.durationSeconds = durationSeconds;
         this.resolution = resolution;
         this.sizeMb = sizeMb;
-    }
-
-    /**
-     * Whether the file this clip describes is still on disk. A clip outlives its
-     * file: the archive keeps the record, and somebody may have deleted the footage.
-     *
-     * @return {@code true} while the path points at an existing file
-     */
-    public boolean exists() {
-        return Files.exists(Path.of(filePath));
     }
 
     public String getFilePath() {
