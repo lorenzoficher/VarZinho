@@ -70,7 +70,7 @@ br.edu.unipampa.varzinho
    domain, because `StreamCamera`, an entity, depends on it.
 4. **One CSV format per camera kind.** `CsvGymRepository` looks a camera's format
    up by its class when writing and by its `kind` column when reading; a new kind
-   is one new format class and one registration in the composition root.
+   is one new format class and one line in `CameraCsvFormats.standard()`.
 5. **Aiming is a capability.** `PtzCamera` implements an `Aimable` interface in
    the domain, so the use case asks for the capability instead of the class, and
    no other camera is forced to answer an aim it cannot take (ISP).
@@ -89,18 +89,125 @@ br.edu.unipampa.varzinho
 
 ---
 
-## Steps
+## Work items
 
 One issue and one pull request each, into `development`, every test passing at
-every step.
+every step. Each item belongs to one aggregate, as
+`.claude/rules/work-calibration.md` asks; the order below is the order of the
+dependencies, and items at the same level can run in parallel.
 
-1. Record this plan and the reversal in `CONTEXT.md`.
-2. Move ports to `application/port/` and adapters to `infrastructure/`; add the
-   architecture test.
-3. One CSV format per camera kind (OCP).
-4. Add the use cases and read models, tested against the in-memory repositories.
-5. The window talks to the use cases only; the launcher becomes the composition
-   root.
-6. Split `CourtPanel` by responsibility.
-7. Document SOLID and the layers: `README.md` (in Portuguese), `ARCHITECTURE.md`,
-   `AGENTS.md`, `CLAUDE.md`, the project rules.
+Until item 1 lands, this plan describes a target, not the code:
+`ARCHITECTURE.md`, `AGENTS.md` and `CLAUDE.md` keep describing the code as it
+is, and are brought up to date in item 11.
+
+### Level 1 — the layers exist
+
+**1. Move ports and adapters, and enforce the dependency rule** (#119, `shared`).
+A `git mv` plus imports; no behaviour changes.
+
+- `repository/HighlightRepository`, `GymRepository`, `CorruptedRecordException`,
+  `StorableHighlights` and `exception/RepositoryException` move to
+  `application/port/`. `StorableHighlights` and `requireStorable` become `public`,
+  since both persistence adapters call it from another package.
+- `repository/Csv*` and `InMemory*` move to `infrastructure/persistence/`;
+  `stream/*` to `infrastructure/stream/`. Their tests move with them.
+- `ArchitectureTest` (in the root test package) replaces
+  `ExceptionPackageDependencyTest`: it reads the `import` lines under
+  `src/main/java` and fails when a layer imports one the table above forbids.
+  It starts with `domain`, `application`, `infrastructure` and `exception`; the
+  `ui` row is added by item 9.
+- Check: add an `application.port` import to `Gym` and the test must fail.
+
+Everyone else rebases on this one, so it goes first and alone.
+
+### Level 2 — independent of each other
+
+**2. One CSV format per camera kind** (#120, `persistence`, open/closed).
+
+```java
+public interface CameraCsvFormat<C extends Camera> {
+    String kind();                 // "fixed", "ptz" — the first column
+    Class<C> cameraClass();        // looked up by camera.getClass() on save
+    int ownColumns();              // columns after the 7 every camera shares
+    List<String> ownFields(C camera);
+    C build(String id, String model, Resolution resolution, int bufferSeconds,
+            List<String> ownFields);
+}
+```
+
+`FixedCameraCsvFormat` (angle) and `PtzCameraCsvFormat` (pan, tilt, zoom, applied
+through `moveTo`); `CameraCsvFormats.standard()` lists them. `CsvGymRepository`
+keeps `CsvGymRepository(Path)` (using the standard list) and gains
+`CsvGymRepository(Path, List<CameraCsvFormat<?>>)`, which refuses two formats for
+one kind or class and a kind named `gym` or `court`. The file format does not
+change. Test it with a test-only camera subclass and its format: it must round-trip
+without the repository being edited.
+
+**3. `Gym.openNextCourt()`** (#128, `structure`). Adds the court numbered one past the
+highest (1 on an empty gym) and returns it. It replaces the arithmetic in
+`Launcher.givePhoneItsCourt`.
+
+**4. Aiming is a capability** (#129, `capture`, interface segregation). An `Aimable`
+interface in `domain/capture/` with `moveTo(pan, tilt, zoom)`, implemented by
+`PtzCamera`. Callers ask for the capability (`camera instanceof Aimable`), never
+for the class, and fixed or stream cameras are not made to answer an aim.
+
+### Level 3 — the use cases (all in `application/`, tested with the in-memory repositories)
+
+**5. `ManageGym` and the read models** (#121, `structure`, needs 1 and 4). Every change
+the court panel makes today, taken by number and id instead of by entity:
+`addCourt`, `installCamera(court, CameraSpec)`, `startRecording`, `stopRecording`,
+`sendToMaintenance`, `removeCamera`, `moveCamera`, `aimCamera`. Each saves the gym
+after an accepted change, as `CourtPanel.onGymChanged` does now. Reads return
+immutable views: `CourtView` (number, cameras, seconds recorded) and `CameraView`
+(id, the `describe()` line, `aimable`). A `CameraKind` enum (`FIXED`, `PTZ`) builds
+the camera from a `CameraSpec`, each constant with its own construction, which
+ends the string comparison in `CourtPanel.buildCamera`.
+
+**6. `CaptureHighlight`** (#130, `highlight`, needs 1). `capture(courtNumber)` triggers the
+court and returns a `PendingCapture` with `writeClip()` — run by the window on a
+worker, it does the deferred file write if the camera has one — and `archive()`,
+run back on the Swing thread, which saves the highlight and returns its
+`HighlightView`. The rule "a highlight is archived only once its file exists"
+moves here from `CapturePanel`; which thread runs each step stays the window's,
+as fixed in #115. `PendingClipWrites` moves from `ui/` to `application/`.
+
+**7. `BrowseArchive`** (#131, `persistence`, needs 1). `all()` and `byCourt(number)`
+return an `ArchiveListing`: the readable highlights newest first, as
+`HighlightView`s, and an optional warning when the file was damaged. The window
+then stops catching `CorruptedRecordException`; any other `RepositoryException`
+still propagates.
+
+**8. `GymSession` and `ConnectStreamCamera`** (#132, `structure`, needs 1 and 3).
+`GymSession` moves from `ui/` to `application/` unchanged in behaviour, taking the
+fallback gym as an argument instead of calling `SampleGym`. `ConnectStreamCamera`
+opens the next court, installs the phone and starts it (today's
+`givePhoneItsCourt`), and stops it if still recording when the phone drops (today
+in `VarZinhoWindow.phoneDropped`).
+
+### Level 4 — the window
+
+**9. The window reaches the model only through use cases** (#122, `console`, needs 5–8).
+
+- The panels take use cases and views; `ui/` imports nothing from `domain/` or
+  `infrastructure/`. It may import `application/`, `enums/` and `exception/`.
+- `Feed` moves to `application/`; `LiveFeed` to `infrastructure/simulation/`;
+  `SegmentFeed` and `PhoneConnection` to `infrastructure/stream/`.
+- `Launcher` and `SampleGym` move to `bootstrap/`: the composition root, the one
+  place that names every concrete adapter. `VarZinhoWindow` becomes `public` so
+  the launcher can build it.
+- `ArchitectureTest` gains its `ui` row.
+
+**10. Split `CourtPanel` by responsibility** (#123, `console`, single responsibility,
+needs 9). Court selection and the new-court field; the camera list with its
+state buttons; the install form; the move and aim row. `CourtPanel` only lays
+them out.
+
+### Level 5 — the delivery
+
+**11. Document SOLID and the layers** (#124, `docs`, needs 1–10). `README.md` (in
+Portuguese) gets a section for the second assignment: a table from each SOLID
+principle and each Clean Architecture circle to the classes that show it.
+`ARCHITECTURE.md`, `AGENTS.md` (package layout), `CLAUDE.md`,
+`.claude/rules/project-constraints.md` and `work-calibration.md` describe the new
+packages. `docs/DOMAIN-MODEL.md` gains `Aimable` and `openNextCourt`.
