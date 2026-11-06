@@ -68,6 +68,10 @@ final class PhoneConnection {
     }
 
     /**
+     * Builds the feed that moves the phone's new segments into its camera. Call it once:
+     * every feed reads the same segment list on its own, so a second one would hand the
+     * camera each segment twice.
+     *
      * @param onSilence run when the phone's segments stop arriving
      * @return the feed that moves the phone's new segments into its camera
      */

@@ -82,8 +82,7 @@ final class VarZinhoWindow extends JFrame {
      * Runs the phone's feed on a clock of its own, shows its court and offers the stream
      * in the browser.
      */
-    void followPhone(Camera phone, Feed phoneFeed, int phoneCourt, String streamUrl) {
-        if (phone == null) throw new IllegalArgumentException("a followed phone needs its camera");
+    void followPhone(Feed phoneFeed, int phoneCourt, String streamUrl) {
         if (phoneFeed == null) throw new IllegalArgumentException("a followed phone needs its feed");
         if (streamUrl == null || streamUrl.isBlank()) {
             throw new IllegalArgumentException("a followed phone needs its stream address");
