@@ -1,17 +1,9 @@
 package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.domain.capture.Camera;
-import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
-import br.edu.unipampa.varzinho.enums.Resolution;
-import br.edu.unipampa.varzinho.repository.CsvGymRepository;
-import br.edu.unipampa.varzinho.repository.CsvHighlightRepository;
 import br.edu.unipampa.varzinho.repository.HighlightRepository;
-import br.edu.unipampa.varzinho.stream.FfmpegClipAssembler;
-import br.edu.unipampa.varzinho.stream.FfmpegRecorder;
-import br.edu.unipampa.varzinho.stream.SegmentIndex;
-import br.edu.unipampa.varzinho.stream.SegmentLog;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -19,7 +11,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
@@ -27,16 +18,17 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class VarZinhoWindow extends JFrame {
-    private static final int BUFFER_SECONDS = 30;
-    private static final String STREAM_URL_VARIABLE = "VARZINHO_STREAM_URL";
-    private static final Path SEGMENT_FOLDER = Path.of("buffer");
+/**
+ * The operator's window: the courts, the capture button and the archive, kept moving by
+ * the feeds it is handed. It builds none of what it shows — {@link Launcher} does.
+ */
+final class VarZinhoWindow extends JFrame {
+    static final int BUFFER_SECONDS = 30;
 
     private final Gym gym;
     private final List<Timer> clocks = new ArrayList<>();
@@ -46,63 +38,6 @@ public final class VarZinhoWindow extends JFrame {
     private final JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
     private final JLabel bufferStatus = new JLabel();
     private boolean phoneDropReported;
-
-    /**
-     * Opens the window on the simulated cameras, or, when {@value #STREAM_URL_VARIABLE}
-     * names a phone stream, on that phone as well.
-     */
-    public static void open() {
-        SwingUtilities.invokeLater(() -> {
-            HighlightRepository repository = new CsvHighlightRepository(
-                    Path.of("data", "highlights.csv"));
-            GymSession session = GymSession.start(new CsvGymRepository(Path.of("data", "gym.csv")),
-                    VarZinhoWindow::showStartupError);
-            String streamUrl = System.getenv(STREAM_URL_VARIABLE);
-            if (streamUrl == null || streamUrl.isBlank()) {
-                new VarZinhoWindow(session, repository, new LiveFeed(session.gym()), new PendingClipWrites())
-                        .setVisible(true);
-            } else {
-                openWithPhone(session, repository, streamUrl);
-            }
-        });
-    }
-
-    /**
-     * Records the phone into a court of its own, so a capture there always comes from
-     * the phone: a court captures from its first recording camera, and on a shared court
-     * that would be whichever camera was installed first.
-     */
-    private static void openWithPhone(GymSession session, HighlightRepository repository, String streamUrl) {
-        FfmpegRecorder recorder;
-        try {
-            recorder = new FfmpegRecorder(streamUrl, SEGMENT_FOLDER);
-            recorder.start();
-        } catch (IOException | IllegalArgumentException cause) {
-            JOptionPane.showMessageDialog(null, "The phone stream could not start (" + cause.getMessage()
-                    + "). Opening with the simulated cameras only.", "Phone not connected",
-                    JOptionPane.WARNING_MESSAGE);
-            new VarZinhoWindow(session, repository, new LiveFeed(session.gym()), new PendingClipWrites())
-                    .setVisible(true);
-            return;
-        }
-        Gym gym = session.gym();
-        SegmentIndex index = new SegmentIndex(FfmpegRecorder.RING_SEGMENTS);
-        PendingClipWrites pendingWrites = new PendingClipWrites();
-        StreamCamera phone = new StreamCamera("phone-1", "Phone", Resolution.HD, BUFFER_SECONDS,
-                streamUrl, pendingWrites.deferring(new FfmpegClipAssembler(index)));
-        int phoneCourt = gym.getCourts().stream().mapToInt(Court::getNumber).max().orElse(0) + 1;
-        Court court = new Court(phoneCourt);
-        gym.addCourt(court);
-        gym.installCamera(phoneCourt, phone);
-        phone.startRecording();
-        // Two feeds, so the simulated courts keep their clock whatever the phone does.
-        VarZinhoWindow window = new VarZinhoWindow(session, repository, new LiveFeed(gym, court), pendingWrites);
-        window.followPhone(phone, new SegmentLog(recorder.segmentList()), index);
-        window.courtPanel.selectCourt(phoneCourt);
-        window.offerLiveView(streamUrl);
-        recorder.onExit(() -> SwingUtilities.invokeLater(() -> window.phoneDropped(phone)));
-        window.setVisible(true);
-    }
 
     VarZinhoWindow(GymSession session, HighlightRepository repository, Feed feed, PendingClipWrites pendingWrites) {
         super("VarZinho - Highlight Capture");
@@ -141,11 +76,18 @@ public final class VarZinhoWindow extends JFrame {
         return title;
     }
 
-    private void followPhone(Camera phone, SegmentLog segments, SegmentIndex index) {
-        Feed phoneFeed = new SegmentFeed(phone, segments, index, () -> phoneDropped(phone));
+    /**
+     * Runs the phone's feed on a clock of its own, shows its court and offers the stream
+     * in the browser.
+     */
+    void followPhone(Camera phone, Feed phoneFeed, int phoneCourt, String streamUrl) {
+        if (phone == null) throw new IllegalArgumentException("a followed phone needs its camera");
+        if (phoneFeed == null) throw new IllegalArgumentException("a followed phone needs its feed");
         Timer clock = new Timer(phoneFeed.periodMillis(), event -> advance(phoneFeed));
         clocks.add(clock);
         clock.start();
+        courtPanel.selectCourt(phoneCourt);
+        offerLiveView(streamUrl);
     }
 
     // Watching the phone in the browser is the whole preview: showing video inside
@@ -168,7 +110,7 @@ public final class VarZinhoWindow extends JFrame {
     // From here on the domain answers by itself: a capture on the phone's court finds no
     // recording camera and says so. FFmpeg exiting and the phone going silent are two
     // signs of the same drop, and the operator hears of it once.
-    private void phoneDropped(Camera phone) {
+    void phoneDropped(Camera phone) {
         if (phoneDropReported) {
             return;
         }
@@ -194,10 +136,6 @@ public final class VarZinhoWindow extends JFrame {
         Court court = courtPanel.selectedCourt();
         bufferStatus.setText("Court " + court.getNumber() + " buffer: "
                 + court.secondsRecorded() + " of " + BUFFER_SECONDS + " seconds.");
-    }
-
-    private static void showStartupError(String message) {
-        JOptionPane.showMessageDialog(null, message, "Saved gym not loaded", JOptionPane.WARNING_MESSAGE);
     }
 
     private void showError(String message) {
