@@ -11,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PhoneConnectionTest {
+    private static final int BUFFER_SECONDS = 30;
+
     @TempDir
     Path segments;
 
@@ -19,14 +21,15 @@ class PhoneConnectionTest {
 
     @Test
     void noAddressMeansNoPhoneAndNothingToReport() {
-        assertTrue(PhoneConnection.open(null, segments, pendingWrites, reasons::add).isEmpty());
-        assertTrue(PhoneConnection.open("  ", segments, pendingWrites, reasons::add).isEmpty());
+        assertTrue(PhoneConnection.open(null, segments, BUFFER_SECONDS, pendingWrites, reasons::add).isEmpty());
+        assertTrue(PhoneConnection.open("  ", segments, BUFFER_SECONDS, pendingWrites, reasons::add).isEmpty());
         assertTrue(reasons.isEmpty());
     }
 
     @Test
     void badAddressMeansNoPhoneAndSaysWhy() {
-        assertTrue(PhoneConnection.open("not-a-stream", segments, pendingWrites, reasons::add).isEmpty());
+        assertTrue(PhoneConnection.open("not-a-stream", segments, BUFFER_SECONDS, pendingWrites, reasons::add)
+                .isEmpty());
 
         assertEquals(1, reasons.size());
         assertTrue(reasons.get(0).contains("not-a-stream"), reasons.get(0));

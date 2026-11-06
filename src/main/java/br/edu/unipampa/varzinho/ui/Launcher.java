@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.repository.CsvGymRepository;
@@ -19,6 +20,7 @@ import java.util.Optional;
 public final class Launcher {
     private static final String STREAM_URL_VARIABLE = "VARZINHO_STREAM_URL";
     private static final Path SEGMENT_FOLDER = Path.of("buffer");
+    private static final int BUFFER_SECONDS = 30;
 
     private Launcher() { }
 
@@ -33,9 +35,9 @@ public final class Launcher {
                     message -> warn(message, "Saved gym not loaded"));
             PendingClipWrites pendingWrites = new PendingClipWrites();
             Optional<PhoneConnection> phone = PhoneConnection.open(System.getenv(STREAM_URL_VARIABLE),
-                    SEGMENT_FOLDER, pendingWrites, message -> warn(message, "Phone not connected"));
+                    SEGMENT_FOLDER, BUFFER_SECONDS, pendingWrites, message -> warn(message, "Phone not connected"));
             if (phone.isEmpty()) {
-                new VarZinhoWindow(session, repository, new LiveFeed(session.gym()), pendingWrites)
+                new VarZinhoWindow(session, repository, new LiveFeed(session.gym()), pendingWrites, BUFFER_SECONDS)
                         .setVisible(true);
             } else {
                 openWithPhone(session, repository, pendingWrites, phone.get());
@@ -43,25 +45,34 @@ public final class Launcher {
         });
     }
 
-    /**
-     * Records the phone into a court of its own, so a capture there always comes from
-     * the phone: a court captures from its first recording camera, and on a shared court
-     * that would be whichever camera was installed first.
-     */
     private static void openWithPhone(GymSession session, HighlightRepository repository,
                                       PendingClipWrites pendingWrites, PhoneConnection phone) {
         Gym gym = session.gym();
-        int phoneCourt = gym.getCourts().stream().mapToInt(Court::getNumber).max().orElse(0) + 1;
-        Court court = new Court(phoneCourt);
-        gym.addCourt(court);
-        gym.installCamera(phoneCourt, phone.camera());
-        phone.camera().startRecording();
+        Court court = givePhoneItsCourt(gym, phone.camera());
         // Two feeds, so the simulated courts keep their clock whatever the phone does.
-        VarZinhoWindow window = new VarZinhoWindow(session, repository, new LiveFeed(gym, court), pendingWrites);
+        VarZinhoWindow window = new VarZinhoWindow(session, repository, new LiveFeed(gym, court), pendingWrites,
+                BUFFER_SECONDS);
         Runnable dropped = () -> window.phoneDropped(phone.camera());
-        window.followPhone(phone.camera(), phone.feed(dropped), phoneCourt, phone.streamUrl());
+        window.followPhone(phone.camera(), phone.feed(dropped), court.getNumber(), phone.streamUrl());
         phone.onDrop(() -> SwingUtilities.invokeLater(dropped));
         window.setVisible(true);
+    }
+
+    /**
+     * Adds a court after the highest-numbered one, installs the phone on it and starts it
+     * recording. The phone gets a court of its own so a capture there always comes from
+     * the phone: a court captures from its first recording camera, and on a shared court
+     * that would be whichever camera was installed first.
+     *
+     * @return the phone's new court
+     */
+    static Court givePhoneItsCourt(Gym gym, Camera phone) {
+        int number = gym.getCourts().stream().mapToInt(Court::getNumber).max().orElse(0) + 1;
+        Court court = new Court(number);
+        gym.addCourt(court);
+        gym.installCamera(number, phone);
+        phone.startRecording();
+        return court;
     }
 
     private static void warn(String message, String title) {
