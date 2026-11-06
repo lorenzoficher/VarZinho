@@ -6,7 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.Iterator;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -123,8 +127,35 @@ class CourtTest {
         assertNotEquals(first.getId(), second.getId());
     }
 
+    @Test
+    void stampsTheHighlightWithTheInstantOfTheGivenClock() {
+        Instant pressedAt = Instant.parse("2026-11-06T20:15:30Z");
+        Court court = recordingCourtWithBufferedFrames(
+                new Court(1, Clock.fixed(pressedAt, ZoneOffset.UTC), () -> "h-1"));
+
+        assertEquals(pressedAt, court.triggerCapture().getCapturedAt());
+    }
+
+    @Test
+    void takesHighlightIdsFromTheGivenSourceInOrder() {
+        Iterator<String> ids = List.of("h-first", "h-second").iterator();
+        Court court = recordingCourtWithBufferedFrames(new Court(1, Clock.systemUTC(), ids::next));
+
+        assertEquals("h-first", court.triggerCapture().getId());
+        assertEquals("h-second", court.triggerCapture().getId());
+    }
+
+    @Test
+    void rejectsAMissingClockOrIdSource() {
+        assertThrows(IllegalArgumentException.class, () -> new Court(1, null, () -> "h-1"));
+        assertThrows(IllegalArgumentException.class, () -> new Court(1, Clock.systemUTC(), null));
+    }
+
     private Court recordingCourtWithBufferedFrames(int number) {
-        Court court = new Court(number);
+        return recordingCourtWithBufferedFrames(new Court(number));
+    }
+
+    private Court recordingCourtWithBufferedFrames(Court court) {
         FixedCamera camera = new FixedCamera("fixed-1", "Fixed", Resolution.HD, 30, 45);
         court.installCamera(camera);
         camera.startRecording();
