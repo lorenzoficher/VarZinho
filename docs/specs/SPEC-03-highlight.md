@@ -17,7 +17,6 @@ public class Highlight {
 public class VideoClip {
     public VideoClip(String filePath, int durationSeconds,
                      Resolution resolution, double sizeMb);
-    public boolean exists();
 }
 ```
 
@@ -55,13 +54,14 @@ Used by the console listing and by the CSV writer's caller.
 
 ### B-3 — A clip carries its metadata
 
-No bytes are read. The clip is a record of a file, not the file.
+No bytes are read, and the disk is never asked anything. The clip is a record
+of a file, not the file; whether the file is still there is checked outside the
+domain, by the window that opens it.
 
 - **AC-3.1** A clip exposes path, duration, resolution and size
 - **AC-3.2** A clip with a blank path is rejected
 - **AC-3.3** A clip with non-positive duration is rejected
 - **AC-3.4** A clip with negative size is rejected
-- **AC-3.5** `exists()` reports whether the path is present on disk
 
 ## Errors
 
