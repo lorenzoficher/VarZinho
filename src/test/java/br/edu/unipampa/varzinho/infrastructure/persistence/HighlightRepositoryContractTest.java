@@ -1,14 +1,16 @@
-package br.edu.unipampa.varzinho.repository;
+package br.edu.unipampa.varzinho.infrastructure.persistence;
+
+import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
 import br.edu.unipampa.varzinho.enums.Resolution;
-import br.edu.unipampa.varzinho.exception.RepositoryException;
 
 import java.time.Instant;
 import java.util.List;

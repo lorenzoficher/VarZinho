@@ -78,8 +78,8 @@ ptz,1,ptz-1,PTZ Pro,HD,30,ACTIVE,0,0,1
 
 ## Dependency direction
 
-The repository package depends on domain objects. No class under `domain/`
-imports `repository/`. The UI depends on the two interfaces and constructs
+Application ports and infrastructure persistence adapters depend on domain
+objects. No class under `domain/` imports `application/` or `infrastructure/`. The UI depends on the two interfaces and constructs
 the CSV implementations only at application startup.
 
 ## Verification

@@ -11,8 +11,8 @@ import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
-import br.edu.unipampa.varzinho.stream.SegmentIndex;
-import br.edu.unipampa.varzinho.stream.SegmentLog;
+import br.edu.unipampa.varzinho.infrastructure.stream.SegmentIndex;
+import br.edu.unipampa.varzinho.infrastructure.stream.SegmentLog;
 
 import java.io.IOException;
 import java.nio.file.Files;

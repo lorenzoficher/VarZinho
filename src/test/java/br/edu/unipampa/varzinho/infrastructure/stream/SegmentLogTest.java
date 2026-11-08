@@ -1,4 +1,4 @@
-package br.edu.unipampa.varzinho.stream;
+package br.edu.unipampa.varzinho.infrastructure.stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
