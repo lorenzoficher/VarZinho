@@ -45,9 +45,11 @@ src/main/java/br/edu/unipampa/varzinho/
 │   │                Frame, ClipAssembler
 │   ├── highlight/   Highlight, VideoClip
 │   └── people/      Person, Athlete, Operator
-├── repository/      HighlightRepository, CsvHighlightRepository
-├── stream/          FFmpeg adapter: SegmentLog, SegmentIndex, FfmpegRecorder,
-│                    FfmpegClipAssembler — knows the domain, never the reverse
+├── application/port/  repository contracts, persistence exceptions, StorableHighlights
+├── infrastructure/
+│   ├── persistence/   CSV and in-memory repository implementations
+│   └── stream/        FFmpeg adapter: SegmentLog, SegmentIndex, FfmpegRecorder,
+│                      FfmpegClipAssembler — knows the domain, never the reverse
 ├── exception/       domain exceptions
 ├── enums/           CameraStatus, Resolution
 ├── ui/              Swing windows — the only package that imports javax.swing
@@ -114,8 +116,9 @@ exception with an empty `catch`. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md
 ## Dependencies
 
 The domain must not depend on persistence. `Highlight` never imports anything
-from `repository/`. The dependency points inward: repository knows domain,
-domain knows nothing.
+from `application/`, `infrastructure/`, `ui/` or `bootstrap/`, nor Swing or
+AWT. Application ports and infrastructure adapters know the domain; the domain
+does not know them.
 
 Adding a third-party library requires agreement from the team — open an issue
 first. Right now the only dependency is JUnit 5.

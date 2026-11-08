@@ -173,7 +173,7 @@ rebuilt from CSV without reconstructing the capture equipment.
   `describe()` differently; people implement `identify()` differently.
 - **Abstraction:** `HighlightRepository` and `GymRepository` are contracts
   with CSV and in-memory implementations.
-- **Domain independence:** no class under `domain/` imports `repository/`
+- **Domain independence:** no class under `domain/` imports `application/` or `infrastructure/`
   or Swing.
 
 ## Persistence boundaries

@@ -75,7 +75,7 @@ inventing one would contradict the domain. These classes exist because a gym
 has members and staff, not because captures are attributable.
 
 The operator is the one who retrieves clips from the archive, but that happens
-in the console: `domain/` must not import `repository/`, so `Operator` holds no
+in the console: `domain/` must not import `application/` or `infrastructure/`, so `Operator` holds no
 repository and has no `listHighlights()`.
 
 ## Errors

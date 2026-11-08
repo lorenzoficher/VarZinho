@@ -2,10 +2,10 @@ package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.enums.Resolution;
-import br.edu.unipampa.varzinho.stream.FfmpegClipAssembler;
-import br.edu.unipampa.varzinho.stream.FfmpegRecorder;
-import br.edu.unipampa.varzinho.stream.SegmentIndex;
-import br.edu.unipampa.varzinho.stream.SegmentLog;
+import br.edu.unipampa.varzinho.infrastructure.stream.FfmpegClipAssembler;
+import br.edu.unipampa.varzinho.infrastructure.stream.FfmpegRecorder;
+import br.edu.unipampa.varzinho.infrastructure.stream.SegmentIndex;
+import br.edu.unipampa.varzinho.infrastructure.stream.SegmentLog;
 
 import java.io.IOException;
 import java.nio.file.Path;

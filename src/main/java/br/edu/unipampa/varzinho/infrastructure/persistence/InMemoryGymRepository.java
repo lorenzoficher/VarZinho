@@ -1,5 +1,6 @@
-package br.edu.unipampa.varzinho.repository;
+package br.edu.unipampa.varzinho.infrastructure.persistence;
 
+import br.edu.unipampa.varzinho.application.port.GymRepository;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 
 import java.util.Optional;

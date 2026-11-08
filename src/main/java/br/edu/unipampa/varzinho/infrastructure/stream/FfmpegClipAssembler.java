@@ -1,4 +1,4 @@
-package br.edu.unipampa.varzinho.stream;
+package br.edu.unipampa.varzinho.infrastructure.stream;
 
 import br.edu.unipampa.varzinho.domain.capture.ClipAssembler;
 import br.edu.unipampa.varzinho.domain.capture.Frame;

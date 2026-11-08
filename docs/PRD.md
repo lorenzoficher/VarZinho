@@ -118,7 +118,7 @@ instead.
   team machine and on the presentation machine.
 - **Tested.** Behaviour is developed test-first. See `TESTING.md`.
 - **Domain independent of infrastructure.** `domain/` imports nothing from
-  `repository/`.
+  `application/` or `infrastructure/`.
 - **English throughout**, except `README.md`.
 
 ## Acceptance criteria
