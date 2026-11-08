@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho.application;
 
+import br.edu.unipampa.varzinho.application.port.CorruptedRecordException;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
@@ -22,18 +23,31 @@ public final class BrowseArchive {
     }
 
     public ArchiveListing all() throws RepositoryException {
-        return listing(repository.findAll());
+        return browse(repository::findAll);
     }
 
     public ArchiveListing byCourt(int courtNumber) throws RepositoryException {
-        return listing(repository.findByCourt(courtNumber));
+        return browse(() -> repository.findByCourt(courtNumber));
     }
 
-    private static ArchiveListing listing(List<Highlight> highlights) {
+    private static ArchiveListing browse(ArchiveLookup lookup) throws RepositoryException {
+        try {
+            return ArchiveListing.complete(viewsOf(lookup.find()));
+        } catch (CorruptedRecordException damage) {
+            return ArchiveListing.recovered(viewsOf(damage.getRecovered()), damage.getMessage());
+        }
+    }
+
+    private static List<HighlightView> viewsOf(List<Highlight> highlights) {
         List<Highlight> newestFirst = new ArrayList<>(highlights);
         newestFirst.sort(Comparator.comparing(Highlight::getCapturedAt).reversed());
-        return ArchiveListing.complete(newestFirst.stream()
+        return newestFirst.stream()
                 .map(HighlightView::from)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
+    }
+
+    @FunctionalInterface
+    private interface ArchiveLookup {
+        List<Highlight> find() throws RepositoryException;
     }
 }
