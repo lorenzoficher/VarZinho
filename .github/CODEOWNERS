@@ -15,7 +15,8 @@
 /src/main/java/br/edu/unipampa/varzinho/domain/structure/    @lorenzoficher @lararios27
 
 # Persistence — Rafael Lopes
-/src/main/java/br/edu/unipampa/varzinho/repository/    @lorenzoficher @rjnlopes03
+/src/main/java/br/edu/unipampa/varzinho/application/port/    @lorenzoficher @rjnlopes03
+/src/main/java/br/edu/unipampa/varzinho/infrastructure/persistence/    @lorenzoficher @rjnlopes03
 
 # Interface — Inaurrara Flores
 /src/main/java/br/edu/unipampa/varzinho/ui/    @lorenzoficher @Inaurrara

@@ -6,44 +6,32 @@ persistence behind an abstraction, and errors as domain exceptions.
 ## Layers
 
 ```
-┌──────────────────────────────────────┐
-│  ui/                                 │
-│  Swing windows · Main                │
-├──────────────────────────────────────┤
-│  repository/                         │
-│  HighlightRepository (interface)     │
-│  CsvHighlightRepository              │
-│  GymRepository (interface)           │
-│  CsvGymRepository                    │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│  stream/                             │
-│  FFmpeg adapter behind ClipAssembler │
-├──────────────────────────────────────┤
-│  domain/                             │
-│  structure · capture · highlight ·   │
-│  people                              │
-└──────────────────────────────────────┘
+ui/                              Swing windows; Main starts the launcher
+application/port/                repository contracts and persistence failures
+infrastructure/persistence/      CSV and in-memory storage adapters
+infrastructure/stream/           FFmpeg adapter behind ClipAssembler
+domain/                          structure, capture, highlight and people
+exception/                       domain failures, independent of other packages
 ```
 
-**Dependencies point inward.** The interface knows the repository; the
-repository knows the domain; the domain knows nothing about either. No class
-under `domain/` imports from `repository/` or `stream/`, nor anything from
-`javax.swing`.
+**Dependencies point inward.** Repository interfaces live in
+`application/port/`; their implementations live in
+`infrastructure/persistence/`. The FFmpeg adapter lives in
+`infrastructure/stream/` and implements `ClipAssembler`, which remains in
+`domain/capture/`.
 
-`stream/` sits beside `repository/` for the same reason: it is the FFmpeg
-adapter that records the phone and writes its clips, and the domain reaches it
-only through the `ClipAssembler` interface in `domain/capture/`, exactly as it
-reaches storage only through the repository interfaces.
+The domain imports no application, infrastructure, UI or bootstrap package,
+nor Swing or AWT. Application code imports no infrastructure, UI or bootstrap
+package, nor Swing or AWT. Infrastructure imports no UI or bootstrap package.
+Domain exceptions import no other project package.
 
-This is what allows the storage mechanism — or the interface — to change
-without touching the model.
+The UI still constructs and calls adapters at this stage. Introducing use
+cases and restricting the UI's dependencies belong to the following work
+items; moving packages does not change capture or persistence behaviour.
 
-Section 2.4 of the brief asks the packages to distinguish three
-responsibilities, and these three layers are that split: `domain/` is the
-model, `repository/` is the service that stores and retrieves it, and `ui/` is
-the interaction. `stream/`, like `repository/`, is an infrastructure adapter
-behind a domain interface, not a fourth responsibility. The business rules live in the domain classes rather than in a
-separate service layer, which is where a rich object model puts them.
+The brief's responsibilities remain distinct: `domain/` models the system,
+application ports define storage contracts, infrastructure implements storage
+and video integration, and `ui/` handles interaction.
 
 ## Persistence
 
@@ -136,8 +124,8 @@ DomainException (abstract, unchecked)
 ├── DuplicateCameraException
 └── ClipAssemblyException
 
-RepositoryException (checked)
-└── CorruptedRecordException (lives in `repository/`, not `exception/`: it carries `Highlight`s)
+RepositoryException (checked, in `application/port/`)
+└── CorruptedRecordException (in `application/port/`: it carries `Highlight`s)
 ```
 
 ### When each is thrown

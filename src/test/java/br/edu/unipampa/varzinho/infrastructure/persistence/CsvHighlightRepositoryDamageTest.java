@@ -1,4 +1,4 @@
-package br.edu.unipampa.varzinho.repository;
+package br.edu.unipampa.varzinho.infrastructure.persistence;
 
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 import br.edu.unipampa.varzinho.application.port.CorruptedRecordException;
@@ -7,8 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
+import br.edu.unipampa.varzinho.domain.highlight.Highlight;
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
 
 import java.io.IOException;
 import java.nio.file.Files;

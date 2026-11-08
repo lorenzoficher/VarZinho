@@ -1,9 +1,9 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
-import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.application.port.CorruptedRecordException;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 

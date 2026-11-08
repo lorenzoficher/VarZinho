@@ -2,8 +2,8 @@ package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.capture.Frame;
-import br.edu.unipampa.varzinho.stream.SegmentIndex;
-import br.edu.unipampa.varzinho.stream.SegmentLog;
+import br.edu.unipampa.varzinho.infrastructure.stream.SegmentIndex;
+import br.edu.unipampa.varzinho.infrastructure.stream.SegmentLog;
 
 import java.io.IOException;
 import java.nio.file.Path;

@@ -1,8 +1,9 @@
 package br.edu.unipampa.varzinho;
 
-import br.edu.unipampa.varzinho.repository.CsvHighlightRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;

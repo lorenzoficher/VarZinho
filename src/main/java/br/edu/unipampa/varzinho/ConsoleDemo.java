@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho;
 
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.capture.Frame;
 import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
@@ -10,8 +11,7 @@ import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
-import br.edu.unipampa.varzinho.application.port.RepositoryException;
-import br.edu.unipampa.varzinho.repository.CsvHighlightRepository;
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 
 import java.nio.file.Path;
