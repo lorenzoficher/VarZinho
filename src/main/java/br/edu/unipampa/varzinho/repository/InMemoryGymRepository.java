@@ -1,5 +1,7 @@
 package br.edu.unipampa.varzinho.repository;
 
+import br.edu.unipampa.varzinho.application.port.GymRepository;
+
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 
 import java.util.Optional;

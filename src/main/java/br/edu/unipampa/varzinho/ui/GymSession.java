@@ -1,8 +1,8 @@
 package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.domain.structure.Gym;
-import br.edu.unipampa.varzinho.exception.RepositoryException;
-import br.edu.unipampa.varzinho.repository.GymRepository;
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
+import br.edu.unipampa.varzinho.application.port.GymRepository;
 import br.edu.unipampa.varzinho.repository.InMemoryGymRepository;
 
 import java.util.Optional;

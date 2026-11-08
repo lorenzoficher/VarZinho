@@ -1,5 +1,7 @@
 package br.edu.unipampa.varzinho.repository;
 
+import br.edu.unipampa.varzinho.application.port.GymRepository;
+
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
@@ -9,7 +11,7 @@ import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.CameraStatus;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.exception.DomainException;
-import br.edu.unipampa.varzinho.exception.RepositoryException;
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
 
 import java.io.IOException;
 import java.nio.file.AtomicMoveNotSupportedException;

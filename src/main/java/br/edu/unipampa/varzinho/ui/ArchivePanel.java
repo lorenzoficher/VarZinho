@@ -3,9 +3,9 @@ package br.edu.unipampa.varzinho.ui;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
-import br.edu.unipampa.varzinho.exception.RepositoryException;
-import br.edu.unipampa.varzinho.repository.CorruptedRecordException;
-import br.edu.unipampa.varzinho.repository.HighlightRepository;
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
+import br.edu.unipampa.varzinho.application.port.CorruptedRecordException;
+import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;

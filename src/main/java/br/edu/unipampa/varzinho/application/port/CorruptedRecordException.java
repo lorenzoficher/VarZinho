@@ -1,7 +1,6 @@
-package br.edu.unipampa.varzinho.repository;
+package br.edu.unipampa.varzinho.application.port;
 
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
-import br.edu.unipampa.varzinho.exception.RepositoryException;
 
 import java.util.List;
 import java.util.function.Predicate;

@@ -1,11 +1,9 @@
-package br.edu.unipampa.varzinho.exception;
+package br.edu.unipampa.varzinho.application.port;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import br.edu.unipampa.varzinho.repository.CorruptedRecordException;
 
 import org.junit.jupiter.api.Test;
 
