@@ -1,4 +1,4 @@
-package br.edu.unipampa.varzinho.ui;
+package br.edu.unipampa.varzinho.application;
 
 import br.edu.unipampa.varzinho.domain.capture.ClipAssembler;
 import br.edu.unipampa.varzinho.domain.highlight.VideoClip;

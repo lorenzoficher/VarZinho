@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.infrastructure.stream.FfmpegClipAssembler;
