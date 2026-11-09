@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;

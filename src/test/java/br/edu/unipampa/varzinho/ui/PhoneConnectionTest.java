@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
