@@ -33,6 +33,19 @@ public final class Gym {
     }
 
     /**
+     * Opens the court numbered one past the gym's highest-numbered court, or court 1
+     * when the gym has none.
+     *
+     * @return the new court, already added to this gym
+     */
+    public Court openNextCourt() {
+        int nextNumber = courts.keySet().stream().mapToInt(Integer::intValue).max().orElse(0) + 1;
+        Court court = new Court(nextNumber);
+        addCourt(court);
+        return court;
+    }
+
+    /**
      * Mounts a camera on one of the gym's courts. Ids are unique across the whole gym,
      * not only within a court: clips are named after their camera, and the archive
      * tells cameras apart by id alone.
