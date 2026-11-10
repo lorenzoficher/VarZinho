@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
+import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
+import br.edu.unipampa.varzinho.enums.CameraStatus;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryGymRepository;
 
@@ -69,6 +71,54 @@ class ManageGymTest {
         assertEquals("court 9 is not registered", failure.getMessage());
     }
 
+    @Test
+    void changesCameraStateAndRemovesItByCourtNumberAndId() throws Exception {
+        Gym gym = gymWithCourts(1);
+        FixedCamera camera = fixedCamera("fixed-1");
+        gym.installCamera(1, camera);
+        InMemoryGymRepository repository = new InMemoryGymRepository();
+        ManageGym management = new ManageGym(gym, repository);
+
+        CourtView active = management.startRecording(1, "fixed-1");
+        assertEquals(CameraStatus.ACTIVE, camera.getStatus());
+        assertTrue(active.getCameras().get(0).getDescription().contains("ACTIVE"));
+
+        management.stopRecording(1, "fixed-1");
+        assertEquals(CameraStatus.INACTIVE, camera.getStatus());
+
+        management.sendToMaintenance(1, "fixed-1");
+        assertEquals(CameraStatus.MAINTENANCE, camera.getStatus());
+
+        CourtView empty = management.removeCamera(1, "fixed-1");
+        assertTrue(empty.getCameras().isEmpty());
+        assertSame(gym, repository.load().orElseThrow());
+    }
+
+    @Test
+    void refusedStateChangeDoesNotSaveTheGym() {
+        Gym gym = gymWithCourts(1);
+        FixedCamera camera = fixedCamera("fixed-1");
+        camera.sendToMaintenance();
+        gym.installCamera(1, camera);
+        InMemoryGymRepository repository = new InMemoryGymRepository();
+        ManageGym management = new ManageGym(gym, repository);
+
+        assertThrows(IllegalStateException.class,
+                () -> management.startRecording(1, "fixed-1"));
+
+        assertTrue(repository.load().isEmpty());
+    }
+
+    @Test
+    void anUnknownCameraIsRefusedByItsId() {
+        ManageGym management = new ManageGym(gymWithCourts(1), new InMemoryGymRepository());
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                () -> management.startRecording(1, "missing"));
+
+        assertEquals("camera missing is not installed on court 1", failure.getMessage());
+    }
+
     private static Gym gymWithCourts(int... numbers) {
         Gym gym = new Gym("VarZinho Arena", "100 Sports Avenue");
         for (int number : numbers) {
@@ -79,6 +129,10 @@ class ManageGymTest {
 
     private static CameraSpec spec(String id, CameraKind kind, int angle) {
         return new CameraSpec(id, "Model " + id, kind, Resolution.FULL_HD, 30, angle);
+    }
+
+    private static FixedCamera fixedCamera(String id) {
+        return new FixedCamera(id, "Fixed", Resolution.HD, 30, 0);
     }
 
     private static List<Integer> courtNumbers(List<CourtView> courts) {
