@@ -29,6 +29,34 @@ class GymTest {
     }
 
     @Test
+    void opensCourtOneWhenTheGymHasNoCourts() {
+        Gym gym = new Gym("Arena", "Rua A");
+
+        Court opened = gym.openNextCourt();
+
+        assertEquals(1, opened.getNumber());
+        assertSame(opened, gym.findCourt(1));
+        assertEquals(1, gym.getCourts().size());
+    }
+
+    @Test
+    void opensTheCourtAfterTheHighestNumberWhenThereAreGaps() {
+        Gym gym = new Gym("Arena", "Rua A");
+        Court first = new Court(1);
+        Court fourth = new Court(4);
+        gym.addCourt(fourth);
+        gym.addCourt(first);
+
+        Court opened = gym.openNextCourt();
+
+        assertEquals(5, opened.getNumber());
+        assertSame(opened, gym.findCourt(5));
+        assertSame(first, gym.findCourt(1));
+        assertSame(fourth, gym.findCourt(4));
+        assertEquals(3, gym.getCourts().size());
+    }
+
+    @Test
     void findAddedCourt() {
         Gym gym = new Gym("Arena", "Rua A");
         Court court = new Court(1);
