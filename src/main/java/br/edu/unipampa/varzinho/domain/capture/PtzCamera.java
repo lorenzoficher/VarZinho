@@ -12,7 +12,7 @@ import java.util.List;
  * named after its aim as well as its id — two clips taken at the same second from
  * the same camera looking elsewhere are not the same footage.
  */
-public final class PtzCamera extends Camera {
+public final class PtzCamera extends Camera implements Aimable {
 
     private static final int MIN_PAN = 0;
     private static final int MAX_PAN = 359;
@@ -36,6 +36,7 @@ public final class PtzCamera extends Camera {
      *
      * @throws IllegalArgumentException if any of the three is outside its range
      */
+    @Override
     public void moveTo(int pan, int tilt, int zoom) {
         require(pan, MIN_PAN, MAX_PAN, "pan");
         require(tilt, MIN_TILT, MAX_TILT, "tilt");
