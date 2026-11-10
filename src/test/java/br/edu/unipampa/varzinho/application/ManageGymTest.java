@@ -9,12 +9,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
+import br.edu.unipampa.varzinho.domain.capture.Frame;
 import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
 import br.edu.unipampa.varzinho.enums.CameraStatus;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryGymRepository;
 
 import java.util.List;
+import java.time.Instant;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -164,6 +166,22 @@ class ManageGymTest {
 
         assertEquals("camera fixed-1 cannot be aimed", failure.getMessage());
         assertTrue(repository.load().isEmpty());
+    }
+
+    @Test
+    void courtViewReportsRecordedSecondsWithoutExposingItsCameraList() throws Exception {
+        Gym gym = gymWithCourts(1);
+        FixedCamera camera = fixedCamera("fixed-1");
+        gym.installCamera(1, camera);
+        camera.startRecording();
+        Court court = gym.findCourt(1);
+        court.record(new Frame(Instant.parse("2026-11-10T20:00:00Z"), 1));
+        court.record(new Frame(Instant.parse("2026-11-10T20:00:01Z"), 2));
+
+        CourtView view = new ManageGym(gym, new InMemoryGymRepository()).court(1);
+
+        assertEquals(2, view.getSecondsRecorded());
+        assertThrows(UnsupportedOperationException.class, () -> view.getCameras().clear());
     }
 
     private static Gym gymWithCourts(int... numbers) {
