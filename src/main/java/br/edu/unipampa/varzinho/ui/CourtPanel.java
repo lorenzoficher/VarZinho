@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.domain.capture.Aimable;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
@@ -220,18 +221,18 @@ final class CourtPanel extends JPanel {
         row.add(new JLabel("Tilt")); row.add(tiltSpinner);
         row.add(new JLabel("Zoom")); row.add(zoomSpinner);
         row.add(move);
-        move.addActionListener(event -> onSelectedCamera(camera -> ((PtzCamera) camera).moveTo(
+        move.addActionListener(event -> onSelectedCamera(camera -> ((Aimable) camera).moveTo(
                 (Integer) panSpinner.getValue(), (Integer) tiltSpinner.getValue(),
                 (Integer) zoomSpinner.getValue())));
         return row;
     }
 
     private void offerAimingForSelection() {
-        boolean ptzSelected = selectedCamera().filter(PtzCamera.class::isInstance).isPresent();
-        panSpinner.setEnabled(ptzSelected);
-        tiltSpinner.setEnabled(ptzSelected);
-        zoomSpinner.setEnabled(ptzSelected);
-        move.setEnabled(ptzSelected);
+        boolean aimableSelected = selectedCamera().filter(Aimable.class::isInstance).isPresent();
+        panSpinner.setEnabled(aimableSelected);
+        tiltSpinner.setEnabled(aimableSelected);
+        zoomSpinner.setEnabled(aimableSelected);
+        move.setEnabled(aimableSelected);
     }
 
     private Optional<Camera> selectedCamera() {
