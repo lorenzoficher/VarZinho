@@ -2,6 +2,7 @@ package br.edu.unipampa.varzinho.application;
 
 import br.edu.unipampa.varzinho.application.port.GymRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
+import br.edu.unipampa.varzinho.domain.capture.Aimable;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
@@ -71,6 +72,26 @@ public final class ManageGym {
     public CourtView removeCamera(int courtNumber, String cameraId) throws RepositoryException {
         Court court = requireCourt(courtNumber);
         court.removeCamera(requireCamera(court, cameraId));
+        repository.save(gym);
+        return CourtView.from(court);
+    }
+
+    public CourtView moveCamera(int fromCourtNumber, String cameraId, int toCourtNumber)
+            throws RepositoryException {
+        Court from = requireCourt(fromCourtNumber);
+        gym.moveCamera(requireCamera(from, cameraId), toCourtNumber);
+        repository.save(gym);
+        return CourtView.from(from);
+    }
+
+    public CourtView aimCamera(int courtNumber, String cameraId, int pan, int tilt, int zoom)
+            throws RepositoryException {
+        Court court = requireCourt(courtNumber);
+        Camera camera = requireCamera(court, cameraId);
+        if (!(camera instanceof Aimable)) {
+            throw new IllegalArgumentException("camera " + cameraId + " cannot be aimed");
+        }
+        ((Aimable) camera).moveTo(pan, tilt, zoom);
         repository.save(gym);
         return CourtView.from(court);
     }

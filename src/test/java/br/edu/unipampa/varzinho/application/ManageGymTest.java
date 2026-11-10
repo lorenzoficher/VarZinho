@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
+import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
 import br.edu.unipampa.varzinho.enums.CameraStatus;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryGymRepository;
@@ -119,6 +120,52 @@ class ManageGymTest {
         assertEquals("camera missing is not installed on court 1", failure.getMessage());
     }
 
+    @Test
+    void movesACameraByCourtNumbersAndIdThenSavesBothSides() throws Exception {
+        Gym gym = gymWithCourts(1, 2);
+        PtzCamera camera = ptzCamera("ptz-1");
+        camera.startRecording();
+        gym.installCamera(1, camera);
+        InMemoryGymRepository repository = new InMemoryGymRepository();
+        ManageGym management = new ManageGym(gym, repository);
+
+        CourtView source = management.moveCamera(1, "ptz-1", 2);
+
+        assertTrue(source.getCameras().isEmpty());
+        assertEquals(List.of("ptz-1"), cameraIds(management.court(2)));
+        assertEquals(CameraStatus.INACTIVE, camera.getStatus());
+        assertSame(gym, repository.load().orElseThrow());
+    }
+
+    @Test
+    void aimsOnlyAnAimableCameraAndReturnsItsNewDescription() throws Exception {
+        Gym gym = gymWithCourts(1);
+        gym.installCamera(1, ptzCamera("ptz-1"));
+        InMemoryGymRepository repository = new InMemoryGymRepository();
+        ManageGym management = new ManageGym(gym, repository);
+
+        CourtView court = management.aimCamera(1, "ptz-1", 90, -10, 3);
+
+        CameraView camera = court.getCameras().get(0);
+        assertTrue(camera.isAimable());
+        assertTrue(camera.getDescription().contains("pan 90 tilt -10 zoom 3"));
+        assertSame(gym, repository.load().orElseThrow());
+    }
+
+    @Test
+    void refusingToAimAFixedCameraDoesNotSaveTheGym() {
+        Gym gym = gymWithCourts(1);
+        gym.installCamera(1, fixedCamera("fixed-1"));
+        InMemoryGymRepository repository = new InMemoryGymRepository();
+        ManageGym management = new ManageGym(gym, repository);
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                () -> management.aimCamera(1, "fixed-1", 90, 0, 2));
+
+        assertEquals("camera fixed-1 cannot be aimed", failure.getMessage());
+        assertTrue(repository.load().isEmpty());
+    }
+
     private static Gym gymWithCourts(int... numbers) {
         Gym gym = new Gym("VarZinho Arena", "100 Sports Avenue");
         for (int number : numbers) {
@@ -133,6 +180,10 @@ class ManageGymTest {
 
     private static FixedCamera fixedCamera(String id) {
         return new FixedCamera(id, "Fixed", Resolution.HD, 30, 0);
+    }
+
+    private static PtzCamera ptzCamera(String id) {
+        return new PtzCamera(id, "PTZ", Resolution.FULL_HD, 30);
     }
 
     private static List<Integer> courtNumbers(List<CourtView> courts) {
