@@ -28,6 +28,10 @@ produced it, and the resulting clip.
 
 Portuguese speakers say *lance*. In code it is always `Highlight`.
 
+**Archive** — every highlight persisted so far. An operator looks a clip up in
+it by court and by day, the day counted in the gym's local time, and opens the
+clip when its file exists.
+
 **Circular buffer** — fixed-size memory that holds the most recent N seconds
 of footage. Writing past the end wraps around and overwrites the oldest
 content. Not a queue: nothing is ever explicitly removed, it is simply
@@ -57,12 +61,17 @@ seconds.
 buffer. Has status (active, inactive, maintenance).
 
 **Athlete** — the player. Presses the button when something worth keeping
-happens, and asks the operator for the clip afterwards. Registered at the gym,
-never recorded on a highlight.
+happens, and asks the operator for the clip afterwards. A role, not a record:
+the system registers no athlete and never records one on a highlight.
 
 **Operator** — gym staff, and the person who holds the archive. When an
-athlete asks for a clip, the operator is who searches for it. Registered at
-the gym, never recorded on a highlight either.
+athlete asks for a clip, the operator is who searches for it. The only person
+the system knows: an account with a name, a username and a password, which
+must sign in before the window opens. Never recorded on a highlight.
+
+**Sign in** — an operator proving who they are with their username and
+password. Opens the window; closing the window ends it. It says nothing about
+who pressed the button.
 
 ## Decisions
 
@@ -77,9 +86,11 @@ is the reason `CircularBuffer` holds real behaviour rather than being a list.
 
 ### A highlight has no author
 
-The button carries no identity. There is no login, no badge reader, no
-session — somebody pressed a button on a wall. Recording who performed the
-play, or even who pressed it, would mean inventing data the system never had.
+The button carries no identity. There is no badge reader and no session at
+the button — somebody pressed a button on a wall. The operator signing in to
+the window changes nothing here: whoever is signed in did not press the
+button. Recording who performed the play, or even who pressed it, would mean
+inventing data the system never had.
 
 It is also unnecessary. An athlete who wants their clip asks the operator, who
 searches the archive by court and time. That is how the gym already works, and
@@ -101,12 +112,30 @@ preserved window of footage; what happened inside it is for whoever watches.
 `CameraStatus` and `Resolution` stay, because those are properties of the
 equipment and do not vary by sport.
 
-### The gym keeps the register of people
+### Operators are accounts, apart from the gym
 
-Athletes and operators are registered at the gym — not at a court, and not on
-a highlight. A person exists before the gym registers them and goes on
-existing afterwards, which makes this aggregation, like the gym's cameras and
-unlike its courts.
+**Reversed on 2026-11-11, for the second assignment.** The gym used to keep a
+register of people — athletes and operators — as an aggregation: a person
+exists before the gym registers them and goes on existing afterwards.
+
+Nothing ever read that register. Athletes were registered but never used, and
+cannot be: the button carries no identity, so no athlete can be tied to a play.
+The athlete stays in this glossary as a role and leaves the code.
+
+The operator becomes the one person the system knows, because the window now
+opens only for an operator who signs in. Credentials change for different
+reasons than courts and cameras, so operators are kept apart from the gym, in
+a store of their own, rather than saved with its structure every time a camera
+is switched on. Aggregation is still shown where it was always clearest: a
+court and its movable cameras. Inheritance stays shown by the camera
+hierarchy; `Person` had one subclass left and leaves with `Athlete`.
+
+The first operator is created on the first run, when none exists, so no
+password lives in the code. Any signed-in operator can register another; there
+are no roles. A username is unique regardless of case; a password has at least
+eight characters, with an uppercase letter, a lowercase letter, a digit and a
+symbol, and is stored only as a salted hash. A failed sign-in never says
+whether the username or the password was wrong.
 
 ### A court aggregates its cameras, it does not compose them
 
@@ -137,6 +166,8 @@ would be better later. Rather than couple the whole system to CSV, persistence
 goes through the `HighlightRepository` and `GymRepository` interfaces. Their
 CSV implementations can be replaced without touching the domain.
 
+That later swap is now planned — see "A real database, alongside CSV" below.
+
 This is dependency inversion, and it is the project's strongest justification
 for using interfaces — the user interface depends on abstractions rather than
 concrete storage mechanisms, while the domain stays independent of persistence.
@@ -159,6 +190,23 @@ The old reasoning is kept above instead of deleted, because it was not wrong
 about the domain — it was wrong about what was being asked. What survives from
 it is the part that still holds: the domain stays independent of the interface,
 and the screen calls the model without owning a single rule.
+
+The interface no longer stays minimal — see "A clearer interface, still
+without rules" below.
+
+### A clearer interface, still without rules
+
+**Reversed on 2026-11-11, for the second assignment.** The interface was kept
+minimal because section 2.9 of the brief asked for no more. The second
+assignment's brief is still being written; we expect it to ask for interface
+work, and the minimal window has become hard to read: one column of controls,
+equipment state as a line of text, every subject on one screen.
+
+What changes is how the window reads, not what it decides. It is organised by
+subject — courts, archive, operators — with equipment state shown at a glance
+and a few summary figures an operator actually asks for. What does not change:
+the window owns no rule and reaches the model only through use cases, so a
+better-looking screen never becomes a smarter one.
 
 ### Real video capture, from a phone
 
@@ -207,6 +255,30 @@ window read models instead of entities, so the boundary is something a test can
 check rather than something everyone has to remember. The plan is in
 [docs/PLAN-CLEAN-ARCHITECTURE.md](docs/PLAN-CLEAN-ARCHITECTURE.md).
 
+### A real database, alongside CSV
+
+**Reversed on 2026-11-11, for the second assignment.** `PRD.md` kept the
+database out of scope — "CSV is sufficient at this scale; the interface allows
+a later swap" — and the project rules listed it as permanently out.
+
+The second assignment's brief is still being written; we expect it to ask for
+a database, and plan for it now rather than late. The later swap the old
+reasoning promised is exactly what it gets: PostgreSQL, run in Docker, reached
+through plain JDBC behind the same `HighlightRepository` and `GymRepository`
+ports. The CSV adapters stay, and the launcher picks one at start. Two real
+adapters for one port is the strongest evidence of dependency inversion the
+project can show, and CSV keeps the application opening on a machine with no
+Docker.
+
+Plain JDBC rather than an object-relational mapper, because a mapper wants
+entities that can be built empty and filled in afterwards, and nothing in this
+model may exist invalid or change after construction. The tables are created
+by the adapter itself, so the same schema serves Docker and the tests.
+
+When the database is chosen but unreachable, the application refuses to open
+instead of falling back to CSV: highlights quietly written to a file would
+look lost from the database.
+
 ## Constraints
 
 | | |
@@ -217,7 +289,7 @@ check rather than something everyone has to remember. The plan is in
 | Deadline | 2026-09-30 |
 | Team | 5 people — Lorenzo Ficher, Lara Rios, Rafael Lopes, Artur Kraemer, Inaurrara Flores |
 | Brief | [docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md) — free theme, judged against an 18-item checklist |
-| Required syllabus topics | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling, a minimal Swing interface and `java.time` |
+| Required syllabus topics | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling, a minimal Swing interface (1.0) and `java.time` |
 
 ## Resolved questions
 
@@ -229,6 +301,7 @@ recorded so they are not silently reopened.
 - **Interface scope.** The delivered window manages courts and cameras,
   captures highlights and lists the persisted archive. This is enough to
   exercise the required flow without moving business rules into Swing.
+  For the second assignment see "A clearer interface, still without rules".
 
 - ~~The official assignment brief has not been read.~~ It is now
   [docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md), and it required a
