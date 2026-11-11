@@ -1,7 +1,8 @@
-package br.edu.unipampa.varzinho.ui;
+package br.edu.unipampa.varzinho.application;
 
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
+import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.infrastructure.persistence.CsvGymRepository;
 
@@ -25,10 +26,11 @@ class GymSessionTest {
     private final List<String> errors = new ArrayList<>();
 
     @Test
-    void withNothingSavedTheSessionOpensOnTheSampleGym() {
-        GymSession session = GymSession.start(new CsvGymRepository(directory.resolve("gym.csv")), errors::add);
+    void withNothingSavedTheSessionOpensOnTheFallbackGym() {
+        GymSession session = GymSession.start(new CsvGymRepository(directory.resolve("gym.csv")), fallback(),
+                errors::add);
 
-        assertEquals(SampleGym.build().getName(), session.gym().getName());
+        assertEquals(fallback().getName(), session.gym().getName());
         assertEquals(2, session.gym().getCourts().size());
         assertTrue(errors.isEmpty());
     }
@@ -36,12 +38,12 @@ class GymSessionTest {
     @Test
     void whatASessionSavedIsWhatTheNextSessionOpensOn() {
         Path file = directory.resolve("gym.csv");
-        GymSession first = GymSession.start(new CsvGymRepository(file), errors::add);
+        GymSession first = GymSession.start(new CsvGymRepository(file), fallback(), errors::add);
         first.gym().addCourt(new Court(3));
         first.gym().installCamera(3, new FixedCamera("fixed-9", "Bullet", Resolution.HD, 30, 10));
         first.save(errors::add);
 
-        GymSession second = GymSession.start(new CsvGymRepository(file), errors::add);
+        GymSession second = GymSession.start(new CsvGymRepository(file), fallback(), errors::add);
 
         assertEquals(3, second.gym().getCourts().size());
         assertEquals("fixed-9", second.gym().findCourt(3).getCameras().get(0).getId());
@@ -49,28 +51,36 @@ class GymSessionTest {
     }
 
     @Test
-    void aDamagedFileIsReportedAndLeftUntouchedWhileTheSessionRunsOnTheSample() throws IOException {
+    void aDamagedFileIsReportedAndLeftUntouchedWhileTheSessionRunsOnTheFallback() throws IOException {
         Path file = directory.resolve("gym.csv");
         Files.write(file, List.of("this is not a gym file"));
 
-        GymSession session = GymSession.start(new CsvGymRepository(file), errors::add);
+        GymSession session = GymSession.start(new CsvGymRepository(file), fallback(), errors::add);
         session.gym().addCourt(new Court(3));
         session.save(errors::add);
 
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).startsWith("The saved gym could not be read"), errors.get(0));
-        assertEquals(SampleGym.build().getName(), session.gym().getName());
+        assertEquals(fallback().getName(), session.gym().getName());
         assertEquals(List.of("this is not a gym file"), Files.readAllLines(file));
     }
 
     @Test
     void aSaveTheStorageRefusesIsReported() {
-        GymSession session = GymSession.start(new CsvGymRepository(directory.resolve("gym.csv")), errors::add);
+        GymSession session = GymSession.start(new CsvGymRepository(directory.resolve("gym.csv")), fallback(),
+                errors::add);
         session.gym().installCamera(1, new FixedCamera("fixed-5", "Bullet, 2nd gen", Resolution.HD, 30, 0));
 
         session.save(errors::add);
 
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).startsWith("The gym could not be saved"), errors.get(0));
+    }
+
+    private static Gym fallback() {
+        Gym gym = new Gym("Fallback Arena", "Rua Central 100");
+        gym.addCourt(new Court(1));
+        gym.addCourt(new Court(2));
+        return gym;
     }
 }
