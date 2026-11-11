@@ -1,15 +1,13 @@
 package br.edu.unipampa.varzinho.infrastructure.persistence;
 
+import br.edu.unipampa.varzinho.application.port.GymRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
-import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
 import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
-import br.edu.unipampa.varzinho.enums.CameraStatus;
 import br.edu.unipampa.varzinho.enums.Resolution;
-import br.edu.unipampa.varzinho.infrastructure.persistence.CsvGymRepository;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -21,68 +19,17 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class CsvGymRepositoryTest {
+class CsvGymRepositoryTest extends GymRepositoryContractTest {
 
     @TempDir
     private Path directory;
 
-    @Test
-    void aSavedGymLoadsBackWithItsCourtsCamerasAimAndStatus() throws RepositoryException {
-        Gym gym = new Gym("Arena Norte", "Rua das Flores 12");
-        gym.addCourt(new Court(1));
-        gym.addCourt(new Court(4));
-        FixedCamera fixed = new FixedCamera("fixed-1", "Bullet", Resolution.FULL_HD, 30, 45);
-        PtzCamera ptz = new PtzCamera("ptz-1", "Domo", Resolution.ULTRA_HD, 20);
-        FixedCamera bench = new FixedCamera("fixed-2", "Bullet", Resolution.HD, 30, 90);
-        gym.installCamera(1, fixed);
-        gym.installCamera(1, ptz);
-        gym.installCamera(4, bench);
-        fixed.startRecording();
-        ptz.moveTo(120, -15, 4);
-        bench.sendToMaintenance();
-        CsvGymRepository repository = repository();
-
-        repository.save(gym);
-        Gym loaded = repository.load().orElseThrow();
-
-        assertEquals("Arena Norte", loaded.getName());
-        assertEquals("Rua das Flores 12", loaded.getAddress());
-        assertEquals(List.of(1, 4), loaded.getCourts().stream().map(Court::getNumber).sorted().toList());
-        List<Camera> courtOne = loaded.findCourt(1).getCameras();
-        FixedCamera loadedFixed = assertInstanceOf(FixedCamera.class, courtOne.get(0));
-        assertEquals("fixed-1", loadedFixed.getId());
-        assertEquals("Bullet", loadedFixed.getModel());
-        assertEquals(Resolution.FULL_HD, loadedFixed.getResolution());
-        assertEquals(30, loadedFixed.getBufferSeconds());
-        assertEquals(45, loadedFixed.getAngle());
-        assertEquals(CameraStatus.ACTIVE, loadedFixed.getStatus());
-        PtzCamera loadedPtz = assertInstanceOf(PtzCamera.class, courtOne.get(1));
-        assertEquals(20, loadedPtz.getBufferSeconds());
-        assertEquals(List.of(120, -15, 4), List.of(loadedPtz.getPan(), loadedPtz.getTilt(), loadedPtz.getZoom()));
-        assertEquals(CameraStatus.INACTIVE, loadedPtz.getStatus());
-        assertEquals(CameraStatus.MAINTENANCE, loaded.findCourt(4).getCameras().get(0).getStatus());
-    }
-
-    @Test
-    void aGymWithoutAFileLoadsAsNothing() throws RepositoryException {
-        assertTrue(repository().load().isEmpty());
-    }
-
-    @Test
-    void savingAgainReplacesWhatWasSavedBefore() throws RepositoryException {
-        CsvGymRepository repository = repository();
-        Gym gym = new Gym("Arena", "Rua A");
-        gym.addCourt(new Court(1));
-        repository.save(gym);
-        gym.addCourt(new Court(2));
-
-        repository.save(gym);
-
-        assertEquals(2, repository.load().orElseThrow().getCourts().size());
+    @Override
+    protected GymRepository createRepository() {
+        return repository();
     }
 
     @Test
