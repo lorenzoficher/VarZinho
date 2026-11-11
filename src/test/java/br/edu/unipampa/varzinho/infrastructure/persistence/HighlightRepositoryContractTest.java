@@ -76,6 +76,18 @@ abstract class HighlightRepositoryContractTest {
     }
 
     @Test
+    void findByCourtKeepsTheOrderFirstSavedEvenAfterAResave() throws RepositoryException {
+        HighlightRepository repository = createRepository();
+        repository.save(highlight("h-001", 3));
+        repository.save(highlight("h-002", 4));
+        repository.save(highlight("h-003", 3));
+
+        repository.save(highlight("h-001", 3));
+
+        assertEquals(List.of("h-001", "h-003"), ids(repository.findByCourt(3)));
+    }
+
+    @Test
     void findByCourtReturnsAnEmptyListWhenNothingMatches() throws RepositoryException {
         HighlightRepository repository = createRepository();
         repository.save(highlight("h-001", 3));
