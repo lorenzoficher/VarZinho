@@ -57,12 +57,17 @@ seconds.
 buffer. Has status (active, inactive, maintenance).
 
 **Athlete** — the player. Presses the button when something worth keeping
-happens, and asks the operator for the clip afterwards. Registered at the gym,
-never recorded on a highlight.
+happens, and asks the operator for the clip afterwards. A role, not a record:
+the system registers no athlete and never records one on a highlight.
 
 **Operator** — gym staff, and the person who holds the archive. When an
-athlete asks for a clip, the operator is who searches for it. Registered at
-the gym, never recorded on a highlight either.
+athlete asks for a clip, the operator is who searches for it. The only person
+the system knows: an account with a name, a username and a password, which
+must sign in before the window opens. Never recorded on a highlight.
+
+**Sign in** — an operator proving who they are with their username and
+password. Opens the window; closing the window ends it. It says nothing about
+who pressed the button.
 
 ## Decisions
 
@@ -77,8 +82,9 @@ is the reason `CircularBuffer` holds real behaviour rather than being a list.
 
 ### A highlight has no author
 
-The button carries no identity. There is no login, no badge reader, no
-session — somebody pressed a button on a wall. Recording who performed the
+The button carries no identity. There is no badge reader and no session at
+the button — somebody pressed a button on a wall. The operator signing in to
+the window changes nothing here: whoever is signed in did not press the button. Recording who performed the
 play, or even who pressed it, would mean inventing data the system never had.
 
 It is also unnecessary. An athlete who wants their clip asks the operator, who
@@ -101,12 +107,29 @@ preserved window of footage; what happened inside it is for whoever watches.
 `CameraStatus` and `Resolution` stay, because those are properties of the
 equipment and do not vary by sport.
 
-### The gym keeps the register of people
+### Operators are accounts, apart from the gym
 
-Athletes and operators are registered at the gym — not at a court, and not on
-a highlight. A person exists before the gym registers them and goes on
-existing afterwards, which makes this aggregation, like the gym's cameras and
-unlike its courts.
+**Reversed on 2026-11-11, for the second assignment.** The gym used to keep a
+register of people — athletes and operators — as an aggregation: a person
+exists before the gym registers them and goes on existing afterwards.
+
+Nothing ever read that register. Athletes were registered but never used, and
+cannot be: the button carries no identity, so no athlete can be tied to a play.
+The athlete stays in this glossary as a role and leaves the code.
+
+The operator becomes the one person the system knows, because the window now
+opens only for an operator who signs in. Credentials change for different
+reasons than courts and cameras, so operators are kept apart from the gym, in
+a store of their own, rather than saved with its structure every time a camera
+is switched on. Aggregation is still shown where it was always clearest: a
+court and its movable cameras.
+
+The first operator is created on the first run, when none exists, so no
+password lives in the code. Any signed-in operator can register another; there
+are no roles. A username is unique regardless of case; a password has at least
+eight characters, with an uppercase letter, a lowercase letter, a digit and a
+symbol, and is stored only as a hash. A failed sign-in never says whether the
+username or the password was wrong.
 
 ### A court aggregates its cameras, it does not compose them
 
@@ -206,6 +229,29 @@ transitions. A use case only orders those calls with the ports, and hands the
 window read models instead of entities, so the boundary is something a test can
 check rather than something everyone has to remember. The plan is in
 [docs/PLAN-CLEAN-ARCHITECTURE.md](docs/PLAN-CLEAN-ARCHITECTURE.md).
+
+### A real database, alongside CSV
+
+**Reversed on 2026-11-11, for the second assignment.** `PRD.md` kept the
+database out of scope — "CSV is sufficient at this scale; the interface allows
+a later swap" — and the project rules listed it as permanently out.
+
+The second assignment will ask for a database, and the later swap the old
+reasoning promised is exactly what it gets: PostgreSQL, run in Docker, reached
+through plain JDBC behind the same `HighlightRepository` and `GymRepository`
+ports. The CSV adapters stay, and the launcher picks one at start. Two real
+adapters for one port is the strongest evidence of dependency inversion the
+project can show, and CSV keeps the application opening on a machine with no
+Docker.
+
+Plain JDBC rather than an object-relational mapper, because a mapper wants
+entities that can be built empty and filled in afterwards, and nothing in this
+model may exist invalid or change after construction. The tables are created
+by the adapter itself, so the same schema serves Docker and the tests.
+
+When the database is chosen but unreachable, the application refuses to open
+instead of falling back to CSV: highlights quietly written to a file would
+look lost from the database.
 
 ## Constraints
 
