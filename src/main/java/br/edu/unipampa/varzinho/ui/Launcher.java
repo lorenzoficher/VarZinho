@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.application.GymSession;
 import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
@@ -32,7 +33,7 @@ public final class Launcher {
     public static void launch() {
         SwingUtilities.invokeLater(() -> {
             HighlightRepository repository = new CsvHighlightRepository(Path.of("data", "highlights.csv"));
-            GymSession session = GymSession.start(new CsvGymRepository(Path.of("data", "gym.csv")),
+            GymSession session = GymSession.start(new CsvGymRepository(Path.of("data", "gym.csv")), SampleGym.build(),
                     message -> warn(message, "Saved gym not loaded"));
             PendingClipWrites pendingWrites = new PendingClipWrites();
             Optional<PhoneConnection> phone = PhoneConnection.open(System.getenv(STREAM_URL_VARIABLE),

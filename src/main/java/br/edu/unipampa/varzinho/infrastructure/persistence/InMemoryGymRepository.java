@@ -8,8 +8,7 @@ import java.util.Optional;
 /**
  * Keeps the gym in memory only, so it vanishes with the process.
  *
- * <p>The window falls back to it when the gym file is damaged: the session goes on, and
- * the damaged file is left untouched for someone to repair instead of being overwritten.
+ * <p>It lets the use cases that save the gym be tested without a file.
  */
 public final class InMemoryGymRepository implements GymRepository {
 
