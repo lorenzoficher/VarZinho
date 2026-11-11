@@ -88,8 +88,9 @@ is the reason `CircularBuffer` holds real behaviour rather than being a list.
 
 The button carries no identity. There is no badge reader and no session at
 the button — somebody pressed a button on a wall. The operator signing in to
-the window changes nothing here: whoever is signed in did not press the button. Recording who performed the
-play, or even who pressed it, would mean inventing data the system never had.
+the window changes nothing here: whoever is signed in did not press the
+button. Recording who performed the play, or even who pressed it, would mean
+inventing data the system never had.
 
 It is also unnecessary. An athlete who wants their clip asks the operator, who
 searches the archive by court and time. That is how the gym already works, and
@@ -126,14 +127,15 @@ opens only for an operator who signs in. Credentials change for different
 reasons than courts and cameras, so operators are kept apart from the gym, in
 a store of their own, rather than saved with its structure every time a camera
 is switched on. Aggregation is still shown where it was always clearest: a
-court and its movable cameras.
+court and its movable cameras. Inheritance stays shown by the camera
+hierarchy; `Person` had one subclass left and leaves with `Athlete`.
 
 The first operator is created on the first run, when none exists, so no
 password lives in the code. Any signed-in operator can register another; there
 are no roles. A username is unique regardless of case; a password has at least
 eight characters, with an uppercase letter, a lowercase letter, a digit and a
-symbol, and is stored only as a hash. A failed sign-in never says whether the
-username or the password was wrong.
+symbol, and is stored only as a salted hash. A failed sign-in never says
+whether the username or the password was wrong.
 
 ### A court aggregates its cameras, it does not compose them
 
@@ -164,6 +166,8 @@ would be better later. Rather than couple the whole system to CSV, persistence
 goes through the `HighlightRepository` and `GymRepository` interfaces. Their
 CSV implementations can be replaced without touching the domain.
 
+That later swap is now planned — see "A real database, alongside CSV" below.
+
 This is dependency inversion, and it is the project's strongest justification
 for using interfaces — the user interface depends on abstractions rather than
 concrete storage mechanisms, while the domain stays independent of persistence.
@@ -187,13 +191,16 @@ about the domain — it was wrong about what was being asked. What survives from
 it is the part that still holds: the domain stays independent of the interface,
 and the screen calls the model without owning a single rule.
 
+The interface no longer stays minimal — see "A clearer interface, still
+without rules" below.
+
 ### A clearer interface, still without rules
 
 **Reversed on 2026-11-11, for the second assignment.** The interface was kept
 minimal because section 2.9 of the brief asked for no more. The second
-assignment will ask for interface work, and the minimal window has become hard
-to read: one column of controls, equipment state as a line of text, every
-subject on one screen.
+assignment's brief is still being written; we expect it to ask for interface
+work, and the minimal window has become hard to read: one column of controls,
+equipment state as a line of text, every subject on one screen.
 
 What changes is how the window reads, not what it decides. It is organised by
 subject — courts, archive, operators — with equipment state shown at a glance
@@ -254,7 +261,8 @@ check rather than something everyone has to remember. The plan is in
 database out of scope — "CSV is sufficient at this scale; the interface allows
 a later swap" — and the project rules listed it as permanently out.
 
-The second assignment will ask for a database, and the later swap the old
+The second assignment's brief is still being written; we expect it to ask for
+a database, and plan for it now rather than late. The later swap the old
 reasoning promised is exactly what it gets: PostgreSQL, run in Docker, reached
 through plain JDBC behind the same `HighlightRepository` and `GymRepository`
 ports. The CSV adapters stay, and the launcher picks one at start. Two real
@@ -281,7 +289,7 @@ look lost from the database.
 | Deadline | 2026-09-30 |
 | Team | 5 people — Lorenzo Ficher, Lara Rios, Rafael Lopes, Artur Kraemer, Inaurrara Flores |
 | Brief | [docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md) — free theme, judged against an 18-item checklist |
-| Required syllabus topics | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling, a minimal Swing interface and `java.time` |
+| Required syllabus topics | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling, a minimal Swing interface (1.0) and `java.time` |
 
 ## Resolved questions
 
@@ -293,6 +301,7 @@ recorded so they are not silently reopened.
 - **Interface scope.** The delivered window manages courts and cameras,
   captures highlights and lists the persisted archive. This is enough to
   exercise the required flow without moving business rules into Swing.
+  For the second assignment see "A clearer interface, still without rules".
 
 - ~~The official assignment brief has not been read.~~ It is now
   [docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md), and it required a

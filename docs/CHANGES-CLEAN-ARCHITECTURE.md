@@ -13,7 +13,7 @@ State as of 2026-11-11, on `development` at `7706b5f`.
 
 | # | Work item | Issue | Pull request | Author | Status | Principle |
 |---|---|---|---|---|---|---|
-| 0 | Record the plan | #118 | #125 | lorenzoficher | merged | — |
+| 0 | Record the plan | #118 | #125 | lorenzoficher | merged 2026-11-08 | — |
 | 1 | Ports in `application/`, adapters in `infrastructure/`, `ArchitectureTest` | #119 | #133 | lararios27 | merged 2026-11-08 | DIP, dependency rule |
 | 2 | One CSV format per camera kind | #120 | — | — | **open** | OCP |
 | 3 | `Gym.openNextCourt()` | #128 | #135 | lararios27 | merged 2026-11-10 | SRP (rule back in the domain) |
@@ -33,8 +33,10 @@ segregation and does not tie aiming to recording). Both are open.
 Pull requests #126 and #127 were a first draft of items 1 and 2 and were closed
 unmerged on purpose: the code is written by the team, one issue each.
 
-**Tests:** 289 when item 1 merged, 321 after item 8 — every pull request kept
-the whole suite green, with only the FFmpeg tests skipped where FFmpeg is absent.
+**Tests:** 289 test runs when item 1 merged, 321 after item 8 — more runs than
+test methods, because the repository contract tests run once per adapter.
+Every pull request kept the whole suite green, with only the FFmpeg tests
+skipped where FFmpeg is absent.
 
 ---
 
