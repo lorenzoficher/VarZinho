@@ -28,6 +28,10 @@ produced it, and the resulting clip.
 
 Portuguese speakers say *lance*. In code it is always `Highlight`.
 
+**Archive** — every highlight persisted so far. An operator looks a clip up in
+it by court and by day, the day counted in the gym's local time, and opens the
+clip when its file exists.
+
 **Circular buffer** — fixed-size memory that holds the most recent N seconds
 of footage. Writing past the end wraps around and overwrites the oldest
 content. Not a queue: nothing is ever explicitly removed, it is simply
@@ -182,6 +186,20 @@ The old reasoning is kept above instead of deleted, because it was not wrong
 about the domain — it was wrong about what was being asked. What survives from
 it is the part that still holds: the domain stays independent of the interface,
 and the screen calls the model without owning a single rule.
+
+### A clearer interface, still without rules
+
+**Reversed on 2026-11-11, for the second assignment.** The interface was kept
+minimal because section 2.9 of the brief asked for no more. The second
+assignment will ask for interface work, and the minimal window has become hard
+to read: one column of controls, equipment state as a line of text, every
+subject on one screen.
+
+What changes is how the window reads, not what it decides. It is organised by
+subject — courts, archive, operators — with equipment state shown at a glance
+and a few summary figures an operator actually asks for. What does not change:
+the window owns no rule and reaches the model only through use cases, so a
+better-looking screen never becomes a smarter one.
 
 ### Real video capture, from a phone
 
