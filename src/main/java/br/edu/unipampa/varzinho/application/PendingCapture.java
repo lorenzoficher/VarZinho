@@ -37,6 +37,19 @@ public final class PendingCapture {
     }
 
     /**
+     * @return whether the camera left a clip file to write; when it did not, the capture
+     *     can be archived at once
+     */
+    public boolean hasClipToWrite() {
+        return write != NOTHING_TO_WRITE;
+    }
+
+    /** What the archive table will show for this capture once it is archived. */
+    public HighlightView view() {
+        return HighlightView.from(highlight);
+    }
+
+    /**
      * Writes the clip file, if this capture has one to write. Takes seconds, so the
      * window runs it off the Swing thread.
      *

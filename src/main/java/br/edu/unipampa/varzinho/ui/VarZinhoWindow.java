@@ -1,11 +1,10 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.application.BrowseArchive;
+import br.edu.unipampa.varzinho.application.CaptureHighlight;
+import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.Feed;
-import br.edu.unipampa.varzinho.application.GymSession;
-import br.edu.unipampa.varzinho.application.PendingClipWrites;
-import br.edu.unipampa.varzinho.domain.structure.Court;
-import br.edu.unipampa.varzinho.domain.structure.Gym;
-import br.edu.unipampa.varzinho.application.port.HighlightRepository;
+import br.edu.unipampa.varzinho.application.ManageGym;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -27,11 +26,12 @@ import java.util.List;
 
 /**
  * The operator's window: the courts, the capture button and the archive, kept moving by
- * the feeds it is handed. It builds none of what it shows —
+ * the feeds it is handed. It reaches the gym and the archive only through the use cases
+ * it is given, and never holds a domain object. It builds none of what it shows —
  * {@link br.edu.unipampa.varzinho.bootstrap.Launcher} does.
  */
 public final class VarZinhoWindow extends JFrame {
-    private final Gym gym;
+    private final ManageGym management;
     private final int bufferSeconds;
     private final List<Timer> clocks = new ArrayList<>();
     private final CourtPanel courtPanel;
@@ -41,27 +41,33 @@ public final class VarZinhoWindow extends JFrame {
     private final JLabel bufferStatus = new JLabel();
     private boolean phoneDropReported;
 
-    public VarZinhoWindow(GymSession session, HighlightRepository repository, Feed feed, PendingClipWrites pendingWrites,
-                          int bufferSeconds) {
+    /**
+     * @param gymName shown in the title and the header
+     * @param bufferSeconds how long each camera's buffer is, for the status line and for
+     *     the cameras installed from the window
+     */
+    public VarZinhoWindow(String gymName, ManageGym management, CaptureHighlight captureHighlight,
+                          BrowseArchive archive, Feed feed, int bufferSeconds) {
         super("VarZinho - Highlight Capture");
-        if (session == null) throw new IllegalArgumentException("a window needs a gym session");
-        if (repository == null) throw new IllegalArgumentException("a window needs a highlight repository");
+        if (gymName == null || gymName.isBlank()) throw new IllegalArgumentException("a window needs the gym's name");
+        if (management == null) throw new IllegalArgumentException("a window needs the gym's management");
+        if (captureHighlight == null) throw new IllegalArgumentException("a window needs a way to capture");
+        if (archive == null) throw new IllegalArgumentException("a window needs the archive to browse");
         if (feed == null) throw new IllegalArgumentException("a window needs a feed of footage");
         if (bufferSeconds <= 0) throw new IllegalArgumentException("a window needs a positive buffer length");
-        this.gym = session.gym();
+        this.management = management;
         this.bufferSeconds = bufferSeconds;
         clocks.add(new Timer(feed.periodMillis(), event -> advance(feed)));
-        this.courtPanel = new CourtPanel(gym, bufferSeconds, this::showError);
-        this.archivePanel = new ArchivePanel(gym, repository, ZoneId.systemDefault(), this::showError);
-        this.capturePanel = new CapturePanel(courtPanel, repository, ZoneId.systemDefault(), pendingWrites,
+        this.courtPanel = new CourtPanel(management, bufferSeconds, this::showError);
+        this.archivePanel = new ArchivePanel(management, archive, ZoneId.systemDefault(), this::showError);
+        this.capturePanel = new CapturePanel(courtPanel, captureHighlight, ZoneId.systemDefault(),
                 this::showError, highlight -> archivePanel.refresh());
         courtPanel.onCourtAdded(archivePanel::refreshCourts);
-        courtPanel.onGymChanged(() -> session.save(this::showError));
-        setTitle("VarZinho - " + gym.getName());
+        setTitle("VarZinho - " + gymName);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(8, 8));
         JPanel top = new JPanel(new BorderLayout(8, 8));
-        header.add(buildTitle());
+        header.add(buildTitle(gymName));
         top.add(header, BorderLayout.NORTH);
         top.add(courtPanel, BorderLayout.CENTER);
         top.add(capturePanel, BorderLayout.SOUTH);
@@ -75,8 +81,8 @@ public final class VarZinhoWindow extends JFrame {
         clocks.forEach(Timer::start);
     }
 
-    private JLabel buildTitle() {
-        JLabel title = new JLabel(gym.getName());
+    private static JLabel buildTitle(String gymName) {
+        JLabel title = new JLabel(gymName);
         title.setFont(title.getFont().deriveFont(Font.BOLD, 18f));
         return title;
     }
@@ -138,9 +144,9 @@ public final class VarZinhoWindow extends JFrame {
     }
 
     private void showBufferStatus() {
-        Court court = courtPanel.selectedCourt();
+        CourtView court = management.court(courtPanel.selectedCourtNumber());
         bufferStatus.setText("Court " + court.getNumber() + " buffer: "
-                + court.secondsRecorded() + " of " + bufferSeconds + " seconds.");
+                + court.getSecondsRecorded() + " of " + bufferSeconds + " seconds.");
     }
 
     private void showError(String message) {

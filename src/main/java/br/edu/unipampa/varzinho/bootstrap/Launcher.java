@@ -1,15 +1,18 @@
 package br.edu.unipampa.varzinho.bootstrap;
 
+import br.edu.unipampa.varzinho.application.BrowseArchive;
+import br.edu.unipampa.varzinho.application.CaptureHighlight;
 import br.edu.unipampa.varzinho.application.ConnectStreamCamera;
 import br.edu.unipampa.varzinho.application.CourtView;
+import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.GymSession;
+import br.edu.unipampa.varzinho.application.PendingClipWrites;
+import br.edu.unipampa.varzinho.application.port.HighlightRepository;
+import br.edu.unipampa.varzinho.domain.structure.Gym;
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvGymRepository;
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
 import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import br.edu.unipampa.varzinho.infrastructure.stream.PhoneConnection;
-import br.edu.unipampa.varzinho.application.PendingClipWrites;
-import br.edu.unipampa.varzinho.domain.structure.Gym;
-import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
-import br.edu.unipampa.varzinho.infrastructure.persistence.CsvGymRepository;
-import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 import br.edu.unipampa.varzinho.ui.VarZinhoWindow;
 
 import javax.swing.JOptionPane;
@@ -18,8 +21,9 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 /**
- * Puts the application together — storage, the saved gym and, when there is one, the
- * phone — and hands the result to the window. A new storage or a new way to reach a
+ * The composition root: puts the application together — storage, the saved gym, the use
+ * cases and, when there is one, the phone — and hands the result to the window. It is the
+ * one place that names every concrete adapter, so a new storage or a new way to reach a
  * camera changes this class, never the window.
  */
 public final class Launcher {
@@ -42,8 +46,7 @@ public final class Launcher {
             Optional<PhoneConnection> phone = PhoneConnection.open(System.getenv(STREAM_URL_VARIABLE),
                     SEGMENT_FOLDER, BUFFER_SECONDS, pendingWrites, message -> warn(message, "Phone not connected"));
             if (phone.isEmpty()) {
-                new VarZinhoWindow(session, repository, new LiveFeed(session.gym()), pendingWrites, BUFFER_SECONDS)
-                        .setVisible(true);
+                window(session, repository, pendingWrites, new LiveFeed(session.gym())).setVisible(true);
             } else {
                 openWithPhone(session, repository, pendingWrites, phone.get());
             }
@@ -56,8 +59,7 @@ public final class Launcher {
         ConnectStreamCamera connection = new ConnectStreamCamera(gym, phone.camera());
         CourtView court = connection.connect();
         // Two feeds, so the simulated courts keep their clock whatever the phone does.
-        VarZinhoWindow window = new VarZinhoWindow(session, repository, new LiveFeed(gym, court.getNumber()),
-                pendingWrites, BUFFER_SECONDS);
+        VarZinhoWindow window = window(session, repository, pendingWrites, new LiveFeed(gym, court.getNumber()));
         Runnable dropped = () -> {
             connection.phoneDropped();
             window.phoneDropped();
@@ -65,6 +67,14 @@ public final class Launcher {
         window.followPhone(phone.feed(dropped), court.getNumber(), phone.streamUrl());
         phone.onDrop(() -> SwingUtilities.invokeLater(dropped));
         window.setVisible(true);
+    }
+
+    private static VarZinhoWindow window(GymSession session, HighlightRepository repository,
+                                         PendingClipWrites pendingWrites, Feed feed) {
+        Gym gym = session.gym();
+        return new VarZinhoWindow(gym.getName(), session.manageGym(),
+                new CaptureHighlight(gym, repository, pendingWrites), new BrowseArchive(repository),
+                feed, BUFFER_SECONDS);
     }
 
     private static void warn(String message, String title) {

@@ -1,6 +1,10 @@
 package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.bootstrap.SampleGym;
+import br.edu.unipampa.varzinho.application.CaptureHighlight;
+import br.edu.unipampa.varzinho.application.HighlightView;
+import br.edu.unipampa.varzinho.application.ManageGym;
+import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryGymRepository;
 import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
@@ -44,11 +48,12 @@ class CapturePanelTest {
     private final Gym gym = SampleGym.build();
     private final InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
     private final List<String> errors = new ArrayList<>();
-    private final List<Highlight> saved = new ArrayList<>();
-    private final CourtPanel courtPanel = new CourtPanel(gym, 30, errors::add);
+    private final List<HighlightView> saved = new ArrayList<>();
+    private final CourtPanel courtPanel =
+            new CourtPanel(new ManageGym(gym, new InMemoryGymRepository()), 30, errors::add);
     private final PendingClipWrites pending = new PendingClipWrites();
-    private final CapturePanel panel =
-            new CapturePanel(courtPanel, repository, BRASILIA, pending, errors::add, saved::add);
+    private final CapturePanel panel = new CapturePanel(courtPanel, new CaptureHighlight(gym, repository, pending),
+            BRASILIA, errors::add, saved::add);
 
     @Test
     void onePressSavesExactlyOneHighlightForTheSelectedCourt() {
@@ -72,7 +77,8 @@ class CapturePanelTest {
         String localTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                 .withZone(BRASILIA).format(highlight.getCapturedAt());
         assertEquals("Saved: court 1 · camera fixed-1 · " + localTime + " · 30s", panel.confirmation());
-        assertEquals(List.of(highlight), saved);
+        assertEquals(1, saved.size());
+        assertEquals(highlight.getClip().getFilePath(), saved.get(0).getClipPath());
     }
 
     @Test
@@ -202,8 +208,8 @@ class CapturePanelTest {
 
     private Set<Path> savedPaths() {
         Set<Path> paths = new HashSet<>();
-        for (Highlight highlight : saved) {
-            paths.add(Path.of(highlight.getClip().getFilePath()));
+        for (HighlightView highlight : saved) {
+            paths.add(Path.of(highlight.getClipPath()));
         }
         return paths;
     }
@@ -215,9 +221,10 @@ class CapturePanelTest {
                 pending.deferring(writer));
         phoneGym.installCamera(3, phone);
         phone.startRecording();
-        CourtPanel phoneCourts = new CourtPanel(phoneGym, 30, errors::add);
-        CapturePanel phonePanel =
-                new CapturePanel(phoneCourts, repository, BRASILIA, pending, errors::add, saved::add);
+        CourtPanel phoneCourts = new CourtPanel(new ManageGym(phoneGym, new InMemoryGymRepository()), 30,
+                errors::add);
+        CapturePanel phonePanel = new CapturePanel(phoneCourts, new CaptureHighlight(phoneGym, repository, pending),
+                BRASILIA, errors::add, saved::add);
         LiveFeed feed = new LiveFeed(phoneGym);
         for (int second = 0; second < Court.DEFAULT_CAPTURE_SECONDS; second++) {
             feed.tick(START.plusSeconds(second));

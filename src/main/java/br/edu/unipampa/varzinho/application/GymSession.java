@@ -57,15 +57,6 @@ public final class GymSession {
         return new ManageGym(gym, repository);
     }
 
-    /** Stores the gym as it is now, reporting instead of throwing when that is refused. */
-    public void save(Consumer<String> errorSink) {
-        try {
-            repository.save(gym);
-        } catch (IllegalArgumentException | RepositoryException refusal) {
-            errorSink.accept("The gym could not be saved: " + refusal.getMessage());
-        }
-    }
-
     /**
      * Where a session that could not read its file keeps the gym: nowhere. The gym itself
      * lives on in the session for the rest of the run; only the file is left alone.
