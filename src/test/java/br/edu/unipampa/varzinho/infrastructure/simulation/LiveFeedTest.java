@@ -1,4 +1,4 @@
-package br.edu.unipampa.varzinho.ui;
+package br.edu.unipampa.varzinho.infrastructure.simulation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -42,7 +42,7 @@ class LiveFeedTest {
         Court phoneCourt = courtWithActiveCamera(2);
         gym.addCourt(simulated);
         gym.addCourt(phoneCourt);
-        LiveFeed feed = new LiveFeed(gym, phoneCourt);
+        LiveFeed feed = new LiveFeed(gym, phoneCourt.getNumber());
 
         tick(feed, 3);
 
@@ -55,7 +55,7 @@ class LiveFeedTest {
         Gym gym = new Gym("Arena", "100 Sports Avenue");
         Court phoneCourt = courtWithActiveCamera(1);
         gym.addCourt(phoneCourt);
-        LiveFeed feed = new LiveFeed(gym, phoneCourt);
+        LiveFeed feed = new LiveFeed(gym, phoneCourt.getNumber());
         Court added = courtWithActiveCamera(2);
         gym.addCourt(added);
 

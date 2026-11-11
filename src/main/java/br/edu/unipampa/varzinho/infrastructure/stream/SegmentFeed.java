@@ -1,9 +1,8 @@
-package br.edu.unipampa.varzinho.ui;
+package br.edu.unipampa.varzinho.infrastructure.stream;
 
+import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.capture.Frame;
-import br.edu.unipampa.varzinho.infrastructure.stream.SegmentIndex;
-import br.edu.unipampa.varzinho.infrastructure.stream.SegmentLog;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -11,7 +10,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 /**
- * The real-time twin of {@link LiveFeed}: a second of footage reaches the phone when
+ * The real-time twin of {@link br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed}: a second of footage reaches the phone when
  * the phone recorder finishes its segment, not when a timer says so.
  *
  * <p>It feeds the phone alone: a segment is footage from the phone, and any other

@@ -1,5 +1,6 @@
-package br.edu.unipampa.varzinho.ui;
+package br.edu.unipampa.varzinho.infrastructure.simulation;
 
+import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.domain.capture.Frame;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
@@ -14,29 +15,34 @@ import java.time.Instant;
  * decision; this class only produces the seconds, so the window can drive it from a
  * Swing timer and a test can drive it from fixed instants.
  */
-final class LiveFeed implements Feed {
+public final class LiveFeed implements Feed {
 
     private static final int ONE_SECOND_MILLIS = 1000;
 
     private final Gym gym;
-    private final Court leftOut;
+    private static final int NO_COURT = 0;
+
+    private final int leftOutCourtNumber;
     private int sequence;
 
-    LiveFeed(Gym gym) {
+    public LiveFeed(Gym gym) {
         if (gym == null) throw new IllegalArgumentException("a live feed needs a gym");
         this.gym = gym;
-        this.leftOut = null;
+        // Court numbers start at 1, so no court is ever left out.
+        this.leftOutCourtNumber = NO_COURT;
     }
 
     /**
-     * A feed for every court but {@code leftOut}, which another feed records. Courts
-     * added to the gym later are fed too.
+     * A feed for every court but the one numbered {@code leftOutCourtNumber}, which
+     * another feed records. Courts added to the gym later are fed too.
      */
-    LiveFeed(Gym gym, Court leftOut) {
+    public LiveFeed(Gym gym, int leftOutCourtNumber) {
         if (gym == null) throw new IllegalArgumentException("a live feed needs a gym");
-        if (leftOut == null) throw new IllegalArgumentException("a live feed needs the court it leaves out");
+        if (leftOutCourtNumber <= NO_COURT) {
+            throw new IllegalArgumentException("a live feed cannot leave out court " + leftOutCourtNumber);
+        }
         this.gym = gym;
-        this.leftOut = leftOut;
+        this.leftOutCourtNumber = leftOutCourtNumber;
     }
 
     @Override
@@ -51,7 +57,7 @@ final class LiveFeed implements Feed {
     public void tick(Instant now) {
         Frame frame = new Frame(now, sequence++);
         for (Court court : gym.getCourts()) {
-            if (court != leftOut) {
+            if (court.getNumber() != leftOutCourtNumber) {
                 court.record(frame);
             }
         }

@@ -1,6 +1,8 @@
 package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.application.GymSession;
+import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
+import br.edu.unipampa.varzinho.infrastructure.stream.PhoneConnection;
 import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
@@ -52,7 +54,7 @@ public final class Launcher {
         Gym gym = session.gym();
         Court court = givePhoneItsCourt(gym, phone.camera());
         // Two feeds, so the simulated courts keep their clock whatever the phone does.
-        VarZinhoWindow window = new VarZinhoWindow(session, repository, new LiveFeed(gym, court), pendingWrites,
+        VarZinhoWindow window = new VarZinhoWindow(session, repository, new LiveFeed(gym, court.getNumber()), pendingWrites,
                 BUFFER_SECONDS);
         Runnable dropped = () -> window.phoneDropped(phone.camera());
         window.followPhone(phone.feed(dropped), court.getNumber(), phone.streamUrl());
