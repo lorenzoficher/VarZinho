@@ -49,6 +49,14 @@ public final class GymSession {
         return gym;
     }
 
+    /**
+     * Changes to this session's gym, each kept where the session keeps it: nowhere, when
+     * the saved gym could not be read.
+     */
+    public ManageGym manageGym() {
+        return new ManageGym(gym, repository);
+    }
+
     /** Stores the gym as it is now, reporting instead of throwing when that is refused. */
     public void save(Consumer<String> errorSink) {
         try {

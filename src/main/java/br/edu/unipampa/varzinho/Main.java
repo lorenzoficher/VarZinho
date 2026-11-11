@@ -1,6 +1,6 @@
 package br.edu.unipampa.varzinho;
 
-import br.edu.unipampa.varzinho.ui.Launcher;
+import br.edu.unipampa.varzinho.bootstrap.Launcher;
 
 public final class Main {
     private Main() { }

@@ -1,15 +1,16 @@
-package br.edu.unipampa.varzinho.ui;
+package br.edu.unipampa.varzinho.bootstrap;
 
+import br.edu.unipampa.varzinho.application.ConnectStreamCamera;
+import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.GymSession;
 import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import br.edu.unipampa.varzinho.infrastructure.stream.PhoneConnection;
 import br.edu.unipampa.varzinho.application.PendingClipWrites;
-import br.edu.unipampa.varzinho.domain.capture.Camera;
-import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
 import br.edu.unipampa.varzinho.infrastructure.persistence.CsvGymRepository;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
+import br.edu.unipampa.varzinho.ui.VarZinhoWindow;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -52,31 +53,18 @@ public final class Launcher {
     private static void openWithPhone(GymSession session, HighlightRepository repository,
                                       PendingClipWrites pendingWrites, PhoneConnection phone) {
         Gym gym = session.gym();
-        Court court = givePhoneItsCourt(gym, phone.camera());
+        ConnectStreamCamera connection = new ConnectStreamCamera(gym, phone.camera());
+        CourtView court = connection.connect();
         // Two feeds, so the simulated courts keep their clock whatever the phone does.
-        VarZinhoWindow window = new VarZinhoWindow(session, repository, new LiveFeed(gym, court.getNumber()), pendingWrites,
-                BUFFER_SECONDS);
-        Runnable dropped = () -> window.phoneDropped(phone.camera());
+        VarZinhoWindow window = new VarZinhoWindow(session, repository, new LiveFeed(gym, court.getNumber()),
+                pendingWrites, BUFFER_SECONDS);
+        Runnable dropped = () -> {
+            connection.phoneDropped();
+            window.phoneDropped();
+        };
         window.followPhone(phone.feed(dropped), court.getNumber(), phone.streamUrl());
         phone.onDrop(() -> SwingUtilities.invokeLater(dropped));
         window.setVisible(true);
-    }
-
-    /**
-     * Adds a court after the highest-numbered one, installs the phone on it and starts it
-     * recording. The phone gets a court of its own so a capture there always comes from
-     * the phone: a court captures from its first recording camera, and on a shared court
-     * that would be whichever camera was installed first.
-     *
-     * @return the phone's new court
-     */
-    static Court givePhoneItsCourt(Gym gym, Camera phone) {
-        int number = gym.getCourts().stream().mapToInt(Court::getNumber).max().orElse(0) + 1;
-        Court court = new Court(number);
-        gym.addCourt(court);
-        gym.installCamera(number, phone);
-        phone.startRecording();
-        return court;
     }
 
     private static void warn(String message, String title) {

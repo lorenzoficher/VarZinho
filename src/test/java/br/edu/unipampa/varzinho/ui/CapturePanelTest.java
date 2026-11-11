@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.bootstrap.SampleGym;
 import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import br.edu.unipampa.varzinho.domain.capture.Camera;

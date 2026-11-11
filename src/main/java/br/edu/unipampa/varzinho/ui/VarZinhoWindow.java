@@ -3,7 +3,6 @@ package br.edu.unipampa.varzinho.ui;
 import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.GymSession;
 import br.edu.unipampa.varzinho.application.PendingClipWrites;
-import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
@@ -28,9 +27,10 @@ import java.util.List;
 
 /**
  * The operator's window: the courts, the capture button and the archive, kept moving by
- * the feeds it is handed. It builds none of what it shows — {@link Launcher} does.
+ * the feeds it is handed. It builds none of what it shows —
+ * {@link br.edu.unipampa.varzinho.bootstrap.Launcher} does.
  */
-final class VarZinhoWindow extends JFrame {
+public final class VarZinhoWindow extends JFrame {
     private final Gym gym;
     private final int bufferSeconds;
     private final List<Timer> clocks = new ArrayList<>();
@@ -41,8 +41,8 @@ final class VarZinhoWindow extends JFrame {
     private final JLabel bufferStatus = new JLabel();
     private boolean phoneDropReported;
 
-    VarZinhoWindow(GymSession session, HighlightRepository repository, Feed feed, PendingClipWrites pendingWrites,
-                   int bufferSeconds) {
+    public VarZinhoWindow(GymSession session, HighlightRepository repository, Feed feed, PendingClipWrites pendingWrites,
+                          int bufferSeconds) {
         super("VarZinho - Highlight Capture");
         if (session == null) throw new IllegalArgumentException("a window needs a gym session");
         if (repository == null) throw new IllegalArgumentException("a window needs a highlight repository");
@@ -85,7 +85,7 @@ final class VarZinhoWindow extends JFrame {
      * Runs the phone's feed on a clock of its own, shows its court and offers the stream
      * in the browser.
      */
-    void followPhone(Feed phoneFeed, int phoneCourt, String streamUrl) {
+    public void followPhone(Feed phoneFeed, int phoneCourt, String streamUrl) {
         if (phoneFeed == null) throw new IllegalArgumentException("a followed phone needs its feed");
         if (streamUrl == null || streamUrl.isBlank()) {
             throw new IllegalArgumentException("a followed phone needs its stream address");
@@ -114,17 +114,15 @@ final class VarZinhoWindow extends JFrame {
         }
     }
 
-    // From here on the domain answers by itself: a capture on the phone's court finds no
-    // recording camera and says so. FFmpeg exiting and the phone going silent are two
-    // signs of the same drop, and the operator hears of it once.
-    void phoneDropped(Camera phone) {
+    /**
+     * Tells the operator, once, that the phone's court can no longer capture. FFmpeg
+     * exiting and the phone going silent are two signs of the same drop.
+     */
+    public void phoneDropped() {
         if (phoneDropReported) {
             return;
         }
         phoneDropReported = true;
-        if (phone.isRecording()) {
-            phone.stopRecording();
-        }
         showBufferStatus();
         showError("The phone stopped streaming, so its court can no longer capture. "
                 + "Restart VarZinho to reconnect.");

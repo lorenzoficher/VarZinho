@@ -1,5 +1,6 @@
 package br.edu.unipampa.varzinho.application;
 
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
@@ -75,6 +76,30 @@ class GymSessionTest {
 
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).startsWith("The gym could not be saved"), errors.get(0));
+    }
+
+    @Test
+    void whatTheSessionsGymManagementChangesIsWhatTheNextSessionOpensOn() throws RepositoryException {
+        Path file = directory.resolve("gym.csv");
+        GymSession first = GymSession.start(new CsvGymRepository(file), fallback(), errors::add);
+
+        first.manageGym().addCourt(3);
+
+        GymSession second = GymSession.start(new CsvGymRepository(file), fallback(), errors::add);
+        assertEquals(3, second.gym().getCourts().size());
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    void afterADamagedFileTheSessionsGymManagementLeavesTheFileUntouched() throws IOException, RepositoryException {
+        Path file = directory.resolve("gym.csv");
+        Files.write(file, List.of("this is not a gym file"));
+        GymSession session = GymSession.start(new CsvGymRepository(file), fallback(), errors::add);
+
+        session.manageGym().addCourt(3);
+
+        assertEquals(3, session.gym().getCourts().size());
+        assertEquals(List.of("this is not a gym file"), Files.readAllLines(file));
     }
 
     private static Gym fallback() {

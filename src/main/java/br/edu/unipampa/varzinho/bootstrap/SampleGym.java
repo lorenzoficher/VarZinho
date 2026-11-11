@@ -1,4 +1,4 @@
-package br.edu.unipampa.varzinho.ui;
+package br.edu.unipampa.varzinho.bootstrap;
 
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
