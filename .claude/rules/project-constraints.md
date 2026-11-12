@@ -23,8 +23,9 @@
   (test scope), and that is a decision, not an accident.** The last two were agreed
   in #145. Adding a third-party library requires an issue and the team's agreement
   first.
-- **The dependency arrow points inward.** `domain/` never imports from `repository/`.
-  Persistence knows the domain; the domain knows nothing about persistence.
+- **The dependency arrow points inward.** `domain/` never imports from `application/`
+  or `infrastructure/`. Persistence knows the domain; the domain knows nothing about
+  persistence.
 - **All persistence goes through the `HighlightRepository` interface.** CSV is
   today's implementation (`CsvHighlightRepository`), not the contract.
 - **FFmpeg is a runtime dependency, never a build one.** It is an external program
@@ -34,7 +35,8 @@
   PostgreSQL and the Testcontainers tests. `mvn test` must keep passing on a machine
   without it; the database tests are skipped there.
 - **All video work goes through the `ClipAssembler` interface.** `domain/` never
-  imports from `stream/`, exactly as it never imports from `repository/`.
+  imports from `stream/`, exactly as it never imports from
+  `infrastructure/persistence/`.
 
 ## Model invariants
 
