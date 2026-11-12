@@ -121,11 +121,19 @@ AWT. Application ports and infrastructure adapters know the domain; the domain
 does not know them.
 
 Adding a third-party library requires agreement from the team — open an issue
-first. Right now the only dependency is JUnit 5.
+first. Right now the dependencies are JUnit 5 and, agreed in #145, the
+PostgreSQL JDBC driver and Testcontainers (test scope only). No
+object-relational mapper: a mapper wants entities that can be built empty.
 
 FFmpeg is a **runtime** dependency, not a library: an external program on the
 `PATH`, needed only when `VARZINHO_STREAM_URL` is set. The build and every test
 pass without it; the one test that runs it is skipped where it is missing.
+
+Docker is a runtime dependency in the same way: it runs the PostgreSQL that
+`docker compose up -d` starts, and Testcontainers needs it for the database
+tests. `domain/` and `application/` never import `java.sql`, `javax.sql` or the
+driver — `ArchitectureTest` enforces it. The build and every test pass without
+Docker; the database tests are skipped where it is missing.
 
 ## Git
 

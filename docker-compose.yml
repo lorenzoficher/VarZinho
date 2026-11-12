@@ -1,0 +1,23 @@
+# Local PostgreSQL for VarZinho. Start with `docker compose up -d`.
+# The credentials are local-only defaults; override them through the environment.
+services:
+  postgres:
+    # Same image as PostgresSmokeTest, so the tests exercise the database the team runs.
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${VARZINHO_DB_NAME:-varzinho}
+      POSTGRES_USER: ${VARZINHO_DB_USER:-varzinho}
+      POSTGRES_PASSWORD: ${VARZINHO_DB_PASSWORD:-varzinho}
+    ports:
+      - "${VARZINHO_DB_PORT:-5432}:5432"
+    # A named volume, so highlights survive the container being restarted or recreated.
+    volumes:
+      - varzinho-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  varzinho-data:
