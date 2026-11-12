@@ -8,7 +8,7 @@ persistence behind an abstraction, and errors as domain exceptions.
 ```
 ui/                              Swing windows; Main starts the launcher
 application/port/                repository contracts and persistence failures
-infrastructure/persistence/      CSV and in-memory storage adapters
+infrastructure/persistence/      CSV, PostgreSQL and in-memory storage adapters
 infrastructure/stream/           FFmpeg adapter behind ClipAssembler
 domain/                          structure, capture, highlight and people
 exception/                       domain failures, independent of other packages
@@ -35,8 +35,8 @@ and video integration, and `ui/` handles interaction.
 
 ## Persistence
 
-Highlights are stored in CSV today. A database would be better eventually. To
-avoid coupling the system to either, all persistence goes through an interface:
+Highlights can be stored in a CSV file or in PostgreSQL. To avoid coupling the
+system to either, all persistence goes through an interface:
 
 ```java
 public interface HighlightRepository {
@@ -47,10 +47,10 @@ public interface HighlightRepository {
 }
 ```
 
-`CsvHighlightRepository` implements it against a file. A future
-`DatabaseHighlightRepository` would implement the same interface, and nothing
-else in the system would change — because nothing else in the system mentions
-CSV.
+`CsvHighlightRepository` implements it against a file, and
+`PostgresHighlightRepository` against a database table. Both pass the same
+contract test, and nothing else in the system changes between them — because
+nothing else in the system mentions CSV or SQL.
 
 This is **dependency inversion**: the high-level policy depends on an
 abstraction, not on the low-level detail. It is also the project's clearest
@@ -69,6 +69,17 @@ No column names a person: a highlight records nobody. The columns after
 
 The format is an implementation detail of `CsvHighlightRepository`. No other
 class parses or produces it.
+
+### The PostgreSQL table
+
+`PostgresHighlightRepository` creates its `highlight` table when it is missing,
+so the Docker database and the tests share one schema with no migration tool.
+It holds the same values as the CSV, with two differences: a `position` column
+keeps the order first saved, and the capture instant takes two columns —
+`captured_epoch_second` and `captured_nano` — because `TIMESTAMPTZ` stops at
+microseconds and an `Instant` carries nanoseconds. Every value reaches SQL as a
+bound parameter, and every `SQLException` surfaces as a `RepositoryException`
+with it as the cause.
 
 ### The gym's structure
 
