@@ -47,7 +47,7 @@ src/main/java/br/edu/unipampa/varzinho/
 │   └── people/      Person, Athlete, Operator
 ├── application/port/  repository contracts, persistence exceptions, StorableHighlights
 ├── infrastructure/
-│   ├── persistence/   CSV and in-memory repository implementations
+│   ├── persistence/   CSV, PostgreSQL and in-memory repository implementations
 │   └── stream/        FFmpeg adapter: SegmentLog, SegmentIndex, FfmpegRecorder,
 │                      FfmpegClipAssembler — knows the domain, never the reverse
 ├── exception/       domain exceptions
