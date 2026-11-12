@@ -152,7 +152,7 @@ without approval; one into `main` needs one approval. See
 
 The deadline is 2026-09-30 and the team has five people. Before adding
 anything not in [docs/PRD.md](docs/PRD.md), open an issue and get agreement.
-Features listed as out of scope stay out of scope — including a real database.
+Features listed as out of scope stay out of scope.
 
 Real video capture used to be on that list too. VarZinho 2.0 took it off, for
 one phone and through FFmpeg only; the reasoning is in `CONTEXT.md`.
@@ -160,6 +160,10 @@ one phone and through FFmpeg only; the reasoning is in `CONTEXT.md`.
 The graphical interface used to be on that list and no longer is:
 [docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md) requires one. It stays
 **minimal** — the brief's word — and it owns no business rule.
+
+A real database left that list on 2026-11-11, for the second assignment:
+PostgreSQL in Docker, reached through plain JDBC, alongside CSV rather than
+replacing it. The reasoning is in `CONTEXT.md`.
 
 The brief is the contract. Where it and these conventions disagree, the brief
 wins, and the disagreement gets fixed here rather than worked around in a

@@ -54,7 +54,6 @@
 
 Stated so nobody mistakes them for oversights — each is argued in `CONTEXT.md`:
 
-- No real database.
 - No frame decoded in Java, and no video library on the classpath.
 
 **Real video capture was on this list until 2026-09-30.** VarZinho 2.0 records a
@@ -65,6 +64,10 @@ metadata only. The reversal and its reasoning are in `CONTEXT.md`.
 [`docs/ASSIGNMENT-BRIEF.md`](../../docs/ASSIGNMENT-BRIEF.md) requires one, so it is
 now required here too: minimal, in Swing, confined to `ui/`, owning no rule. The
 reversal and its reasoning are in `CONTEXT.md`.
+
+**A real database was on this list until 2026-11-11.** The second assignment is
+expected to ask for one: PostgreSQL in Docker, reached through plain JDBC, alongside
+CSV. The reversal and its reasoning are in `CONTEXT.md`.
 
 ## Language
 
