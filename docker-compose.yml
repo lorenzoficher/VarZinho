@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${VARZINHO_DB_USER:-varzinho}
       POSTGRES_PASSWORD: ${VARZINHO_DB_PASSWORD:-varzinho}
     ports:
-      - "${VARZINHO_DB_PORT:-5432}:5432"
+      - "127.0.0.1:${VARZINHO_DB_PORT:-5432}:5432"
     # A named volume, so highlights survive the container being restarted or recreated.
     volumes:
       - varzinho-data:/var/lib/postgresql/data
