@@ -31,9 +31,9 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 
-# Agent kit: .claude/rules/ is versioned so the team shares it.
-# These four are per-machine or per-session state.
-.claude/settings.json
+# Agent kit: .claude/rules/ and .claude/settings.json are versioned so the team
+# shares them. Personal settings go in settings.local.json; these three are
+# per-machine or per-session state.
 .claude/settings.local.json
 .claude/current-issue
 .claude/board.env
