@@ -121,6 +121,17 @@ gym would be a gym nobody built. The window then opens on the sample gym and
 keeps its changes in memory (`InMemoryGymRepository`), leaving the damaged file
 for someone to repair instead of overwriting it.
 
+`PostgresGymRepository` keeps the same structure in three tables it creates
+when they are missing: `gym` (one row at most), `court` and `camera`, where a
+`position` column keeps the order cameras were installed in and a check lets
+each kind fill only its own aim columns. Saving deletes and rewrites the three
+tables inside one transaction, so a save that fails part-way rolls back and
+leaves the gym stored before untouched. Loading reads the three tables in one
+snapshot and rebuilds the gym through the domain, as the CSV adapter does.
+Stream cameras, and courts that hold only them, are never saved, for the same
+reason as in the CSV file. It passes the same
+`GymRepositoryContractTest` as the CSV and in-memory adapters.
+
 ## Exceptions
 
 Failures the application can act on use the project's domain or repository
