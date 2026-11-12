@@ -18,10 +18,9 @@ import java.time.Instant;
 public final class LiveFeed implements Feed {
 
     private static final int ONE_SECOND_MILLIS = 1000;
-
-    private final Gym gym;
     private static final int NO_COURT = 0;
 
+    private final Gym gym;
     private final int leftOutCourtNumber;
     private int sequence;
 

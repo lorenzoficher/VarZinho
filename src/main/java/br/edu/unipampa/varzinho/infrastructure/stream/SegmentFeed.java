@@ -10,7 +10,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 /**
- * The real-time twin of {@link br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed}: a second of footage reaches the phone when
+ * The real-time twin of {@code LiveFeed}: a second of footage reaches the phone when
  * the phone recorder finishes its segment, not when a timer says so.
  *
  * <p>It feeds the phone alone: a segment is footage from the phone, and any other
