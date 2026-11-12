@@ -17,6 +17,7 @@ class ArchitectureTest {
 
     private static final String PROJECT_PACKAGE = "br.edu.unipampa.varzinho";
     private static final Path SOURCES = Path.of("src/main/java/br/edu/unipampa/varzinho");
+    private static final Path TEST_SOURCES = Path.of("src/test/java/br/edu/unipampa/varzinho");
     // Only infrastructure talks to the database; the inner layers never see JDBC.
     private static final List<String> DATABASE_ACCESS = List.of("java.sql", "javax.sql", "org.postgresql");
     private static final Pattern IMPORT = Pattern.compile(
@@ -54,6 +55,28 @@ class ArchitectureTest {
     @Test
     void exceptionsDoNotImportOtherProjectPackages() throws IOException {
         assertNoForbiddenImports("exception", List.of(PROJECT_PACKAGE));
+    }
+
+    @Test
+    void testsDoNotImportJUnit4() throws IOException {
+        List<String> violations = new ArrayList<>();
+        try (Stream<Path> sources = Files.walk(TEST_SOURCES)) {
+            for (Path source : sources.filter(path -> path.toString().endsWith(".java"))
+                    .sorted().toList()) {
+                String code = Files.readString(source).replaceAll("(?s)/\\*.*?\\*/", "");
+                Matcher imports = IMPORT.matcher(code);
+                while (imports.find()) {
+                    String imported = imports.group(1);
+                    if (belongsTo(imported, "org.junit")
+                            && !belongsTo(imported, "org.junit.jupiter")
+                            && !belongsTo(imported, "org.junit.platform")) {
+                        violations.add(TEST_SOURCES.relativize(source) + " imports " + imported);
+                    }
+                }
+            }
+        }
+        assertTrue(violations.isEmpty(), () -> "JUnit 4 imports are forbidden:\n"
+                + String.join("\n", violations));
     }
 
     private static void assertNoForbiddenImports(String layer, List<String> forbidden) throws IOException {
