@@ -121,11 +121,19 @@ AWT. Application ports and infrastructure adapters know the domain; the domain
 does not know them.
 
 Adding a third-party library requires agreement from the team — open an issue
-first. Right now the only dependency is JUnit 5.
+first. Right now the dependencies are JUnit 5 and, agreed in #145, the
+PostgreSQL JDBC driver and Testcontainers (test scope only). No
+object-relational mapper: a mapper wants entities that can be built empty.
 
 FFmpeg is a **runtime** dependency, not a library: an external program on the
 `PATH`, needed only when `VARZINHO_STREAM_URL` is set. The build and every test
 pass without it; the one test that runs it is skipped where it is missing.
+
+Docker is a runtime dependency in the same way: it runs the PostgreSQL that
+`docker compose up -d` starts, and Testcontainers needs it for the database
+tests. `domain/` and `application/` never import `java.sql`, `javax.sql` or the
+driver — `ArchitectureTest` enforces it. The build and every test pass without
+Docker; the database tests are skipped where it is missing.
 
 ## Git
 
@@ -144,7 +152,7 @@ without approval; one into `main` needs one approval. See
 
 The deadline is 2026-09-30 and the team has five people. Before adding
 anything not in [docs/PRD.md](docs/PRD.md), open an issue and get agreement.
-Features listed as out of scope stay out of scope — including a real database.
+Features listed as out of scope stay out of scope.
 
 Real video capture used to be on that list too. VarZinho 2.0 took it off, for
 one phone and through FFmpeg only; the reasoning is in `CONTEXT.md`.
@@ -152,6 +160,10 @@ one phone and through FFmpeg only; the reasoning is in `CONTEXT.md`.
 The graphical interface used to be on that list and no longer is:
 [docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md) requires one. It stays
 **minimal** — the brief's word — and it owns no business rule.
+
+A real database left that list on 2026-11-11, for the second assignment:
+PostgreSQL in Docker, reached through plain JDBC, alongside CSV rather than
+replacing it. The reasoning is in `CONTEXT.md`.
 
 The brief is the contract. Where it and these conventions disagree, the brief
 wins, and the disagreement gets fixed here rather than worked around in a
