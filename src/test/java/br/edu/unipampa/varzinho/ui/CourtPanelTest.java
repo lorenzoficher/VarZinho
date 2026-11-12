@@ -1,11 +1,10 @@
 package br.edu.unipampa.varzinho.ui;
 
-import br.edu.unipampa.varzinho.bootstrap.SampleGym;
 import br.edu.unipampa.varzinho.application.CameraKind;
 import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.application.port.GymRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
-import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
+import br.edu.unipampa.varzinho.bootstrap.SampleGym;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
@@ -14,8 +13,12 @@ import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.CameraStatus;
 import br.edu.unipampa.varzinho.enums.Resolution;
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvGymRepository;
+import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -326,6 +329,27 @@ class CourtPanelTest {
 
         assertEquals(List.of("The gym could not be saved: disk unplugged"), errors);
         assertEquals(3, panel.selectedCourtNumber());
+        assertEquals(3, gym.getCourts().size());
+    }
+
+    @Test
+    void aValueTheStorageCannotHoldLeavesTheCameraInstalledAndLaterCourtsListed(@TempDir Path folder) {
+        CourtPanel csvPanel = new CourtPanel(
+                new ManageGym(gym, new CsvGymRepository(folder.resolve("gym.csv"))), 30, errors::add);
+        csvPanel.selectCourt(2);
+        csvPanel.idField().setText("fixed-9");
+        csvPanel.modelField().setText("Bullet, 2nd gen");
+        csvPanel.typeSelector().setSelectedItem(CameraKind.FIXED);
+        csvPanel.resolutionSelector().setSelectedItem(Resolution.HD);
+
+        csvPanel.installButton().doClick();
+        csvPanel.courtNumberField().setText("3");
+        csvPanel.addCourtButton().doClick();
+
+        assertEquals(2, errors.size());
+        assertTrue(errors.get(0).startsWith("The gym could not be saved: "), errors.get(0));
+        assertTrue(gym.findCourt(2).getCameras().stream().anyMatch(camera -> camera.getId().equals("fixed-9")));
+        assertEquals(3, csvPanel.selectedCourtNumber());
         assertEquals(3, gym.getCourts().size());
     }
 

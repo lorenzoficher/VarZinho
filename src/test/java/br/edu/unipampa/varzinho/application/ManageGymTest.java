@@ -2,10 +2,13 @@ package br.edu.unipampa.varzinho.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import br.edu.unipampa.varzinho.application.port.GymRepository;
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
@@ -16,6 +19,7 @@ import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryGymRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.time.Instant;
 import java.util.stream.Collectors;
 
@@ -62,6 +66,30 @@ class ManageGymTest {
         assertThrows(IllegalArgumentException.class, () -> management.addCourt(1));
 
         assertTrue(repository.load().isEmpty());
+    }
+
+    @Test
+    void aGymTheStorageCannotHoldIsAFailureToKeepTheChangeNotARefusal() {
+        Gym gym = gymWithCourts(1);
+        GymRepository unstorable = new GymRepository() {
+            @Override
+            public void save(Gym toSave) {
+                throw new IllegalArgumentException("cannot store a value with a comma");
+            }
+
+            @Override
+            public Optional<Gym> load() {
+                return Optional.empty();
+            }
+        };
+        ManageGym management = new ManageGym(gym, unstorable);
+
+        RepositoryException failure =
+                assertThrows(RepositoryException.class, () -> management.addCourt(2));
+
+        assertEquals("cannot store a value with a comma", failure.getMessage());
+        assertInstanceOf(IllegalArgumentException.class, failure.getCause());
+        assertEquals(List.of(1, 2), courtNumbers(management.courts()));
     }
 
     @Test
