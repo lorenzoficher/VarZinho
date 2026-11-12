@@ -46,6 +46,7 @@ resolução e tamanho.
 - Maven
 - JUnit 5
 - FFmpeg — opcional, só para a captura com o celular
+- PostgreSQL, via Docker — opcional, só para o banco de dados
 
 ## Instalando o Maven
 
@@ -119,6 +120,23 @@ navegador. Se o celular sair da rede, a janela avisa e a quadra dele deixa de
 capturar; para reconectar, reinicie o programa.
 
 Sem a variável, o programa funciona como na versão 1.0, com as câmeras simuladas.
+
+### Banco de dados PostgreSQL
+
+Precisa do Docker. Na raiz do repositório:
+
+```bash
+docker compose up -d
+```
+
+Isso sobe um PostgreSQL na porta 5432 (banco, usuário e senha `varzinho`). Os
+dados ficam num volume do Docker e sobrevivem a reiniciar o container; só
+`docker compose down -v` os apaga. Se a porta 5432 já estiver ocupada, escolha
+outra com `VARZINHO_DB_PORT=5433 docker compose up -d`.
+
+A aplicação ainda grava em CSV; o banco é a base dos repositórios PostgreSQL que
+vêm a seguir. Com o Docker instalado, `mvn test` também testa contra um
+PostgreSQL de verdade; sem ele, esses testes são pulados.
 
 ### O que a interface faz
 

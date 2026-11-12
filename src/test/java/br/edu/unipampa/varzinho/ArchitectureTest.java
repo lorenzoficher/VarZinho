@@ -17,6 +17,8 @@ class ArchitectureTest {
 
     private static final String PROJECT_PACKAGE = "br.edu.unipampa.varzinho";
     private static final Path SOURCES = Path.of("src/main/java/br/edu/unipampa/varzinho");
+    // Only infrastructure talks to the database; the inner layers never see JDBC.
+    private static final List<String> DATABASE_ACCESS = List.of("java.sql", "javax.sql", "org.postgresql");
     private static final Pattern IMPORT = Pattern.compile(
             "(?m)^\\h*import\\s+(?:static\\s+)?([\\w.*]+)\\s*;");
 
@@ -28,9 +30,19 @@ class ArchitectureTest {
     }
 
     @Test
+    void domainDoesNotReachTheDatabase() throws IOException {
+        assertNoForbiddenImports("domain", DATABASE_ACCESS);
+    }
+
+    @Test
     void applicationDoesNotImportAdaptersOrDesktopLibraries() throws IOException {
         assertNoForbiddenImports("application", List.of(PROJECT_PACKAGE + ".infrastructure",
                 PROJECT_PACKAGE + ".ui", PROJECT_PACKAGE + ".bootstrap", "javax.swing", "java.awt"));
+    }
+
+    @Test
+    void applicationDoesNotReachTheDatabase() throws IOException {
+        assertNoForbiddenImports("application", DATABASE_ACCESS);
     }
 
     @Test

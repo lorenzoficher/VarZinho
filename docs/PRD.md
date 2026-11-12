@@ -40,7 +40,6 @@ Stated explicitly so they are not mistaken for omissions:
 |---|---|
 | Video decoding or encoding in Java | No video library on the classpath. Since 2.0 a phone's clips are real files, but FFmpeg — an external program — writes them; see `CONTEXT.md` |
 | A polished or complete interface | Section 2.9 of the brief asks for a minimal one; every rule stays in the domain, never on the screen |
-| Database | CSV is sufficient at this scale; the interface allows a later swap |
 | User accounts, login, authentication | No identity exists in the capture flow |
 | Live streaming, sponsors, multi-angle | Real products do this; out of scope here |
 | Automatic play detection | Listed as future work |
@@ -145,7 +144,9 @@ Deliberately deferred, recorded so the scope boundary is visible:
 
 - Multi-angle capture (many cameras per highlight, N:N)
 - `Match` grouping highlights, with teams and score
-- Database repository implementation
+- Database repository implementation — planned for the second assignment:
+  PostgreSQL in Docker through plain JDBC, alongside CSV. See
+  [the decision in `CONTEXT.md`](../CONTEXT.md#a-real-database-alongside-csv)
 - Automatic play detection
 - Sponsor and live-streaming features
 - Advanced archive search and clip playback beyond the delivered court filter

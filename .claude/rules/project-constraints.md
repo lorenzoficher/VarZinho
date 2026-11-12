@@ -19,17 +19,24 @@
 
 ## Dependencies
 
-- **JUnit 5 is the only dependency, and that is a decision, not an accident.** Adding
-  a third-party library requires an issue and the team's agreement first.
-- **The dependency arrow points inward.** `domain/` never imports from `repository/`.
-  Persistence knows the domain; the domain knows nothing about persistence.
+- **The dependencies are JUnit 5, the PostgreSQL JDBC driver and Testcontainers
+  (test scope), and that is a decision, not an accident.** The last two were agreed
+  in #145. Adding a third-party library requires an issue and the team's agreement
+  first.
+- **The dependency arrow points inward.** `domain/` never imports from `application/`
+  or `infrastructure/`. Persistence knows the domain; the domain knows nothing about
+  persistence.
 - **All persistence goes through the `HighlightRepository` interface.** CSV is
   today's implementation (`CsvHighlightRepository`), not the contract.
 - **FFmpeg is a runtime dependency, never a build one.** It is an external program
   on the `PATH`, used only when `VARZINHO_STREAM_URL` names a phone stream. `mvn
   compile` and `mvn test` must keep passing on a machine without it.
+- **Docker is a runtime dependency, never a build one.** It runs the local
+  PostgreSQL and the Testcontainers tests. `mvn test` must keep passing on a machine
+  without it; the database tests are skipped there.
 - **All video work goes through the `ClipAssembler` interface.** `domain/` never
-  imports from `stream/`, exactly as it never imports from `repository/`.
+  imports from `stream/`, exactly as it never imports from
+  `infrastructure/persistence/`.
 
 ## Model invariants
 
@@ -49,7 +56,6 @@
 
 Stated so nobody mistakes them for oversights — each is argued in `CONTEXT.md`:
 
-- No real database.
 - No frame decoded in Java, and no video library on the classpath.
 
 **Real video capture was on this list until 2026-09-30.** VarZinho 2.0 records a
@@ -60,6 +66,10 @@ metadata only. The reversal and its reasoning are in `CONTEXT.md`.
 [`docs/ASSIGNMENT-BRIEF.md`](../../docs/ASSIGNMENT-BRIEF.md) requires one, so it is
 now required here too: minimal, in Swing, confined to `ui/`, owning no rule. The
 reversal and its reasoning are in `CONTEXT.md`.
+
+**A real database was on this list until 2026-11-11.** The second assignment is
+expected to ask for one: PostgreSQL in Docker, reached through plain JDBC, alongside
+CSV. The reversal and its reasoning are in `CONTEXT.md`.
 
 ## Language
 
