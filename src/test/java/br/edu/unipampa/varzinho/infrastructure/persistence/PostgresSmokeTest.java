@@ -22,7 +22,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class PostgresSmokeTest {
 
     // Same image as docker-compose.yml, so the tests exercise the database the team runs.
-    private static final String IMAGE = "postgres:16-alpine";
+    private static final String IMAGE = "postgres:16.15-alpine";
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(IMAGE);

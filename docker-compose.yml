@@ -3,7 +3,7 @@
 services:
   postgres:
     # Same image as PostgresSmokeTest, so the tests exercise the database the team runs.
-    image: postgres:16-alpine
+    image: postgres:16.15-alpine
     environment:
       POSTGRES_DB: ${VARZINHO_DB_NAME:-varzinho}
       POSTGRES_USER: ${VARZINHO_DB_USER:-varzinho}
