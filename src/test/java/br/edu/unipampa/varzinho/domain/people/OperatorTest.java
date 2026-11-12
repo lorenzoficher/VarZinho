@@ -1,43 +1,86 @@
 package br.edu.unipampa.varzinho.domain.people;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 
 class OperatorTest {
+    private static final String STRONG_PASSWORD = "Strong1!";
 
     @Test
-    void identifiesItselfByBadge() {
-        Operator operator = operatorBadged("OP-7");
-
-        assertTrue(operator.identify().contains("OP-7"));
+    void rejectsEachBrokenPasswordRuleWithItsReason() {
+        assertPasswordRefusal("Short1!", "8 characters");
+        assertPasswordRefusal("lowercase1!", "uppercase");
+        assertPasswordRefusal("UPPERCASE1!", "lowercase");
+        assertPasswordRefusal("NoDigits!", "digit");
+        assertPasswordRefusal("NoSymbol1", "symbol");
     }
 
     @Test
-    void exposesBadgeAndShift() {
-        Operator operator = new Operator("Inaurrara Flores", "999.888.777-66",
-                                         LocalDate.now().minusYears(28), "OP-7", "evening");
+    void equalPasswordsReceiveDifferentSaltedHashes() {
+        Operator first = operator("first");
+        Operator second = operator("second");
 
-        assertEquals("OP-7", operator.getBadge());
-        assertEquals("evening", operator.getShift());
+        assertNotEquals(first.getPasswordHash(), second.getPasswordHash());
+        assertFalse(first.getPasswordHash().contains(STRONG_PASSWORD));
     }
 
     @Test
-    void rejectsABlankBadge() {
-        assertThrows(IllegalArgumentException.class, () -> operatorBadged("   "));
+    void checksTheRightPasswordAndRefusesAWrongOne() {
+        Operator operator = operator("inaurrara");
+
+        assertTrue(operator.checksPassword(STRONG_PASSWORD));
+        assertFalse(operator.checksPassword("Wrong1!x"));
+        assertFalse(operator.checksPassword(null));
     }
 
     @Test
-    void rejectsAMissingBadge() {
-        assertThrows(IllegalArgumentException.class, () -> operatorBadged(null));
+    void aRestoredOperatorStillChecksItsPassword() {
+        Operator original = operator("inaurrara");
+
+        Operator restored = Operator.restore(original.getName(), original.getUsername(), original.getPasswordHash());
+
+        assertTrue(restored.checksPassword(STRONG_PASSWORD));
+        assertEquals(original.getPasswordHash(), restored.getPasswordHash());
     }
 
-    private Operator operatorBadged(String badge) {
-        return new Operator("Inaurrara Flores", "999.888.777-66",
-                            LocalDate.now().minusYears(28), badge, "evening");
+    @Test
+    void usernamesAreEqualRegardlessOfCase() {
+        Operator lowerCase = operator("inaurrara");
+        Operator upperCase = operator("INAURRARA");
+
+        assertTrue(lowerCase.equals(upperCase));
+        assertEquals(lowerCase.hashCode(), upperCase.hashCode());
+        assertEquals("inaurrara", upperCase.getUsername());
+    }
+
+    @Test
+    void rejectsABlankOrWhitespaceUsername() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new Operator("Inaurrara Flores", "  ", STRONG_PASSWORD));
+        IllegalArgumentException whitespace = assertThrows(IllegalArgumentException.class,
+                () -> new Operator("Inaurrara Flores", "inaur rara", STRONG_PASSWORD));
+
+        assertTrue(whitespace.getMessage().contains("whitespace"));
+    }
+
+    @Test
+    void refusesAnInvalidStoredHash() {
+        assertThrows(IllegalArgumentException.class,
+                () -> Operator.restore("Inaurrara Flores", "inaurrara", "not-a-pbkdf2-hash"));
+    }
+
+    private static Operator operator(String username) {
+        return new Operator("Inaurrara Flores", username, STRONG_PASSWORD);
+    }
+
+    private static void assertPasswordRefusal(String password, String rule) {
+        IllegalArgumentException refusal = assertThrows(IllegalArgumentException.class,
+                () -> new Operator("Inaurrara Flores", "inaurrara", password));
+        assertTrue(refusal.getMessage().contains(rule), refusal.getMessage());
     }
 }
