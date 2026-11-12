@@ -1,19 +1,15 @@
 package br.edu.unipampa.varzinho.domain.structure;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import br.edu.unipampa.varzinho.domain.capture.Camera;
-import br.edu.unipampa.varzinho.domain.people.Person;
 import br.edu.unipampa.varzinho.exception.DuplicateCameraException;
 
 public final class Gym {
     private final String name;
     private final String address;
-    private final List<Person> people = new ArrayList<>();
     private final Map<Integer, Court> courts = new HashMap<>();
 
     public Gym(String name, String address) {
@@ -102,19 +98,6 @@ public final class Gym {
         return List.copyOf(courts.values());
     }
 
-    public void registerPerson(Person person) {
-        if (person == null) throw new IllegalArgumentException("a gym cannot register a null person");
-        if (findPerson(person.getDocument()).isPresent()) {
-            throw new IllegalArgumentException("document " + person.getDocument() + " is already registered");
-        }
-        people.add(person);
-    }
-
-    public Optional<Person> findPerson(String document) {
-        return people.stream().filter(person -> person.getDocument().equals(document)).findFirst();
-    }
-
     public String getName() { return name; }
     public String getAddress() { return address; }
-    public List<Person> getPeople() { return List.copyOf(people); }
 }
