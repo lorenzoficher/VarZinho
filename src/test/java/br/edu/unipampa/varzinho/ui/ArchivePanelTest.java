@@ -2,6 +2,7 @@ package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.bootstrap.SampleGym;
 import br.edu.unipampa.varzinho.application.BrowseArchive;
+import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryGymRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
@@ -26,6 +27,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -171,8 +173,8 @@ class ArchivePanelTest {
         assertTrue(errors.get(0).contains("h-never-written.mp4"));
     }
 
-    private ManageGym courts() {
-        return new ManageGym(gym, new InMemoryGymRepository());
+    private Supplier<List<CourtView>> courts() {
+        return new ManageGym(gym, new InMemoryGymRepository())::courts;
     }
 
     private static Highlight highlight(String id, Instant capturedAt, int court) {

@@ -59,7 +59,7 @@ public final class VarZinhoWindow extends JFrame {
         this.bufferSeconds = bufferSeconds;
         clocks.add(new Timer(feed.periodMillis(), event -> advance(feed)));
         this.courtPanel = new CourtPanel(management, bufferSeconds, this::showError);
-        this.archivePanel = new ArchivePanel(management, archive, ZoneId.systemDefault(), this::showError);
+        this.archivePanel = new ArchivePanel(management::courts, archive, ZoneId.systemDefault(), this::showError);
         this.capturePanel = new CapturePanel(courtPanel, captureHighlight, ZoneId.systemDefault(),
                 this::showError, highlight -> archivePanel.refresh());
         courtPanel.onCourtAdded(archivePanel::refreshCourts);

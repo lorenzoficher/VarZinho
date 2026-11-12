@@ -4,7 +4,6 @@ import br.edu.unipampa.varzinho.application.ArchiveListing;
 import br.edu.unipampa.varzinho.application.BrowseArchive;
 import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.HighlightView;
-import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 
 import javax.swing.JButton;
@@ -26,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * The archive: every saved highlight as a table row, narrowed to one court on request.
@@ -38,7 +38,7 @@ import java.util.function.Consumer;
 final class ArchivePanel extends JPanel {
     private static final String ALL_COURTS = "All courts";
 
-    private final ManageGym courts;
+    private final Supplier<List<CourtView>> courts;
     private final BrowseArchive archive;
     private final Consumer<String> errorSink;
     private final List<Integer> courtNumbers = new ArrayList<>();
@@ -47,7 +47,7 @@ final class ArchivePanel extends JPanel {
     private final JTable table;
     private final JButton openClip = new JButton("Open clip");
 
-    ArchivePanel(ManageGym courts, BrowseArchive archive, ZoneId zone, Consumer<String> errorSink) {
+    ArchivePanel(Supplier<List<CourtView>> courts, BrowseArchive archive, ZoneId zone, Consumer<String> errorSink) {
         super(new BorderLayout(4, 4));
         if (courts == null) throw new IllegalArgumentException("an archive panel needs the gym's courts");
         if (archive == null) throw new IllegalArgumentException("an archive panel needs the archive to browse");
@@ -112,7 +112,7 @@ final class ArchivePanel extends JPanel {
      * when a court is added after the window opened.
      */
     void refreshCourts() {
-        courts.courts().stream().map(CourtView::getNumber)
+        courts.get().stream().map(CourtView::getNumber)
                 .filter(number -> !courtNumbers.contains(number))
                 .forEach(number -> {
                     courtNumbers.add(number);
