@@ -8,9 +8,8 @@ import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.GymSession;
 import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
-import br.edu.unipampa.varzinho.infrastructure.persistence.CsvGymRepository;
-import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
 import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import br.edu.unipampa.varzinho.infrastructure.stream.PhoneConnection;
 import br.edu.unipampa.varzinho.ui.VarZinhoWindow;
@@ -28,6 +27,7 @@ import java.util.Optional;
  */
 public final class Launcher {
     private static final String STREAM_URL_VARIABLE = "VARZINHO_STREAM_URL";
+    private static final Path DATA_FOLDER = Path.of("data");
     private static final Path SEGMENT_FOLDER = Path.of("buffer");
     private static final int BUFFER_SECONDS = 30;
 
@@ -35,12 +35,21 @@ public final class Launcher {
 
     /**
      * Opens the window on the simulated cameras, or, when {@value #STREAM_URL_VARIABLE}
-     * names a phone stream, on that phone as well.
+     * names a phone stream, on that phone as well. Everything is kept in the CSV files
+     * unless {@value Storage#URL_VARIABLE} names a database; when that database cannot be
+     * reached, no window opens and the application exits.
      */
     public static void launch() {
         SwingUtilities.invokeLater(() -> {
-            HighlightRepository repository = new CsvHighlightRepository(Path.of("data", "highlights.csv"));
-            GymSession session = GymSession.start(new CsvGymRepository(Path.of("data", "gym.csv")), SampleGym.build(),
+            Storage storage;
+            try {
+                storage = Storage.fromEnvironment(System::getenv, DATA_FOLDER);
+            } catch (RepositoryException unreachable) {
+                refuseToOpen(unreachable.getMessage());
+                return;
+            }
+            HighlightRepository repository = storage.highlights();
+            GymSession session = GymSession.start(storage.gym(), SampleGym.build(),
                     message -> warn(message, "Saved gym not loaded"));
             PendingClipWrites pendingWrites = new PendingClipWrites();
             Optional<PhoneConnection> phone = PhoneConnection.open(System.getenv(STREAM_URL_VARIABLE),
@@ -75,6 +84,12 @@ public final class Launcher {
         return new VarZinhoWindow(gym.getName(), session.manageGym(),
                 new CaptureHighlight(gym, repository, pendingWrites), new BrowseArchive(repository),
                 feed, BUFFER_SECONDS);
+    }
+
+    private static void refuseToOpen(String reason) {
+        JOptionPane.showMessageDialog(null, "VarZinho will not open: " + reason + ".",
+                "Database not reached", JOptionPane.ERROR_MESSAGE);
+        System.exit(1);
     }
 
     private static void warn(String message, String title) {
