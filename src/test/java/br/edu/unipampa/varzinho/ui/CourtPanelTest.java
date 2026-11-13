@@ -248,6 +248,21 @@ class CourtPanelTest {
     }
 
     @Test
+    void aimingAFixedCameraIsRefusedEvenIfTheButtonWasLeftEnabled() {
+        Camera fixed = gym.findCourt(1).getCameras().get(0);
+        String before = fixed.describe();
+        panel.selectCamera(0);
+        // The disabled button is the screen's guarantee; this checks the one behind it.
+        panel.moveButton().setEnabled(true);
+
+        panel.moveButton().doClick();
+
+        assertEquals(List.of("camera fixed-1 cannot be aimed"), errors);
+        assertEquals(before, fixed.describe());
+        assertEquals(0, gymRepository.saves);
+    }
+
+    @Test
     void aimingIsOnlyOfferedWhileAPtzIsSelected() {
         panel.selectCamera(0);
         assertFalse(panel.moveButton().isEnabled());

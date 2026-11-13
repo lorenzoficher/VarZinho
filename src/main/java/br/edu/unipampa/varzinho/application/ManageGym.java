@@ -88,10 +88,10 @@ public final class ManageGym {
             throws RepositoryException {
         Court court = requireCourt(courtNumber);
         Camera camera = requireCamera(court, cameraId);
-        if (!(camera instanceof Aimable)) {
+        if (!(camera instanceof Aimable aimable)) {
             throw new IllegalArgumentException("camera " + cameraId + " cannot be aimed");
         }
-        ((Aimable) camera).moveTo(pan, tilt, zoom);
+        aimable.moveTo(pan, tilt, zoom);
         keep();
         return CourtView.from(court);
     }
