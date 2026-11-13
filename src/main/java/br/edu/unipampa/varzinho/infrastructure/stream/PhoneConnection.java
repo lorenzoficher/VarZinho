@@ -1,12 +1,9 @@
-package br.edu.unipampa.varzinho.ui;
+package br.edu.unipampa.varzinho.infrastructure.stream;
 
+import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.enums.Resolution;
-import br.edu.unipampa.varzinho.infrastructure.stream.FfmpegClipAssembler;
-import br.edu.unipampa.varzinho.infrastructure.stream.FfmpegRecorder;
-import br.edu.unipampa.varzinho.infrastructure.stream.SegmentIndex;
-import br.edu.unipampa.varzinho.infrastructure.stream.SegmentLog;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -18,7 +15,7 @@ import java.util.function.Consumer;
  * it. This is the one place that knows the phone is reached through FFmpeg; the window
  * only sees a camera and a feed.
  */
-final class PhoneConnection {
+public final class PhoneConnection {
     private final String streamUrl;
     private final FfmpegRecorder recorder;
     private final SegmentIndex index;
@@ -40,8 +37,8 @@ final class PhoneConnection {
      *     the phone could not be reached
      * @return the connected phone; empty when no address was given, or when it failed
      */
-    static Optional<PhoneConnection> open(String streamUrl, Path segmentFolder, int bufferSeconds,
-                                          PendingClipWrites pendingWrites, Consumer<String> onFailure) {
+    public static Optional<PhoneConnection> open(String streamUrl, Path segmentFolder, int bufferSeconds,
+                                                 PendingClipWrites pendingWrites, Consumer<String> onFailure) {
         if (streamUrl == null || streamUrl.isBlank()) {
             return Optional.empty();
         }
@@ -60,11 +57,11 @@ final class PhoneConnection {
         return Optional.of(new PhoneConnection(streamUrl, recorder, index, camera));
     }
 
-    StreamCamera camera() {
+    public StreamCamera camera() {
         return camera;
     }
 
-    String streamUrl() {
+    public String streamUrl() {
         return streamUrl;
     }
 
@@ -76,7 +73,7 @@ final class PhoneConnection {
      * @param onSilence run when the phone's segments stop arriving
      * @return the feed that moves the phone's new segments into its camera
      */
-    Feed feed(Runnable onSilence) {
+    public Feed feed(Runnable onSilence) {
         return new SegmentFeed(camera, new SegmentLog(recorder.segmentList()), index, onSilence);
     }
 
@@ -84,7 +81,7 @@ final class PhoneConnection {
      * @param action run, on FFmpeg's own thread, once the recorder exits for any reason
      *     other than being stopped
      */
-    void onDrop(Runnable action) {
+    public void onDrop(Runnable action) {
         recorder.onExit(action);
     }
 }

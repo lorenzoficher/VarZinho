@@ -1,4 +1,4 @@
-package br.edu.unipampa.varzinho.ui;
+package br.edu.unipampa.varzinho.infrastructure.stream;
 
 import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import org.junit.jupiter.api.Test;

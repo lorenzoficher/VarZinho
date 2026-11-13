@@ -75,7 +75,7 @@ mvn exec:java
 ```
 
 `mvn exec:java` abre a janela Swing ([Main](src/main/java/br/edu/unipampa/varzinho/Main.java)
-→ [Launcher](src/main/java/br/edu/unipampa/varzinho/ui/Launcher.java)
+→ [Launcher](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java)
 → [VarZinhoWindow](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java)).
 Os lances salvos ficam em `data/highlights.csv`, e as quadras e câmeras em
 `data/gym.csv`. Os dois reaparecem na próxima execução.
@@ -141,7 +141,7 @@ PostgreSQL de verdade; sem ele, esses testes são pulados.
 ### O que a interface faz
 
 Na primeira execução, a janela abre sobre um ginásio de exemplo já montado
-([SampleGym](src/main/java/br/edu/unipampa/varzinho/ui/SampleGym.java)): a
+([SampleGym](src/main/java/br/edu/unipampa/varzinho/bootstrap/SampleGym.java)): a
 quadra 1 tem uma câmera fixa e uma PTZ, a quadra 2 tem uma câmera fixa, e todas
 já estão gravando. Depois disso, ela abre sobre o ginásio salvo em
 `data/gym.csv`, com as quadras, câmeras, estados e posições deixados na
@@ -200,8 +200,9 @@ Caminhos relativos a `src/main/java/br/edu/unipampa/varzinho/`.
 | [`GymRepository`](src/main/java/br/edu/unipampa/varzinho/application/port/GymRepository.java) | `application.port` | Interface da estrutura do ginásio. `CsvGymRepository` grava quadras e câmeras em arquivo; `InMemoryGymRepository` guarda em memória |
 | [`DomainException`](src/main/java/br/edu/unipampa/varzinho/exception/DomainException.java), [`RepositoryException`](src/main/java/br/edu/unipampa/varzinho/exception/RepositoryException.java) | `exception` | Raízes das exceções próprias do domínio e da persistência |
 | [`FfmpegRecorder`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/FfmpegRecorder.java), [`FfmpegClipAssembler`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/FfmpegClipAssembler.java) | `infrastructure.stream` | Usam o FFmpeg: um grava o celular em segmentos de 1 segundo que se sobrescrevem; o outro junta os segmentos do lance num `.mp4` |
-| [`Launcher`](src/main/java/br/edu/unipampa/varzinho/ui/Launcher.java), [`PhoneConnection`](src/main/java/br/edu/unipampa/varzinho/ui/PhoneConnection.java) | `ui` | Montam a aplicação: os repositórios, o ginásio salvo e, se `VARZINHO_STREAM_URL` estiver definida, o celular. `PhoneConnection` é a única classe da interface que sabe que o celular chega pelo FFmpeg |
-| [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) | `ui` | A janela. Recebe tudo pronto do `Launcher`, monta `CourtPanel`, `CapturePanel` e `ArchivePanel` e mostra os erros. `GymSession` carrega o ginásio salvo e grava cada mudança |
+| [`Launcher`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java) | `bootstrap` | Monta a aplicação: os repositórios, o ginásio salvo, os casos de uso e, se `VARZINHO_STREAM_URL` estiver definida, o celular. É o único lugar que conhece cada adaptador concreto |
+| [`PhoneConnection`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/PhoneConnection.java) | `infrastructure.stream` | Liga o celular pelo FFmpeg e entrega a câmera e o feed dos segmentos. É a única classe que sabe que o celular chega pelo FFmpeg |
+| [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) | `ui` | A janela. Recebe os casos de uso prontos do `Launcher`, monta `CourtPanel`, `CapturePanel` e `ArchivePanel` e mostra os erros. Não importa nada de `domain` nem de `infrastructure`: o `ArchitectureTest` confere |
 
 ## Regras de negócio
 
@@ -253,7 +254,7 @@ cada conceito foi usado e por que faz sentido no domínio.
 
 | Conceito | Onde foi utilizado | Por que faz sentido no domínio |
 |---|---|---|
-| Classes e objetos | [`SampleGym.build()`](src/main/java/br/edu/unipampa/varzinho/ui/SampleGym.java) instancia `Gym`, `Court`, `FixedCamera` e `PtzCamera`. `Court.triggerCapture()` cria o `Highlight`, e `Camera.clipFrom()` cria o `VideoClip` | Cada classe é algo que existe no ginásio: prédio, quadra, câmera, lance, arquivo de vídeo, pessoa |
+| Classes e objetos | [`SampleGym.build()`](src/main/java/br/edu/unipampa/varzinho/bootstrap/SampleGym.java) instancia `Gym`, `Court`, `FixedCamera` e `PtzCamera`. `Court.triggerCapture()` cria o `Highlight`, e `Camera.clipFrom()` cria o `VideoClip` | Cada classe é algo que existe no ginásio: prédio, quadra, câmera, lance, arquivo de vídeo, pessoa |
 | Atributos | `CircularBuffer` (`frames`, `writePosition`, `size`), `Camera` (`id`, `resolution`, `status`, `buffer`), `PtzCamera` (`pan`, `tilt`, `zoom`), `VideoClip` (`filePath`, `durationSeconds`, `resolution`, `sizeMb`) | O estado guardado é o que o equipamento tem de fato: onde o buffer está escrevendo, se a câmera grava, para onde a PTZ aponta |
 | Métodos | `Court.triggerCapture()`, `CircularBuffer.record()` e `extractLastSeconds()`, `Camera.startRecording()`, `stopRecording()` e `sendToMaintenance()`, `PtzCamera.moveTo()`, `Person.age()` | O comportamento fica no objeto que o executa: quem captura é a quadra, quem sobrescreve é o buffer, quem se move é a PTZ |
 | Desafio da aula | Não se aplica a este repositório: o desafio foi uma atividade feita em sala e não é um artefato deste projeto | Os mesmos fundamentos (classes, atributos, métodos e construtores) aparecem aplicados no domínio nas linhas *Classes e objetos*, *Atributos*, *Métodos* e *Construtores* deste checklist |

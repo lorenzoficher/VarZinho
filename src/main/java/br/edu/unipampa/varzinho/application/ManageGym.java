@@ -43,7 +43,7 @@ public final class ManageGym {
     public CourtView addCourt(int courtNumber) throws RepositoryException {
         Court court = new Court(courtNumber);
         gym.addCourt(court);
-        repository.save(gym);
+        keep();
         return CourtView.from(court);
     }
 
@@ -52,7 +52,7 @@ public final class ManageGym {
             throw new IllegalArgumentException("installing a camera needs its specification");
         }
         gym.installCamera(courtNumber, spec.getKind().build(spec));
-        repository.save(gym);
+        keep();
         return court(courtNumber);
     }
 
@@ -72,7 +72,7 @@ public final class ManageGym {
     public CourtView removeCamera(int courtNumber, String cameraId) throws RepositoryException {
         Court court = requireCourt(courtNumber);
         court.removeCamera(requireCamera(court, cameraId));
-        repository.save(gym);
+        keep();
         return CourtView.from(court);
     }
 
@@ -80,7 +80,7 @@ public final class ManageGym {
             throws RepositoryException {
         Court from = requireCourt(fromCourtNumber);
         gym.moveCamera(requireCamera(from, cameraId), toCourtNumber);
-        repository.save(gym);
+        keep();
         return CourtView.from(from);
     }
 
@@ -92,7 +92,7 @@ public final class ManageGym {
             throw new IllegalArgumentException("camera " + cameraId + " cannot be aimed");
         }
         ((Aimable) camera).moveTo(pan, tilt, zoom);
-        repository.save(gym);
+        keep();
         return CourtView.from(court);
     }
 
@@ -100,8 +100,20 @@ public final class ManageGym {
             throws RepositoryException {
         Court court = requireCourt(courtNumber);
         change.accept(requireCamera(court, cameraId));
-        repository.save(gym);
+        keep();
         return CourtView.from(court);
+    }
+
+    /**
+     * Stores the gym after a change it already took. A value the storage cannot hold is
+     * a failure to keep the change, not a refusal of it, so it is reported as one.
+     */
+    private void keep() throws RepositoryException {
+        try {
+            repository.save(gym);
+        } catch (IllegalArgumentException unstorable) {
+            throw new RepositoryException(unstorable.getMessage(), unstorable);
+        }
     }
 
     private static Camera requireCamera(Court court, String cameraId) {

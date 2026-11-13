@@ -1,5 +1,10 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.bootstrap.SampleGym;
+import br.edu.unipampa.varzinho.application.BrowseArchive;
+import br.edu.unipampa.varzinho.application.CourtView;
+import br.edu.unipampa.varzinho.application.ManageGym;
+import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryGymRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
 import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
@@ -22,6 +27,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,7 +49,7 @@ class ArchivePanelTest {
         repository.save(highlight("h-1", EARLY, 1));
         repository.save(highlight("h-2", LATE, 2));
 
-        ArchivePanel panel = new ArchivePanel(gym, repository, BRASILIA, errors::add);
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
 
         assertEquals(2, panel.table().getRowCount());
         assertEquals("camera-h-2", panel.table().getValueAt(0, 2));
@@ -55,7 +61,7 @@ class ArchivePanelTest {
         InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
         repository.save(highlight("h-1", EARLY, 1));
         repository.save(highlight("h-3", LATE, 3));
-        ArchivePanel panel = new ArchivePanel(gym, repository, BRASILIA, errors::add);
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
         gym.addCourt(new Court(3));
 
         panel.refreshCourts();
@@ -70,7 +76,7 @@ class ArchivePanelTest {
         InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
         repository.save(highlight("h-1", EARLY, 1));
         repository.save(highlight("h-2", LATE, 2));
-        ArchivePanel panel = new ArchivePanel(gym, repository, BRASILIA, errors::add);
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
 
         panel.filter().setSelectedItem("Court 2");
 
@@ -80,8 +86,7 @@ class ArchivePanelTest {
 
     @Test
     void filterOffersAllCourtsFollowedByEachCourt() {
-        ArchivePanel panel = new ArchivePanel(gym, new InMemoryHighlightRepository(),
-                BRASILIA, errors::add);
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(new InMemoryHighlightRepository()), BRASILIA, errors::add);
 
         assertEquals("All courts", panel.filter().getItemAt(0));
         assertEquals(gym.getCourts().size() + 1, panel.filter().getItemCount());
@@ -93,7 +98,7 @@ class ArchivePanelTest {
         InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
         repository.save(highlight("h-1", LATE, 1));
 
-        JTable table = new ArchivePanel(gym, repository, BRASILIA, errors::add).table();
+        JTable table = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add).table();
 
         assertEquals(List.of("Captured at", "Court", "Camera", "Duration", "Clip"), columnNames(table));
         assertEquals("2026-09-29 18:30:15", table.getValueAt(0, 0));
@@ -106,7 +111,7 @@ class ArchivePanelTest {
     @Test
     void refreshPicksUpHighlightsSavedAfterTheTableFilled() throws RepositoryException {
         InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
-        ArchivePanel panel = new ArchivePanel(gym, repository, BRASILIA, errors::add);
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
         repository.save(highlight("h-1", EARLY, 1));
 
         panel.refresh();
@@ -118,7 +123,7 @@ class ArchivePanelTest {
     void archiveFailureIsReportedAndLeavesTheRowsAsTheyWere() throws RepositoryException {
         FailingRepository repository = new FailingRepository();
         repository.save(highlight("h-1", EARLY, 1));
-        ArchivePanel panel = new ArchivePanel(gym, repository, BRASILIA, errors::add);
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
         repository.failing = true;
 
         panel.refresh();
@@ -137,7 +142,7 @@ class ArchivePanelTest {
                 "h-2,not-a-date,1",
                 "h-3,2026-09-29T21:30:15Z,1,camera-h-3,clips/h-3.mp4,30,FULL_HD,12.5"));
 
-        ArchivePanel panel = new ArchivePanel(gym, new CsvHighlightRepository(file), BRASILIA, errors::add);
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(new CsvHighlightRepository(file)), BRASILIA, errors::add);
 
         assertEquals(2, panel.table().getRowCount());
         assertEquals("camera-h-3", panel.table().getValueAt(0, 2));
@@ -148,7 +153,7 @@ class ArchivePanelTest {
 
     @Test
     void openingAClipWithNoHighlightChosenAsksForOne() {
-        ArchivePanel panel = new ArchivePanel(gym, new InMemoryHighlightRepository(), BRASILIA, errors::add);
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(new InMemoryHighlightRepository()), BRASILIA, errors::add);
 
         panel.openClipButton().doClick();
 
@@ -159,13 +164,17 @@ class ArchivePanelTest {
     void aClipWithNoFileBehindItIsReportedInsteadOfOpened() throws RepositoryException {
         InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
         repository.save(highlight("h-never-written", EARLY, 1));
-        ArchivePanel panel = new ArchivePanel(gym, repository, BRASILIA, errors::add);
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
         panel.table().setRowSelectionInterval(0, 0);
 
         panel.openClipButton().doClick();
 
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).contains("h-never-written.mp4"));
+    }
+
+    private Supplier<List<CourtView>> courts() {
+        return new ManageGym(gym, new InMemoryGymRepository())::courts;
     }
 
     private static Highlight highlight(String id, Instant capturedAt, int court) {

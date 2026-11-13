@@ -1,13 +1,12 @@
 package br.edu.unipampa.varzinho.ui;
 
-import br.edu.unipampa.varzinho.application.PendingClipWrites;
+import br.edu.unipampa.varzinho.application.CaptureHighlight;
+import br.edu.unipampa.varzinho.application.HighlightView;
+import br.edu.unipampa.varzinho.application.PendingCapture;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
-import br.edu.unipampa.varzinho.domain.highlight.Highlight;
-import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.exception.ClipAssemblyException;
 import br.edu.unipampa.varzinho.exception.EmptyBufferException;
 import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
-import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -17,7 +16,6 @@ import java.awt.BorderLayout;
 import java.awt.Font;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
@@ -26,32 +24,29 @@ import java.util.function.Consumer;
  * athlete presses on the court.
  *
  * <p>It is the only capture action in the window. Recording is continuous, so a press
- * just freezes the selected court's buffer and archives it; nothing is saved when the
- * court refuses.
+ * just asks {@link CaptureHighlight} to freeze the selected court's buffer; nothing is
+ * saved when the court refuses. The panel decides only which thread runs each step.
  */
 final class CapturePanel extends JPanel {
     private final CourtPanel courtPanel;
-    private final HighlightRepository repository;
-    private final PendingClipWrites pendingWrites;
+    private final CaptureHighlight captureHighlight;
     private final Consumer<String> errorSink;
-    private final Consumer<Highlight> onSaved;
+    private final Consumer<HighlightView> onSaved;
     private final DateTimeFormatter timeFormat;
     private final JButton save = new JButton();
     private final JLabel confirmation = new JLabel(" ");
 
-    CapturePanel(CourtPanel courtPanel, HighlightRepository repository, ZoneId zone, PendingClipWrites pendingWrites,
-                 Consumer<String> errorSink, Consumer<Highlight> onSaved) {
+    CapturePanel(CourtPanel courtPanel, CaptureHighlight captureHighlight, ZoneId zone,
+                 Consumer<String> errorSink, Consumer<HighlightView> onSaved) {
         super(new BorderLayout(4, 4));
         if (courtPanel == null) throw new IllegalArgumentException("a capture panel needs a court panel");
-        if (repository == null) throw new IllegalArgumentException("a capture panel needs a highlight repository");
+        if (captureHighlight == null) throw new IllegalArgumentException("a capture panel needs a way to capture");
         if (zone == null) throw new IllegalArgumentException("a capture panel needs a time zone to show times in");
-        this.timeFormat = ArchivePanel.timeFormatIn(zone);
-        if (pendingWrites == null) throw new IllegalArgumentException("a capture panel needs the clips it has to write");
         if (errorSink == null) throw new IllegalArgumentException("a capture panel needs somewhere to report errors");
         if (onSaved == null) throw new IllegalArgumentException("a capture panel needs someone to tell about saves");
         this.courtPanel = courtPanel;
-        this.repository = repository;
-        this.pendingWrites = pendingWrites;
+        this.captureHighlight = captureHighlight;
+        this.timeFormat = ArchivePanel.timeFormatIn(zone);
         this.errorSink = errorSink;
         this.onSaved = onSaved;
         save.setFont(save.getFont().deriveFont(Font.BOLD, 20f));
@@ -69,37 +64,37 @@ final class CapturePanel extends JPanel {
     }
 
     // A phone's file is written on a worker so the window and the feeds keep going; the
-    // highlight is archived only once that file exists, never before.
+    // capture refuses to be archived before that file exists.
     private void saveHighlight() {
-        Highlight highlight;
+        PendingCapture capture;
         try {
-            highlight = courtPanel.selectedCourt().triggerCapture();
+            capture = captureHighlight.capture(courtPanel.selectedCourtNumber());
         } catch (NoActiveCameraException | EmptyBufferException | ClipAssemblyException failure) {
             refuse(failure.getMessage());
             return;
         }
-        Optional<Runnable> write = pendingWrites.take(highlight.getClip());
-        if (write.isEmpty()) {
-            archive(highlight);
+        if (!capture.hasClipToWrite()) {
+            archive(capture);
             return;
         }
-        confirmation.setText("Saving: court " + highlight.getCourtNumber()
-                + " · camera " + highlight.getCameraId() + "…");
-        new ClipWrite(write.get(), highlight).execute();
+        HighlightView shown = capture.view();
+        confirmation.setText("Saving: court " + shown.getCourtNumber() + " · camera " + shown.getCameraId() + "…");
+        new ClipWrite(capture).execute();
     }
 
-    private void archive(Highlight highlight) {
+    private void archive(PendingCapture capture) {
+        HighlightView archived;
         try {
-            repository.save(highlight);
+            archived = capture.archive();
         } catch (RepositoryException failure) {
             refuse("Archive error: " + failure.getMessage());
             return;
         }
-        confirmation.setText("Saved: court " + highlight.getCourtNumber()
-                + " · camera " + highlight.getCameraId()
-                + " · " + timeFormat.format(highlight.getCapturedAt())
-                + " · " + highlight.getClip().getDurationSeconds() + "s");
-        onSaved.accept(highlight);
+        confirmation.setText("Saved: court " + archived.getCourtNumber()
+                + " · camera " + archived.getCameraId()
+                + " · " + timeFormat.format(archived.getCapturedAt())
+                + " · " + archived.getDurationSeconds() + "s");
+        onSaved.accept(archived);
     }
 
     private void refuse(String reason) {
@@ -107,19 +102,17 @@ final class CapturePanel extends JPanel {
         errorSink.accept(reason);
     }
 
-    /** Writes one highlight's file off the Swing thread, and archives it back on it. */
+    /** Writes one capture's file off the Swing thread, and archives it back on it. */
     private final class ClipWrite extends SwingWorker<Void, Void> {
-        private final Runnable write;
-        private final Highlight highlight;
+        private final PendingCapture capture;
 
-        ClipWrite(Runnable write, Highlight highlight) {
-            this.write = write;
-            this.highlight = highlight;
+        ClipWrite(PendingCapture capture) {
+            this.capture = capture;
         }
 
         @Override
         protected Void doInBackground() {
-            write.run();
+            capture.writeClip();
             return null;
         }
 
@@ -127,7 +120,7 @@ final class CapturePanel extends JPanel {
         protected void done() {
             try {
                 get();
-                archive(highlight);
+                archive(capture);
             } catch (ExecutionException failure) {
                 refuse(failure.getCause().getMessage());
             } catch (InterruptedException interrupted) {
@@ -138,8 +131,7 @@ final class CapturePanel extends JPanel {
     }
 
     private void showCourt() {
-        Court court = courtPanel.selectedCourt();
-        save.setText("Save highlight - court " + court.getNumber());
+        save.setText("Save highlight - court " + courtPanel.selectedCourtNumber());
         confirmation.setText(" ");
     }
 }

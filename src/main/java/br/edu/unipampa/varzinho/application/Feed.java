@@ -1,4 +1,4 @@
-package br.edu.unipampa.varzinho.ui;
+package br.edu.unipampa.varzinho.application;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -7,7 +7,7 @@ import java.time.Instant;
  * Where the window's seconds of footage come from: a simulated clock, or the segments
  * the phone recorder finishes. The window drives either one from the same timer.
  */
-interface Feed {
+public interface Feed {
 
     /** How often the window should call {@link #tick}. */
     int periodMillis();

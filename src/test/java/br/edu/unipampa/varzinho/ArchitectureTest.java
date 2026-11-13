@@ -53,6 +53,12 @@ class ArchitectureTest {
     }
 
     @Test
+    void uiDoesNotImportTheDomainOrAdapters() throws IOException {
+        assertNoForbiddenImports("ui", List.of(PROJECT_PACKAGE + ".domain",
+                PROJECT_PACKAGE + ".infrastructure"));
+    }
+
+    @Test
     void exceptionsDoNotImportOtherProjectPackages() throws IOException {
         assertNoForbiddenImports("exception", List.of(PROJECT_PACKAGE));
     }

@@ -1,6 +1,7 @@
 package br.edu.unipampa.varzinho.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -112,6 +113,31 @@ class CaptureHighlightTest {
         assertEquals("fixed-1", archived.getCameraId());
         assertEquals(30, archived.getDurationSeconds());
         assertEquals(repository.findAll().get(0).getClip().getFilePath(), archived.getClipPath());
+    }
+
+    @Test
+    void aFixedCameraCaptureHasNoClipToWrite() {
+        recording(fixedCamera());
+
+        assertFalse(captureHighlight.capture(COURT).hasClipToWrite());
+    }
+
+    @Test
+    void aStreamCaptureHasAClipToWrite() {
+        recording(streamCamera((window, target) -> written.add(target)));
+
+        assertTrue(captureHighlight.capture(COURT).hasClipToWrite());
+    }
+
+    @Test
+    void aCaptureShowsWhatItWillArchiveBeforeItsClipIsWritten() {
+        recording(streamCamera((window, target) -> written.add(target)));
+
+        HighlightView shown = captureHighlight.capture(COURT).view();
+
+        assertEquals(COURT, shown.getCourtNumber());
+        assertEquals("phone-1", shown.getCameraId());
+        assertTrue(written.isEmpty());
     }
 
     @Test

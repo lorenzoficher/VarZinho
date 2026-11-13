@@ -1,5 +1,10 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.application.CameraKind;
+import br.edu.unipampa.varzinho.application.ManageGym;
+import br.edu.unipampa.varzinho.application.port.GymRepository;
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
+import br.edu.unipampa.varzinho.bootstrap.SampleGym;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
@@ -8,11 +13,16 @@ import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.enums.CameraStatus;
 import br.edu.unipampa.varzinho.enums.Resolution;
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvGymRepository;
+import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -22,7 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CourtPanelTest {
     private final Gym gym = SampleGym.build();
     private final List<String> errors = new ArrayList<>();
-    private final CourtPanel panel = new CourtPanel(gym, 30, errors::add);
+    private final CountingGymRepository gymRepository = new CountingGymRepository();
+    private final CourtPanel panel = new CourtPanel(new ManageGym(gym, gymRepository), 30, errors::add);
 
     @Test
     void switchingCourtsShowsTheCamerasOfTheNewCourt() {
@@ -31,7 +42,7 @@ class CourtPanelTest {
         panel.selectCourt(2);
 
         assertEquals(List.of(gym.findCourt(2).getCameras().get(0).describe()), panel.cameraLines());
-        assertEquals(2, panel.selectedCourt().getNumber());
+        assertEquals(2, panel.selectedCourtNumber());
     }
 
     @Test
@@ -63,7 +74,7 @@ class CourtPanelTest {
         panel.selectCourt(2);
         panel.idField().setText("fixed-3");
         panel.modelField().setText("Fixed Lite");
-        panel.typeSelector().setSelectedItem(CourtPanel.FIXED);
+        panel.typeSelector().setSelectedItem(CameraKind.FIXED);
         panel.resolutionSelector().setSelectedItem(Resolution.HD);
 
         panel.installButton().doClick();
@@ -82,7 +93,7 @@ class CourtPanelTest {
     void installingAPtzCameraGivesTheCourtOneMoreCamera() {
         panel.idField().setText("ptz-2");
         panel.modelField().setText("PTZ Lite");
-        panel.typeSelector().setSelectedItem(CourtPanel.PTZ);
+        panel.typeSelector().setSelectedItem(CameraKind.PTZ);
 
         panel.installButton().doClick();
 
@@ -143,7 +154,7 @@ class CourtPanelTest {
 
         panel.addCourtButton().doClick();
 
-        assertEquals(3, panel.selectedCourt().getNumber());
+        assertEquals(3, panel.selectedCourtNumber());
         assertTrue(panel.cameraLines().isEmpty());
         assertEquals(3, gym.getCourts().size());
         assertTrue(errors.isEmpty());
@@ -181,7 +192,7 @@ class CourtPanelTest {
     @Test
     void addingACourtTellsWhoeverListensForNewCourts() {
         List<Integer> announced = new ArrayList<>();
-        panel.onCourtAdded(() -> announced.add(panel.selectedCourt().getNumber()));
+        panel.onCourtAdded(() -> announced.add(panel.selectedCourtNumber()));
         panel.courtNumberField().setText("4");
 
         panel.addCourtButton().doClick();
@@ -246,10 +257,7 @@ class CourtPanelTest {
     }
 
     @Test
-    void everyChangeToTheGymIsAnnounced() {
-        List<String> changes = new ArrayList<>();
-        panel.onGymChanged(() -> changes.add("changed"));
-
+    void everyChangeTheGymAcceptsIsSaved() {
         panel.courtNumberField().setText("3");
         panel.addCourtButton().doClick();
         panel.idField().setText("fixed-3");
@@ -259,14 +267,11 @@ class CourtPanelTest {
         panel.startButton().doClick();
         panel.removeCameraButton().doClick();
 
-        assertEquals(4, changes.size());
+        assertEquals(4, gymRepository.saves);
     }
 
     @Test
-    void aRefusedChangeIsNotAnnounced() {
-        List<String> changes = new ArrayList<>();
-        panel.onGymChanged(() -> changes.add("changed"));
-
+    void aRefusedChangeIsNotSaved() {
         panel.courtNumberField().setText("1");
         panel.addCourtButton().doClick();
         panel.installButton().doClick();
@@ -274,15 +279,13 @@ class CourtPanelTest {
         panel.maintenanceButton().doClick();
         panel.startButton().doClick();
 
-        assertEquals(1, changes.size());
+        assertEquals(1, gymRepository.saves);
         assertEquals(3, errors.size());
     }
 
     @Test
     void movingTheSelectedCameraTakesItToTheChosenCourt() {
         Camera ptz = gym.findCourt(1).getCameras().get(1);
-        List<String> changes = new ArrayList<>();
-        panel.onGymChanged(() -> changes.add("changed"));
 
         panel.selectCamera(1);
         panel.moveTargetSelector().setSelectedItem(2);
@@ -291,7 +294,7 @@ class CourtPanelTest {
         assertEquals(1, panel.cameraLines().size());
         assertTrue(gym.findCourt(2).getCameras().contains(ptz));
         assertEquals(CameraStatus.INACTIVE, ptz.getStatus());
-        assertEquals(1, changes.size());
+        assertEquals(1, gymRepository.saves);
     }
 
     @Test
@@ -315,5 +318,54 @@ class CourtPanelTest {
         panel.moveToCourtButton().doClick();
 
         assertEquals(1, gym.findCourt(5).getCameras().size());
+    }
+
+    @Test
+    void aSaveTheStorageRefusesIsReportedWhileTheChangeStays() {
+        gymRepository.failing = true;
+        panel.courtNumberField().setText("3");
+
+        panel.addCourtButton().doClick();
+
+        assertEquals(List.of("The gym could not be saved: disk unplugged"), errors);
+        assertEquals(3, panel.selectedCourtNumber());
+        assertEquals(3, gym.getCourts().size());
+    }
+
+    @Test
+    void aValueTheStorageCannotHoldLeavesTheCameraInstalledAndLaterCourtsListed(@TempDir Path folder) {
+        CourtPanel csvPanel = new CourtPanel(
+                new ManageGym(gym, new CsvGymRepository(folder.resolve("gym.csv"))), 30, errors::add);
+        csvPanel.selectCourt(2);
+        csvPanel.idField().setText("fixed-9");
+        csvPanel.modelField().setText("Bullet, 2nd gen");
+        csvPanel.typeSelector().setSelectedItem(CameraKind.FIXED);
+        csvPanel.resolutionSelector().setSelectedItem(Resolution.HD);
+
+        csvPanel.installButton().doClick();
+        csvPanel.courtNumberField().setText("3");
+        csvPanel.addCourtButton().doClick();
+
+        assertEquals(2, errors.size());
+        assertTrue(errors.get(0).startsWith("The gym could not be saved: "), errors.get(0));
+        assertTrue(gym.findCourt(2).getCameras().stream().anyMatch(camera -> camera.getId().equals("fixed-9")));
+        assertEquals(3, csvPanel.selectedCourtNumber());
+        assertEquals(3, gym.getCourts().size());
+    }
+
+    private static final class CountingGymRepository implements GymRepository {
+        private int saves;
+        private boolean failing;
+
+        @Override
+        public void save(Gym gym) throws RepositoryException {
+            if (failing) throw new RepositoryException("disk unplugged");
+            saves++;
+        }
+
+        @Override
+        public Optional<Gym> load() {
+            return Optional.empty();
+        }
     }
 }
