@@ -40,6 +40,10 @@ through DroidCam: the ring kept one segment per second, every capture wrote a
 playable 30-second `.mp4`, and closing the window left no FFmpeg process behind.
 The phone dropping mid-session has not been exercised yet.
 
+Storage follows the same pattern: CSV under `data/` unless `VARZINHO_DATABASE_URL`
+names a PostgreSQL database, in which case an unreachable database stops the
+application instead of falling back to CSV.
+
 The second assignment ([docs/Trabalho 2.md](docs/Trabalho%202.md)) asks for SOLID and
 Clean Architecture. The target and the work items are in
 [docs/PLAN-CLEAN-ARCHITECTURE.md](docs/PLAN-CLEAN-ARCHITECTURE.md), one issue each;

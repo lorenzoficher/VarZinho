@@ -134,9 +134,23 @@ dados ficam num volume do Docker e sobrevivem a reiniciar o container; só
 `docker compose down -v` os apaga. Se a porta 5432 já estiver ocupada, escolha
 outra com `VARZINHO_DB_PORT=5433 docker compose up -d`.
 
-A aplicação ainda grava em CSV; o banco é a base dos repositórios PostgreSQL que
-vêm a seguir. Com o Docker instalado, `mvn test` também testa contra um
-PostgreSQL de verdade; sem ele, esses testes são pulados.
+Para a aplicação gravar o ginásio e o acervo no banco em vez dos CSV, indique o
+banco nas variáveis de ambiente:
+
+```powershell
+$env:VARZINHO_DATABASE_URL = "jdbc:postgresql://localhost:5432/varzinho"
+$env:VARZINHO_DATABASE_USER = "varzinho"
+$env:VARZINHO_DATABASE_PASSWORD = "varzinho"
+mvn exec:java
+```
+
+Sem `VARZINHO_DATABASE_URL`, tudo continua nos arquivos de `data/`. Se o banco
+indicado não responder, o programa mostra o erro e não abre: ele **não** volta a
+gravar em CSV, para que nenhum lance fique num arquivo enquanto você o procura no
+banco. A mensagem mostra o endereço do banco, nunca a senha.
+
+Com o Docker instalado, `mvn test` também testa contra um PostgreSQL de verdade;
+sem ele, esses testes são pulados.
 
 ### O que a interface faz
 
@@ -200,7 +214,7 @@ Caminhos relativos a `src/main/java/br/edu/unipampa/varzinho/`.
 | [`GymRepository`](src/main/java/br/edu/unipampa/varzinho/application/port/GymRepository.java) | `application.port` | Interface da estrutura do ginásio. `CsvGymRepository` grava quadras e câmeras em arquivo; `InMemoryGymRepository` guarda em memória |
 | [`DomainException`](src/main/java/br/edu/unipampa/varzinho/exception/DomainException.java), [`RepositoryException`](src/main/java/br/edu/unipampa/varzinho/exception/RepositoryException.java) | `exception` | Raízes das exceções próprias do domínio e da persistência |
 | [`FfmpegRecorder`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/FfmpegRecorder.java), [`FfmpegClipAssembler`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/FfmpegClipAssembler.java) | `infrastructure.stream` | Usam o FFmpeg: um grava o celular em segmentos de 1 segundo que se sobrescrevem; o outro junta os segmentos do lance num `.mp4` |
-| [`Launcher`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java) | `bootstrap` | Monta a aplicação: os repositórios, o ginásio salvo, os casos de uso e, se `VARZINHO_STREAM_URL` estiver definida, o celular. É o único lugar que conhece cada adaptador concreto |
+| [`Launcher`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java) | `bootstrap` | Monta a aplicação: os repositórios (CSV, ou PostgreSQL se `VARZINHO_DATABASE_URL` estiver definida), o ginásio salvo, os casos de uso e, se `VARZINHO_STREAM_URL` estiver definida, o celular. É o único lugar que conhece cada adaptador concreto |
 | [`PhoneConnection`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/PhoneConnection.java) | `infrastructure.stream` | Liga o celular pelo FFmpeg e entrega a câmera e o feed dos segmentos. É a única classe que sabe que o celular chega pelo FFmpeg |
 | [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) | `ui` | A janela. Recebe os casos de uso prontos do `Launcher`, monta `CourtPanel`, `CapturePanel` e `ArchivePanel` e mostra os erros. Não importa nada de `domain` nem de `infrastructure`: o `ArchitectureTest` confere |
 

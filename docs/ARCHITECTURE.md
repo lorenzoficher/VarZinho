@@ -52,6 +52,13 @@ public interface HighlightRepository {
 contract test, and nothing else in the system changes between them — because
 nothing else in the system mentions CSV or SQL.
 
+Which one a run uses is decided once, in the composition root (`bootstrap/Storage`):
+CSV under `data/` by default, PostgreSQL when `VARZINHO_DATABASE_URL` names a
+database (with `VARZINHO_DATABASE_USER` and `VARZINHO_DATABASE_PASSWORD`). A
+database that is named but unreachable stops the application before any window
+opens; it never falls back to CSV, because highlights written to a file would look
+lost from the database.
+
 This is **dependency inversion**: the high-level policy depends on an
 abstraction, not on the low-level detail. It is also the project's clearest
 justification for declaring an interface at all.
