@@ -27,6 +27,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CourtPanelTest {
@@ -245,6 +246,25 @@ class CourtPanelTest {
 
         assertEquals(List.of("pan runs from 0 to 359, not 400"), errors);
         assertEquals(0, ptz.getPan());
+    }
+
+    @Test
+    void aimingAFixedCameraIsRefusedEvenIfTheButtonWasLeftEnabled() {
+        FixedCamera fixed = (FixedCamera) gym.findCourt(1).getCameras().get(0);
+        CameraStatus statusBefore = fixed.getStatus();
+        int angleBefore = fixed.getAngle();
+        panel.selectCamera(0);
+        // The disabled button is the screen's guarantee; this checks the one behind it.
+        panel.moveButton().setEnabled(true);
+
+        panel.moveButton().doClick();
+
+        assertEquals(List.of("camera " + fixed.getId() + " cannot be aimed"), errors);
+        assertSame(fixed, gym.findCourt(1).getCameras().get(0));
+        assertEquals(statusBefore, fixed.getStatus());
+        assertEquals(angleBefore, fixed.getAngle());
+        assertEquals(0, gymRepository.saves);
+        assertFalse(panel.moveButton().isEnabled());
     }
 
     @Test
