@@ -18,6 +18,8 @@ import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.awt.Component;
+import java.awt.Container;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -35,6 +37,14 @@ class CourtPanelTest {
     private final List<String> errors = new ArrayList<>();
     private final CountingGymRepository gymRepository = new CountingGymRepository();
     private final CourtPanel panel = new CourtPanel(new ManageGym(gym, gymRepository), 30, errors::add);
+
+    @Test
+    void composesOnePanelForEachCourtAreaResponsibility() {
+        assertEquals(1, descendantsOfType(panel, CourtSelectionPanel.class));
+        assertEquals(1, descendantsOfType(panel, CameraListPanel.class));
+        assertEquals(1, descendantsOfType(panel, CameraInstallPanel.class));
+        assertEquals(1, descendantsOfType(panel, CameraPositionPanel.class));
+    }
 
     @Test
     void switchingCourtsShowsTheCamerasOfTheNewCourt() {
@@ -371,6 +381,15 @@ class CourtPanelTest {
         assertTrue(gym.findCourt(2).getCameras().stream().anyMatch(camera -> camera.getId().equals("fixed-9")));
         assertEquals(3, csvPanel.selectedCourtNumber());
         assertEquals(3, gym.getCourts().size());
+    }
+
+    private static int descendantsOfType(Container root, Class<? extends Component> type) {
+        int matches = 0;
+        for (Component component : root.getComponents()) {
+            if (type.isInstance(component)) matches++;
+            if (component instanceof Container child) matches += descendantsOfType(child, type);
+        }
+        return matches;
     }
 
     private static final class CountingGymRepository implements GymRepository {
