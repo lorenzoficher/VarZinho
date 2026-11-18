@@ -76,9 +76,17 @@ mvn exec:java
 
 `mvn exec:java` abre a janela Swing ([Main](src/main/java/br/edu/unipampa/varzinho/Main.java)
 → [Launcher](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java)
+→ [SignInDialog](src/main/java/br/edu/unipampa/varzinho/ui/SignInDialog.java)
 → [VarZinhoWindow](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java)).
-Os lances salvos ficam em `data/highlights.csv`, e as quadras e câmeras em
-`data/gym.csv`. Os dois reaparecem na próxima execução.
+Antes da janela principal, um operador precisa entrar com usuário e senha. Na
+primeira execução, sem nenhum operador salvo, aparece o formulário que cria o
+primeiro. A senha precisa de 8 caracteres, com maiúscula, minúscula, dígito e
+símbolo. Fechar esse formulário encerra o programa; fechar a janela principal
+encerra a sessão.
+
+Os lances salvos ficam em `data/highlights.csv`, as quadras e câmeras em
+`data/gym.csv` e os operadores em `data/operators.csv`, guardando só o hash da
+senha. Tudo reaparece na próxima execução.
 
 Há também uma demonstração em modo texto, sem janela, que percorre o fluxo
 inteiro — cadastra ginásio, quadras, atleta e operador, grava, captura, salva,
@@ -144,7 +152,7 @@ $env:VARZINHO_DATABASE_PASSWORD = "varzinho"
 mvn exec:java
 ```
 
-Sem `VARZINHO_DATABASE_URL`, tudo continua nos arquivos de `data/`. Se o banco
+Os operadores também vão para o banco. Sem `VARZINHO_DATABASE_URL`, tudo continua nos arquivos de `data/`. Se o banco
 indicado não responder, o programa mostra o erro e não abre: ele **não** volta a
 gravar em CSV, para que nenhum lance fique num arquivo enquanto você o procura no
 banco. A mensagem mostra o endereço do banco, nunca a senha.
@@ -214,8 +222,9 @@ Caminhos relativos a `src/main/java/br/edu/unipampa/varzinho/`.
 | [`GymRepository`](src/main/java/br/edu/unipampa/varzinho/application/port/GymRepository.java) | `application.port` | Interface da estrutura do ginásio. `CsvGymRepository` grava quadras e câmeras em arquivo; `InMemoryGymRepository` guarda em memória |
 | [`DomainException`](src/main/java/br/edu/unipampa/varzinho/exception/DomainException.java), [`RepositoryException`](src/main/java/br/edu/unipampa/varzinho/exception/RepositoryException.java) | `exception` | Raízes das exceções próprias do domínio e da persistência |
 | [`FfmpegRecorder`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/FfmpegRecorder.java), [`FfmpegClipAssembler`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/FfmpegClipAssembler.java) | `infrastructure.stream` | Usam o FFmpeg: um grava o celular em segmentos de 1 segundo que se sobrescrevem; o outro junta os segmentos do lance num `.mp4` |
-| [`Launcher`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java) | `bootstrap` | Monta a aplicação: os repositórios (CSV, ou PostgreSQL se `VARZINHO_DATABASE_URL` estiver definida), o ginásio salvo, os casos de uso e, se `VARZINHO_STREAM_URL` estiver definida, o celular. É o único lugar que conhece cada adaptador concreto |
+| [`Launcher`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java) | `bootstrap` | Monta a aplicação: os repositórios e os operadores (CSV, ou PostgreSQL se `VARZINHO_DATABASE_URL` estiver definida), a entrada do operador, o ginásio salvo, os casos de uso e, se `VARZINHO_STREAM_URL` estiver definida, o celular. É o único lugar que conhece cada adaptador concreto |
 | [`PhoneConnection`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/PhoneConnection.java) | `infrastructure.stream` | Liga o celular pelo FFmpeg e entrega a câmera e o feed dos segmentos. É a única classe que sabe que o celular chega pelo FFmpeg |
+| [`SignInDialog`](src/main/java/br/edu/unipampa/varzinho/ui/SignInDialog.java) | `ui` | A entrada antes da janela: `SignInPanel` para quem já tem conta, ou `FirstOperatorPanel` quando nenhum operador existe. Só repassa o que `OperatorAccess` decide — o erro de login nunca diz se foi o usuário ou a senha |
 | [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) | `ui` | A janela. Recebe os casos de uso prontos do `Launcher`, monta `CourtPanel`, `CapturePanel` e `ArchivePanel` e mostra os erros. Não importa nada de `domain` nem de `infrastructure`: o `ArchitectureTest` confere |
 
 ## Regras de negócio

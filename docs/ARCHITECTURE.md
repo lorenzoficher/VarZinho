@@ -59,6 +59,12 @@ database that is named but unreachable stops the application before any window
 opens; it never falls back to CSV, because highlights written to a file would look
 lost from the database.
 
+The operator accounts follow the same choice: `data/operators.csv` by default,
+`PostgresOperatorStore` when a database is named. The launcher hands that store to
+`OperatorAccess`, and `ui/SignInDialog` asks for a sign-in — or for the first
+operator, when none is stored — before the main window is built. Closing that
+gate exits without opening the window.
+
 This is **dependency inversion**: the high-level policy depends on an
 abstraction, not on the low-level detail. It is also the project's clearest
 justification for declaring an interface at all.
