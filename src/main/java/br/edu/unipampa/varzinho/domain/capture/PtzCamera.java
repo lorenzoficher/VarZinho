@@ -6,7 +6,7 @@ import br.edu.unipampa.varzinho.enums.Resolution;
 import java.util.List;
 
 /**
- * A camera that can be panned, tilted and zoomed while it records.
+ * A camera that can be panned, tilted and zoomed.
  *
  * <p>Where it is pointing is part of what it captured, so the clip it produces is
  * named after its aim as well as its id — two clips taken at the same second from
