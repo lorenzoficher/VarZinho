@@ -88,6 +88,21 @@ microseconds and an `Instant` carries nanoseconds. Every value reaches SQL as a
 bound parameter, and every `SQLException` surfaces as a `RepositoryException`
 with it as the cause.
 
+### Operator accounts in PostgreSQL
+
+`PostgresOperatorStore` implements `OperatorStore` through plain JDBC. Opening
+it creates `operator_account` and a unique index on `lower(username)` in one
+transaction. The database arbitrates duplicate inserts, including concurrent
+inserts from different windows; a duplicate is reported as
+`IllegalArgumentException`, as required by the port. Other SQL failures become
+`RepositoryException` with their SQL cause chained.
+
+The table stores only the name, username and encoded password hash. Reading
+uses `Operator.restore` to retain the original hash, never rehashing it or
+storing a plain password. This adapter is available independently of the
+startup storage selection. Its contract and database constraints are tested
+against Testcontainers PostgreSQL, with integration tests skipped without Docker.
+
 ### The gym's structure
 
 Courts and cameras created in the window are kept by a second interface,
