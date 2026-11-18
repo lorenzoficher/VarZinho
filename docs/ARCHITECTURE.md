@@ -241,6 +241,15 @@ the archive panel lists persisted highlights with an optional court filter.
 People registration remains in `ConsoleDemo`, because people do not
 participate in the capture operation.
 
+The stream camera receives the real `FfmpegClipAssembler`: capture returns only
+after its clip is written. `CapturePanel` runs the whole capture on a
+`SwingWorker`, then archives the completed highlight on the Swing thread.
+While the worker uses the model, the window skips feed ticks and disables
+court and camera changes. A phone disconnect waits for capture to finish.
+Both success and failure restore the controls and feeds. There is no registry
+of deferred clip writes; a caller outside the panel gets the same completed
+capture as the window.
+
 They are deliberately thin. Every rule lives in the domain and the interface
 only calls it. If logic starts accumulating in a window class, it belongs in a
 domain class instead — a screen that decides whether a court can be captured
