@@ -2,17 +2,20 @@ package br.edu.unipampa.varzinho.bootstrap;
 
 import br.edu.unipampa.varzinho.application.port.GymRepository;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
+import br.edu.unipampa.varzinho.application.port.OperatorStore;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.infrastructure.persistence.CsvGymRepository;
 import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvOperatorStore;
 import br.edu.unipampa.varzinho.infrastructure.persistence.PostgresGymRepository;
 import br.edu.unipampa.varzinho.infrastructure.persistence.PostgresHighlightRepository;
+import br.edu.unipampa.varzinho.infrastructure.persistence.PostgresOperatorStore;
 
 import java.nio.file.Path;
 import java.util.function.UnaryOperator;
 
 /**
- * Where this run keeps the gym and the highlight archive: the CSV files by default, or
+ * Where this run keeps the gym, the highlight archive and the operator accounts: the CSV files by default, or
  * PostgreSQL when {@value #URL_VARIABLE} names a database.
  *
  * <p>A database that is named but cannot be reached is never swapped for the files:
@@ -27,10 +30,12 @@ final class Storage {
 
     private final HighlightRepository highlights;
     private final GymRepository gym;
+    private final OperatorStore operators;
 
-    private Storage(HighlightRepository highlights, GymRepository gym) {
+    private Storage(HighlightRepository highlights, GymRepository gym, OperatorStore operators) {
         this.highlights = highlights;
         this.gym = gym;
+        this.operators = operators;
     }
 
     /**
@@ -44,7 +49,8 @@ final class Storage {
         String url = environment.apply(URL_VARIABLE);
         if (url == null || url.isBlank()) {
             return new Storage(new CsvHighlightRepository(dataFolder.resolve("highlights.csv")),
-                    new CsvGymRepository(dataFolder.resolve("gym.csv")));
+                    new CsvGymRepository(dataFolder.resolve("gym.csv")),
+                    new CsvOperatorStore(dataFolder.resolve("operators.csv")));
         }
         return inDatabase(url, environment.apply(USER_VARIABLE), environment.apply(PASSWORD_VARIABLE));
     }
@@ -57,7 +63,8 @@ final class Storage {
         }
         try {
             return new Storage(PostgresHighlightRepository.open(url, user, password),
-                    PostgresGymRepository.open(url, user, password));
+                    PostgresGymRepository.open(url, user, password),
+                    PostgresOperatorStore.open(url, user, password));
         } catch (RepositoryException failure) {
             // The adapter's own message repeats the raw url, which may carry the password.
             throw new RepositoryException("could not reach the database at " + shownUrl
@@ -79,5 +86,9 @@ final class Storage {
 
     GymRepository gym() {
         return gym;
+    }
+
+    OperatorStore operators() {
+        return operators;
     }
 }

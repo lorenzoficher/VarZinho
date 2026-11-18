@@ -99,8 +99,8 @@ inserts from different windows; a duplicate is reported as
 
 The table stores only the name, username and encoded password hash. Reading
 uses `Operator.restore` to retain the original hash, never rehashing it or
-storing a plain password. This adapter is available independently of the
-startup storage selection. Its contract and database constraints are tested
+storing a plain password. `bootstrap/Storage` opens it alongside the other
+PostgreSQL repositories when a database is named. Its contract and database constraints are tested
 against Testcontainers PostgreSQL, with integration tests skipped without Docker.
 
 ### The gym's structure

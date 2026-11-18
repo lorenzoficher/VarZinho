@@ -1,8 +1,10 @@
 package br.edu.unipampa.varzinho.bootstrap;
 
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
+import br.edu.unipampa.varzinho.domain.people.Operator;
 import br.edu.unipampa.varzinho.infrastructure.persistence.CsvGymRepository;
 import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvOperatorStore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -31,6 +33,15 @@ class StorageTest {
 
         assertInstanceOf(CsvHighlightRepository.class, storage.highlights());
         assertInstanceOf(CsvGymRepository.class, storage.gym());
+    }
+
+    @Test
+    void keepsOperatorsInTheDataFolderWhenNoDatabaseIsNamed() throws RepositoryException {
+        Storage storage = Storage.fromEnvironment(Map.<String, String>of()::get, dataFolder);
+
+        storage.operators().save(new Operator("Ana Lima", "ana", "Str0ng!pass"));
+
+        assertTrue(new CsvOperatorStore(dataFolder.resolve("operators.csv")).hasAny());
     }
 
     @Test
