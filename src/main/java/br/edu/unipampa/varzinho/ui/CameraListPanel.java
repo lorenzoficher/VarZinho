@@ -42,6 +42,9 @@ final class CameraListPanel extends JPanel {
         cameraList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         add(new JScrollPane(cameraList), BorderLayout.CENTER);
         JPanel buttons = new JPanel(new GridLayout(0, 1, 4, 4));
+        start.setIcon(VarZinhoIcons.record());
+        stop.setIcon(VarZinhoIcons.stop());
+        maintenance.setIcon(VarZinhoIcons.maintenance());
         buttons.add(start); buttons.add(stop); buttons.add(maintenance); buttons.add(remove);
         add(buttons, BorderLayout.EAST);
         start.addActionListener(event -> changeSelected(management::startRecording));
