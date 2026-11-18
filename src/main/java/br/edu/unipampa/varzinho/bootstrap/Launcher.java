@@ -6,12 +6,15 @@ import br.edu.unipampa.varzinho.application.ConnectStreamCamera;
 import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.GymSession;
+import br.edu.unipampa.varzinho.application.OperatorAccess;
 import br.edu.unipampa.varzinho.application.PendingClipWrites;
+import br.edu.unipampa.varzinho.application.SignedInOperator;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import br.edu.unipampa.varzinho.infrastructure.stream.PhoneConnection;
+import br.edu.unipampa.varzinho.ui.SignInDialog;
 import br.edu.unipampa.varzinho.ui.VarZinhoWindow;
 
 import javax.swing.JOptionPane;
@@ -34,10 +37,12 @@ public final class Launcher {
     private Launcher() { }
 
     /**
-     * Opens the window on the simulated cameras, or, when {@value #STREAM_URL_VARIABLE}
-     * names a phone stream, on that phone as well. Everything is kept in the CSV files
-     * unless {@value Storage#URL_VARIABLE} names a database; when that database cannot be
-     * reached, no window opens and the application exits.
+     * Asks for an operator to sign in — or to be created, on the first run — and then
+     * opens the window on the simulated cameras, or, when {@value #STREAM_URL_VARIABLE}
+     * names a phone stream, on that phone as well. Everything, operators included, is kept
+     * in the CSV files unless {@value Storage#URL_VARIABLE} names a database; when that
+     * database cannot be reached, or the sign-in is closed without an operator, no window
+     * opens and the application exits.
      */
     public static void launch() {
         SwingUtilities.invokeLater(() -> {
@@ -45,7 +50,10 @@ public final class Launcher {
             try {
                 storage = Storage.fromEnvironment(System::getenv, DATA_FOLDER);
             } catch (RepositoryException unreachable) {
-                refuseToOpen(unreachable.getMessage());
+                refuseToOpen(unreachable.getMessage(), "Database not reached");
+                return;
+            }
+            if (signIn(storage).isEmpty()) {
                 return;
             }
             HighlightRepository repository = storage.highlights();
@@ -86,9 +94,26 @@ public final class Launcher {
                 feed, BUFFER_SECONDS);
     }
 
-    private static void refuseToOpen(String reason) {
+    // Empty means the application is already on its way out: the gate was closed, or the
+    // operators could not be read.
+    private static Optional<SignedInOperator> signIn(Storage storage) {
+        Optional<SignedInOperator> operator;
+        try {
+            operator = SignInDialog.ask(new OperatorAccess(storage.operators()));
+        } catch (RepositoryException unreadable) {
+            refuseToOpen("the operators could not be read (" + unreadable.getMessage() + ")",
+                    "Operators not read");
+            return Optional.empty();
+        }
+        if (operator.isEmpty()) {
+            System.exit(0);
+        }
+        return operator;
+    }
+
+    private static void refuseToOpen(String reason, String title) {
         JOptionPane.showMessageDialog(null, "VarZinho will not open: " + reason + ".",
-                "Database not reached", JOptionPane.ERROR_MESSAGE);
+                title, JOptionPane.ERROR_MESSAGE);
         System.exit(1);
     }
 

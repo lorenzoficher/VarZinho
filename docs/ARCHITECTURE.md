@@ -59,6 +59,12 @@ database that is named but unreachable stops the application before any window
 opens; it never falls back to CSV, because highlights written to a file would look
 lost from the database.
 
+The operator accounts follow the same choice: `data/operators.csv` by default,
+`PostgresOperatorStore` when a database is named. The launcher hands that store to
+`OperatorAccess`, and `ui/SignInDialog` asks for a sign-in — or for the first
+operator, when none is stored — before the main window is built. Closing that
+gate exits without opening the window.
+
 This is **dependency inversion**: the high-level policy depends on an
 abstraction, not on the low-level detail. It is also the project's clearest
 justification for declaring an interface at all.
@@ -99,8 +105,8 @@ inserts from different windows; a duplicate is reported as
 
 The table stores only the name, username and encoded password hash. Reading
 uses `Operator.restore` to retain the original hash, never rehashing it or
-storing a plain password. This adapter is available independently of the
-startup storage selection. Its contract and database constraints are tested
+storing a plain password. `bootstrap/Storage` opens it alongside the other
+PostgreSQL repositories when a database is named. Its contract and database constraints are tested
 against Testcontainers PostgreSQL, with integration tests skipped without Docker.
 
 ### The gym's structure
