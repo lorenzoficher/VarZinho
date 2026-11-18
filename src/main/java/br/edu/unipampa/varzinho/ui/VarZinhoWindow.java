@@ -16,7 +16,6 @@ import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
@@ -83,7 +82,7 @@ public final class VarZinhoWindow extends JFrame {
 
     private static JLabel buildTitle(String gymName) {
         JLabel title = new JLabel(gymName);
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 18f));
+        VarZinhoTheme.styleTitle(title);
         return title;
     }
 
@@ -107,6 +106,7 @@ public final class VarZinhoWindow extends JFrame {
     // Swing would need a decoding library, which this project does not take on.
     private void offerLiveView(String streamUrl) {
         JButton liveView = new JButton("Open live view");
+        liveView.setIcon(VarZinhoIcons.openClip());
         liveView.addActionListener(event -> openLiveView(streamUrl));
         header.add(liveView);
         pack();
