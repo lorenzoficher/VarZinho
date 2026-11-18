@@ -8,7 +8,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import java.awt.Frame;
+import java.awt.Window;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -21,7 +21,10 @@ public final class SignInDialog extends JDialog {
     private SignedInOperator signedIn;
 
     private SignInDialog(OperatorAccess access) throws RepositoryException {
-        super((Frame) null, true);
+        // Owned by no window at all: a null Frame owner would hang it on Swing's hidden
+        // shared frame, and the window manager would then leave it off the taskbar, where
+        // it is lost the moment another window takes focus.
+        super((Window) null, ModalityType.APPLICATION_MODAL);
         JPanel form = formFor(access, this::showError, this::admit);
         if (form instanceof FirstOperatorPanel firstForm) {
             setTitle("VarZinho - Create the first operator");
