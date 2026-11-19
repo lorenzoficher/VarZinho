@@ -74,6 +74,8 @@ final class CourtPanel extends JPanel {
     void onCourtChange(Runnable listener) { courtSelection.onCourtChange(listener); }
     void onCourtAdded(Runnable listener) { courtSelection.onCourtAdded(listener); }
     void onCamerasChanged(Runnable listener) { cameraList.onCamerasChanged(listener); }
+    /** Shows a change the panel did not make itself, such as the phone dropping. */
+    void refreshCameras() { cameraList.refreshKeepingSelection(); }
     void selectCamera(int index) { cameraList.selectCamera(index); }
     List<String> cameraLines() { return cameraList.cameraLines(); }
     List<String> cameraColumns() { return cameraList.cameraColumns(); }

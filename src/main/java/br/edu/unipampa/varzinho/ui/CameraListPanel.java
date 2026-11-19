@@ -9,6 +9,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.table.AbstractTableModel;
@@ -17,6 +18,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridLayout;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +55,9 @@ final class CameraListPanel extends JPanel {
         this.errorSink = errorSink;
         cameraTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         cameraTable.getTableHeader().setReorderingAllowed(false);
+        // JTable claims F2 to edit a cell; these cells are not editable, and F2 saves a highlight.
+        cameraTable.getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0), "none");
         cameraTable.getColumnModel().getColumn(STATUS_COLUMN).setCellRenderer(new BadgeRenderer());
         add(new JScrollPane(cameraTable), BorderLayout.CENTER);
         JPanel buttons = new JPanel(new GridLayout(0, 1, 4, 4));
@@ -70,9 +75,14 @@ final class CameraListPanel extends JPanel {
         refresh();
     }
 
+    /**
+     * Reads the court's cameras again and tells whoever follows them, so an install, a
+     * move or a change made outside this panel reaches the summaries as well.
+     */
     void refresh() {
         shownCameras = management.court(selectedCourt.getAsInt()).getCameras();
         cameraRows.fireTableDataChanged();
+        cameraListeners.forEach(Runnable::run);
     }
 
     void refreshKeepingSelection() {
@@ -90,7 +100,7 @@ final class CameraListPanel extends JPanel {
         cameraTable.getSelectionModel().addListSelectionListener(event -> listener.run());
     }
 
-    /** Called after any camera of the court changes state, so summaries follow at once. */
+    /** Called whenever the court's cameras are read again, so summaries follow at once. */
     void onCamerasChanged(Runnable listener) {
         cameraListeners.add(listener);
     }
@@ -128,7 +138,6 @@ final class CameraListPanel extends JPanel {
                 () -> change.apply(selectedCourt.getAsInt(), camera.get().getId()),
                 errorSink);
         refreshKeepingSelection();
-        cameraListeners.forEach(Runnable::run);
     }
 
     @FunctionalInterface

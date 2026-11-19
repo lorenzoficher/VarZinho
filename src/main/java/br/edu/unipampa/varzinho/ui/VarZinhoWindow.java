@@ -166,6 +166,7 @@ public final class VarZinhoWindow extends JFrame {
             if (phoneDropReported) return;
             disconnect.run();
             phoneDropReported = true;
+            courtPanel.refreshCameras();
             showBufferStatus();
             messages.show("O celular parou de transmitir. "
                     + "Reinicie o VarZinho para reconectar.");

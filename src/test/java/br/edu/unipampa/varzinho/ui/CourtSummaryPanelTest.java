@@ -56,6 +56,35 @@ class CourtSummaryPanelTest {
     }
 
     @Test
+    void installingACameraUpdatesTheRecordingCardAtOnce() {
+        courts.idField().setText("fixed-9");
+        courts.modelField().setText("Fixed Pro");
+        courts.installButton().doClick();
+
+        assertEquals(3, courts.cameraLines().size(), errors.toString());
+        assertTrue(summary.recordingText().endsWith(" de 3"), summary.recordingText());
+    }
+
+    @Test
+    void movingACameraAwayUpdatesTheRecordingCardAtOnce() {
+        courts.selectCamera(0);
+        courts.moveTargetSelector().setSelectedItem(2);
+        courts.moveToCourtButton().doClick();
+
+        assertEquals("1 de 1", summary.recordingText(), errors.toString());
+    }
+
+    @Test
+    void aCameraStoppedOutsideThePanelShowsOnceTheCamerasAreRefreshed() {
+        gym.findCourt(1).getCameras().get(0).stopRecording();
+
+        courts.refreshCameras();
+
+        assertEquals("1 de 2", summary.recordingText());
+        assertEquals(StatusBadge.STOPPED, courts.statusBadges().get(0));
+    }
+
+    @Test
     void theTodayCardSaysWhenNothingHasBeenSavedYet() {
         assertEquals("0", summary.todayText());
     }

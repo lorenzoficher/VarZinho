@@ -18,7 +18,11 @@ import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import javax.swing.JComponent;
+import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import java.awt.Component;
+import java.awt.event.KeyEvent;
 import java.awt.Container;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -89,6 +93,16 @@ class CourtPanelTest {
         assertEquals(StatusBadge.RECORDING, StatusBadge.of(CameraStatus.ACTIVE));
         assertEquals(StatusBadge.STOPPED, StatusBadge.of(CameraStatus.INACTIVE));
         assertEquals(StatusBadge.MAINTENANCE, StatusBadge.of(CameraStatus.MAINTENANCE));
+    }
+
+    @Test
+    void theCameraTableLeavesF2ToTheSaveShortcut() {
+        JTable table = descendantOfType(panel, JTable.class);
+
+        Object binding = table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .get(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0));
+
+        assertTrue(binding == null || "none".equals(binding), String.valueOf(binding));
     }
 
     @Test
@@ -429,6 +443,17 @@ class CourtPanelTest {
         assertTrue(gym.findCourt(2).getCameras().stream().anyMatch(camera -> camera.getId().equals("fixed-9")));
         assertEquals(3, csvPanel.selectedCourtNumber());
         assertEquals(3, gym.getCourts().size());
+    }
+
+    private static <T extends Component> T descendantOfType(Container root, Class<T> type) {
+        for (Component component : root.getComponents()) {
+            if (type.isInstance(component)) return type.cast(component);
+            if (component instanceof Container child) {
+                T found = descendantOfType(child, type);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     private static int descendantsOfType(Container root, Class<? extends Component> type) {
