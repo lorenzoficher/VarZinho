@@ -7,21 +7,43 @@ import br.edu.unipampa.varzinho.domain.capture.Camera;
 public final class CameraView {
 
     private final String id;
+    private final String model;
+    private final int pan, tilt, zoom;
+    private final br.edu.unipampa.varzinho.enums.CameraStatus status;
     private final String description;
     private final boolean aimable;
 
-    private CameraView(String id, String description, boolean aimable) {
-        this.id = id;
-        this.description = description;
-        this.aimable = aimable;
+    private CameraView(Camera camera) {
+        this.id = camera.getId();
+        this.description = camera.describe();
+        this.aimable = camera instanceof Aimable;
+        this.model = camera.getModel();
+        if (camera instanceof br.edu.unipampa.varzinho.domain.capture.PtzCamera ptz) {
+            pan = ptz.getPan();
+            tilt = ptz.getTilt();
+            zoom = ptz.getZoom();
+        } else {
+            pan = tilt = 0;
+            zoom = 1;
+        }
+        this.status = camera.getStatus();
     }
 
     static CameraView from(Camera camera) {
-        return new CameraView(camera.getId(), camera.describe(), camera instanceof Aimable);
+        return new CameraView(camera);
     }
 
     public String getId() {
         return id;
+    }
+
+    public String getModel() { return model; }
+    public int getPan() { return pan; }
+    public int getTilt() { return tilt; }
+    public int getZoom() { return zoom; }
+    public boolean isRecording() { return status.canRecord(); }
+    public boolean isUnderMaintenance() {
+        return status == br.edu.unipampa.varzinho.enums.CameraStatus.MAINTENANCE;
     }
 
     public String getDescription() {

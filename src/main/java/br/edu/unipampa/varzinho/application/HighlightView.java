@@ -10,14 +10,16 @@ import java.time.Instant;
 public final class HighlightView {
 
     private final Instant capturedAt;
+    private final String id;
     private final int courtNumber;
     private final String cameraId;
     private final int durationSeconds;
     private final String clipPath;
 
-    private HighlightView(Instant capturedAt, int courtNumber, String cameraId,
+    private HighlightView(String id, Instant capturedAt, int courtNumber, String cameraId,
             int durationSeconds, String clipPath) {
         this.capturedAt = capturedAt;
+        this.id = id;
         this.courtNumber = courtNumber;
         this.cameraId = cameraId;
         this.durationSeconds = durationSeconds;
@@ -25,7 +27,7 @@ public final class HighlightView {
     }
 
     static HighlightView from(Highlight highlight) {
-        return new HighlightView(highlight.getCapturedAt(), highlight.getCourtNumber(),
+        return new HighlightView(highlight.getId(), highlight.getCapturedAt(), highlight.getCourtNumber(),
                 highlight.getCameraId(), highlight.getClip().getDurationSeconds(),
                 highlight.getClip().getFilePath());
     }
@@ -33,6 +35,8 @@ public final class HighlightView {
     public Instant getCapturedAt() {
         return capturedAt;
     }
+
+    public String getId() { return id; }
 
     public int getCourtNumber() {
         return courtNumber;
