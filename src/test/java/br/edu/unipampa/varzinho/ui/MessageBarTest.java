@@ -2,6 +2,8 @@ package br.edu.unipampa.varzinho.ui;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MessageBarTest {
@@ -9,7 +11,7 @@ class MessageBarTest {
     void combinesStartupWarningsWithAnArchiveWarningUntilTheNextAction() {
         MessageBar bar = new MessageBar();
         bar.show("Acervo danificado.");
-        bar.showStartupWarnings(java.util.List.of("Academia indisponível.", "Celular desconectado."));
+        bar.showStartupWarnings(List.of("Academia indisponível.", "Celular desconectado."));
         assertEquals("Academia indisponível. Celular desconectado. Acervo danificado.", bar.message());
         bar.show("Destaque salvo.");
         assertEquals("Destaque salvo.", bar.message());

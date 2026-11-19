@@ -1,15 +1,16 @@
 package br.edu.unipampa.varzinho.ui;
 
+import br.edu.unipampa.varzinho.application.OperatorAccess;
 import br.edu.unipampa.varzinho.application.OperatorView;
+import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryOperatorStore;
 import org.junit.jupiter.api.Test;
 
-import br.edu.unipampa.varzinho.application.OperatorAccess;
-import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryOperatorStore;
 import javax.swing.JButton;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SidebarPanelTest {
@@ -34,7 +35,7 @@ class SidebarPanelTest {
         theme.doClick();
         assertTrue(VarZinhoTheme.isDark());
         theme.doClick();
-        org.junit.jupiter.api.Assertions.assertFalse(VarZinhoTheme.isDark());
+        assertFalse(VarZinhoTheme.isDark());
     }
 
     private static OperatorView operator() throws Exception {
