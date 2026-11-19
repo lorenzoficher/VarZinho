@@ -18,7 +18,6 @@ import java.awt.GraphicsEnvironment;
 public final class VarZinhoTheme {
     public static final Color SIDEBAR = Color.decode("#082A33");
     public static final Color SIDEBAR_FOREGROUND = Color.decode("#F5F7FA");
-    public static final Color SIDEBAR_MUTED = Color.decode("#9FB2B8");
     public static final Color CONTENT_LIGHT = Color.decode("#F4F8F7");
     public static final Color CONTENT_DARK = Color.decode("#172328");
     public static final Color ACCENT = Color.decode("#B8F34A");

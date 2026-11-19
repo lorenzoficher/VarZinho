@@ -3,7 +3,6 @@ package br.edu.unipampa.varzinho.ui;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 
 import javax.swing.Icon;
-import java.awt.Color;
 
 /** The Tabler icons used by VarZinho, loaded from the licensed bundled resources. */
 final class VarZinhoIcons {
@@ -13,13 +12,6 @@ final class VarZinhoIcons {
     private VarZinhoIcons() { }
 
     static Icon courts() { return icon("building-stadium"); }
-    static Icon brand(Color color) { return icon("home-arena", 24, color); }
-    static Icon dashboard(Color color) { return icon("layout-dashboard", SIZE, color); }
-    static Icon court(Color color) { return icon("court", SIZE, color); }
-    static Icon cameras(Color color) { return icon("camera", SIZE, color); }
-    static Icon highlights(Color color) { return icon("sparkles", SIZE, color); }
-    static Icon archive(Color color) { return icon("archive", SIZE, color); }
-    static Icon settings(Color color) { return icon("settings", SIZE, color); }
     static Icon archive() { return icon("archive"); }
     static Icon operators() { return icon("users"); }
     static Icon record() { return icon("player-record"); }
@@ -31,10 +23,5 @@ final class VarZinhoIcons {
 
     private static Icon icon(String name) {
         return new FlatSVGIcon(ROOT + name + ".svg", SIZE, SIZE);
-    }
-
-    private static Icon icon(String name, int size, Color color) {
-        return new FlatSVGIcon(ROOT + name + ".svg", size, size)
-                .setColorFilter(new FlatSVGIcon.ColorFilter(ignored -> color));
     }
 }
