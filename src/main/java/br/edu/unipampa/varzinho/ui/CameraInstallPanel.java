@@ -9,11 +9,13 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.util.function.Consumer;
@@ -49,15 +51,15 @@ final class CameraInstallPanel extends JPanel {
         this.onInstalled = onInstalled;
         typeSelector.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list, Object value,
+            public Component getListCellRendererComponent(JList<?> list, Object value,
                     int index, boolean selected, boolean focused) {
-                String label = value == CameraKind.FIXED ? "Fixa" : "PTZ";
+                String label = value instanceof CameraKind kind ? PortugueseText.cameraKind(kind) : "";
                 return super.getListCellRendererComponent(list, label, index, selected, focused);
             }
         });
         resolutionSelector.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list, Object value,
+            public Component getListCellRendererComponent(JList<?> list, Object value,
                     int index, boolean selected, boolean focused) {
                 String label = value instanceof Resolution resolution ? resolution.label() : "";
                 return super.getListCellRendererComponent(list, label, index, selected, focused);
