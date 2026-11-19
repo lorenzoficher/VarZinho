@@ -155,6 +155,24 @@ class CapturePanelTest {
     }
 
     @Test
+    void anUnexpectedFailureWithoutAMessageStillExplainsWhatFailedAndRestoresControls() throws Exception {
+        Phone phone = phoneWritingWith((window, target) -> {
+            throw new NullPointerException();
+        });
+
+        press(phone.panel());
+        awaitFinished(phone.panel());
+
+        assertEquals(List.of("The capture failed unexpectedly: NullPointerException"), errors);
+        assertTrue(repository.findAll().isEmpty());
+        onSwing(() -> {
+            assertFalse(phone.activity().isRunning());
+            assertTrue(phone.courts().installButton().isEnabled());
+            assertEquals("", phone.panel().confirmation());
+        });
+    }
+
+    @Test
     void realCameraAssemblyRunsOffSwingWhileTheWindowKeepsResponding() throws Exception {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);

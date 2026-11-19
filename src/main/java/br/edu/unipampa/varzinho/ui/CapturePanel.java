@@ -4,6 +4,9 @@ import br.edu.unipampa.varzinho.application.CaptureHighlight;
 import br.edu.unipampa.varzinho.application.HighlightView;
 import br.edu.unipampa.varzinho.application.PendingCapture;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
+import br.edu.unipampa.varzinho.exception.ClipAssemblyException;
+import br.edu.unipampa.varzinho.exception.EmptyBufferException;
+import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -15,12 +18,15 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The Save highlight button. The whole capture runs on a worker, while the Swing
  * thread pauses feeds and camera changes until the model is returned to it.
  */
 final class CapturePanel extends JPanel {
+    private static final Logger LOGGER = Logger.getLogger(CapturePanel.class.getName());
     private final CourtPanel courtPanel;
     private final CaptureHighlight captureHighlight;
     private final CaptureActivity activity;
@@ -65,6 +71,7 @@ final class CapturePanel extends JPanel {
     }
 
     private void saveHighlight() {
+        // An already queued action must not start a second worker.
         if (activity.isRunning()) return;
         int courtNumber = courtPanel.selectedCourtNumber();
         activity.begin();
@@ -94,6 +101,17 @@ final class CapturePanel extends JPanel {
         errorSink.accept(reason);
     }
 
+    private void captureFailed(Throwable cause) {
+        if (cause instanceof NoActiveCameraException || cause instanceof EmptyBufferException
+                || cause instanceof ClipAssemblyException) {
+            String reason = cause.getMessage();
+            refuse(reason == null || reason.isBlank() ? "The capture could not be completed." : reason);
+        } else {
+            LOGGER.log(Level.SEVERE, "capture failed unexpectedly", cause);
+            refuse("The capture failed unexpectedly: " + cause.getClass().getSimpleName());
+        }
+    }
+
     private final class Capture extends SwingWorker<PendingCapture, Void> {
         private final int courtNumber;
 
@@ -111,7 +129,7 @@ final class CapturePanel extends JPanel {
             try {
                 archive(get());
             } catch (ExecutionException failure) {
-                refuse(failure.getCause().getMessage());
+                captureFailed(failure.getCause());
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
                 refuse("The capture was interrupted before it could be archived.");
