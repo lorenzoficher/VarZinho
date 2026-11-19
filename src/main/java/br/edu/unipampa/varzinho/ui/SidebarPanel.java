@@ -16,12 +16,12 @@ import java.util.function.Consumer;
 final class SidebarPanel extends JPanel {
     enum Page { DASHBOARD, COURTS, CAMERAS, HIGHLIGHTS, ARCHIVE, SETTINGS }
 
-    private final JToggleButton dashboard = navigation("Dashboard", "dashboard");
-    private final JToggleButton courts = navigation("Quadras", "courts");
-    private final JToggleButton cameras = navigation("Câmeras", "cameras");
-    private final JToggleButton highlights = navigation("Melhores momentos", "highlights");
-    private final JToggleButton archive = navigation("Arquivos", "archive");
-    private final JToggleButton settings = navigation("Configurações", "settings");
+    private final JToggleButton dashboard = new JToggleButton("Dashboard", VarZinhoIcons.operators());
+    private final JToggleButton courts = new JToggleButton("Quadras", VarZinhoIcons.courts());
+    private final JToggleButton cameras = new JToggleButton("Câmeras", VarZinhoIcons.record());
+    private final JToggleButton highlights = new JToggleButton("Melhores momentos", VarZinhoIcons.aim());
+    private final JToggleButton archive = new JToggleButton("Arquivos", VarZinhoIcons.archive());
+    private final JToggleButton settings = new JToggleButton("Configurações", VarZinhoIcons.theme());
 
     SidebarPanel(String gymName, OperatorView operator, Consumer<Page> onPageChange) {
         super(new MigLayout("insets 24 18, fillx, wrap 1", "[grow,fill]", "[][]32[]8[][][][][][]push[]16[][]"));
@@ -32,7 +32,7 @@ final class SidebarPanel extends JPanel {
         putClientProperty("FlatLaf.style", "background: $VarZinho.sidebarBackground");
 
         JLabel product = new JLabel("VarZinho Arena");
-        product.setIcon(VarZinhoIcons.brand(VarZinhoTheme.ACCENT));
+        product.setIcon(VarZinhoIcons.courts());
         product.setIconTextGap(12);
         product.setForeground(UIManager.getColor("VarZinho.sidebarForeground"));
         VarZinhoTheme.styleTitle(product);
@@ -113,23 +113,5 @@ final class SidebarPanel extends JPanel {
         button.putClientProperty("FlatLaf.style", "foreground: $VarZinho.sidebarForeground; "
                 + "background: $VarZinho.sidebarBackground; selectedBackground: $VarZinho.accent; "
                 + "selectedForeground: $VarZinho.sidebarBackground; borderWidth: 0; arc: 12; iconTextGap: 12");
-    }
-
-    private static JToggleButton navigation(String text, String icon) {
-        JToggleButton button = new JToggleButton(text, icon(icon, VarZinhoTheme.SIDEBAR_MUTED));
-        button.setSelectedIcon(icon(icon, VarZinhoTheme.ON_ACCENT));
-        return button;
-    }
-
-    private static javax.swing.Icon icon(String name, java.awt.Color color) {
-        switch (name) {
-            case "dashboard": return VarZinhoIcons.dashboard(color);
-            case "courts": return VarZinhoIcons.court(color);
-            case "cameras": return VarZinhoIcons.cameras(color);
-            case "highlights": return VarZinhoIcons.highlights(color);
-            case "archive": return VarZinhoIcons.archive(color);
-            case "settings": return VarZinhoIcons.settings(color);
-            default: throw new IllegalArgumentException("unknown navigation icon " + name);
-        }
     }
 }
