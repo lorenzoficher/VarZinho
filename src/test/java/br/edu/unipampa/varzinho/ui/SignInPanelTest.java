@@ -64,6 +64,10 @@ class SignInPanelTest {
 
         assertEquals("ana", panel.usernameField().getText());
         assertEquals(0, panel.passwordField().getPassword().length);
+        panel.passwordField().setText(PASSWORD);
+        panel.signInButton().doClick();
+        assertEquals(1, signedIn.size());
+        assertEquals("ana", signedIn.get(0).getOperator().getUsername());
     }
 
     @Test
