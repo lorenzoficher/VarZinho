@@ -46,11 +46,11 @@ public final class VarZinhoTheme {
     }
 
     static void styleTitle(JLabel title) {
-        title.setFont(new Font(title.getFont().getName(), Font.BOLD, TITLE_FONT_SIZE));
+        title.setFont(title.getFont().deriveFont(Font.BOLD, (float) TITLE_FONT_SIZE));
     }
 
     static void styleProminentAction(AbstractButton action) {
-        action.setFont(new Font(action.getFont().getName(), Font.BOLD, PROMINENT_ACTION_FONT_SIZE));
+        action.setFont(action.getFont().deriveFont(Font.BOLD, (float) PROMINENT_ACTION_FONT_SIZE));
     }
 
     private static void apply(boolean dark, boolean animate) {

@@ -46,8 +46,8 @@ public final class Launcher {
      * opens and the application exits.
      */
     public static void launch() {
-        VarZinhoTheme.install();
         SwingUtilities.invokeLater(() -> {
+            VarZinhoTheme.install();
             Storage storage;
             try {
                 storage = Storage.fromEnvironment(System::getenv, DATA_FOLDER);
