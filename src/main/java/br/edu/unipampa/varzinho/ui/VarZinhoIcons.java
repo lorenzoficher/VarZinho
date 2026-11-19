@@ -7,7 +7,7 @@ import javax.swing.Icon;
 /** The Tabler icons used by VarZinho, loaded from the licensed bundled resources. */
 final class VarZinhoIcons {
     private static final String ROOT = "icons/tabler/";
-    private static final int SIZE = 18;
+    static final int SIZE = 18;
 
     private VarZinhoIcons() { }
 

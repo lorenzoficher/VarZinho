@@ -18,8 +18,8 @@ class VarZinhoIconsTest {
                 VarZinhoIcons.theme());
 
         for (Icon icon : icons) {
-            assertEquals(18, icon.getIconWidth());
-            assertEquals(18, icon.getIconHeight());
+            assertEquals(VarZinhoIcons.SIZE, icon.getIconWidth());
+            assertEquals(VarZinhoIcons.SIZE, icon.getIconHeight());
         }
     }
 
