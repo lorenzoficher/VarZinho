@@ -12,18 +12,21 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Desktop;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The operator's window: the courts, the capture button and the archive, kept moving by
@@ -32,6 +35,7 @@ import java.util.List;
  * {@link br.edu.unipampa.varzinho.bootstrap.Launcher} does.
  */
 public final class VarZinhoWindow extends JFrame {
+    private static final Logger LOGGER = Logger.getLogger(VarZinhoWindow.class.getName());
     private final ManageGym management;
     private final int bufferSeconds;
     private final List<Timer> clocks = new ArrayList<>();
@@ -45,7 +49,7 @@ public final class VarZinhoWindow extends JFrame {
     private boolean phoneDropReported;
 
     /**
-     * @param gymName shown in the title and the header
+     * @param gymName shown in the title and the sidebar
      * @param bufferSeconds how long each camera's buffer is, for the status line and for
      *     the cameras installed from the window
      */
@@ -53,6 +57,7 @@ public final class VarZinhoWindow extends JFrame {
                           BrowseArchive archive, Feed feed, int bufferSeconds) {
         super("VarZinho Arena");
         if (gymName == null || gymName.isBlank()) throw new IllegalArgumentException("a window needs the gym's name");
+        if (operator == null) throw new IllegalArgumentException("a window needs the signed-in operator");
         if (management == null) throw new IllegalArgumentException("a window needs the gym's management");
         if (captureHighlight == null) throw new IllegalArgumentException("a window needs a way to capture");
         if (archive == null) throw new IllegalArgumentException("a window needs the archive to browse");
@@ -60,61 +65,54 @@ public final class VarZinhoWindow extends JFrame {
         if (bufferSeconds <= 0) throw new IllegalArgumentException("a window needs a positive buffer length");
         this.management = management;
         this.bufferSeconds = bufferSeconds;
-        clocks.add(new Timer(feed.periodMillis(), event -> advance(feed)));
-        if (operator == null) throw new IllegalArgumentException("a window needs the signed-in operator");
+        clocks.add(clockFor(feed, captureActivity, this::showBufferStatus, messages));
         this.courtPanel = new CourtPanel(management, bufferSeconds, messages::show);
         this.archivePanel = new ArchivePanel(management::courts, archive, ZoneId.systemDefault(), messages::show);
         this.capturePanel = new CapturePanel(courtPanel, captureHighlight, ZoneId.systemDefault(),
                 messages::show, highlight -> {
-                    messages.show("Melhor momento salvo na quadra " + highlight.getCourtNumber() + ".");
+                    messages.show("Lance salvo na quadra " + highlight.getCourtNumber() + ".");
                     archivePanel.refresh();
                 }, captureActivity);
         courtPanel.onCourtAdded(archivePanel::refreshCourts);
         setTitle("VarZinho Arena — " + gymName);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
-        CardLayout pageLayout = new CardLayout();
-        JPanel pages = new JPanel(pageLayout);
         JPanel top = new JPanel(new BorderLayout(8, 8));
-        header.add(buildTitle(gymName), "cell 0 0");
+        JLabel title = new JLabel("Quadras");
+        VarZinhoTheme.styleTitle(title);
+        header.add(title, "cell 0 0");
         top.add(header, BorderLayout.NORTH);
         top.add(courtPanel, BorderLayout.CENTER);
         top.add(capturePanel, BorderLayout.SOUTH);
         JPanel courtsPage = new JPanel(new BorderLayout(8, 8));
         courtsPage.add(top, BorderLayout.CENTER);
         courtsPage.add(bufferStatus, BorderLayout.SOUTH);
-        pages.add(courtsPage, SidebarPanel.Page.COURTS.name());
-        pages.add(archivePanel, SidebarPanel.Page.ARCHIVE.name());
-        SidebarPanel sidebar = new SidebarPanel(gymName, operator,
-                page -> pageLayout.show(pages, page.name()));
-        add(sidebar, BorderLayout.WEST);
-        JPanel content = new JPanel(new BorderLayout(8, 8));
-        content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        content.add(pages, BorderLayout.CENTER);
-        content.add(messages, BorderLayout.SOUTH);
-        add(content, BorderLayout.CENTER);
+        setContentPane(navigation(gymName, operator, courtsPage, archivePanel, messages));
         showBufferStatus();
         pack();
         setLocationRelativeTo(null);
         clocks.forEach(Timer::start);
     }
 
+    static JPanel navigation(String gymName, OperatorView operator, JPanel courtsPage, JPanel archivePage,
+                             MessageBar messages) {
+        CardLayout pageLayout = new CardLayout();
+        JPanel pages = new JPanel(pageLayout);
+        pages.add(courtsPage, SidebarPanel.Page.COURTS.name());
+        pages.add(archivePage, SidebarPanel.Page.ARCHIVE.name());
+        SidebarPanel sidebar = new SidebarPanel(gymName, operator,
+                page -> pageLayout.show(pages, page.name()));
+        JPanel content = new JPanel(new BorderLayout(8, 8));
+        content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        content.add(pages, BorderLayout.CENTER);
+        content.add(messages, BorderLayout.SOUTH);
+        JPanel navigation = new JPanel(new BorderLayout());
+        navigation.add(sidebar, BorderLayout.WEST);
+        navigation.add(content, BorderLayout.CENTER);
+        return navigation;
+    }
+
     public void showStartupWarnings(List<String> warnings) {
         messages.showStartupWarnings(warnings);
-    }
-
-    private static JLabel buildTitle(String gymName) {
-        JLabel title = new JLabel(gymName);
-        VarZinhoTheme.styleTitle(title);
-        return title;
-    }
-
-    static JButton buildThemeButton() {
-        JButton button = new JButton(VarZinhoIcons.theme());
-        button.setText("Alternar tema");
-        button.setToolTipText("Alternar entre os temas claro e escuro");
-        button.addActionListener(event -> VarZinhoTheme.toggle());
-        return button;
     }
 
     /**
@@ -126,7 +124,7 @@ public final class VarZinhoWindow extends JFrame {
         if (streamUrl == null || streamUrl.isBlank()) {
             throw new IllegalArgumentException("a followed phone needs its stream address");
         }
-        Timer clock = new Timer(phoneFeed.periodMillis(), event -> advance(phoneFeed));
+        Timer clock = clockFor(phoneFeed, captureActivity, this::showBufferStatus, messages);
         clocks.add(clock);
         clock.start();
         courtPanel.selectCourt(phoneCourt);
@@ -139,7 +137,7 @@ public final class VarZinhoWindow extends JFrame {
         JButton liveView = new JButton("Abrir transmissão ao vivo");
         liveView.setIcon(VarZinhoIcons.openClip());
         liveView.addActionListener(event -> openLiveView(streamUrl));
-        header.add(liveView, "cell 0 0");
+        header.add(liveView, "cell 1 0");
         pack();
     }
 
@@ -147,6 +145,9 @@ public final class VarZinhoWindow extends JFrame {
         try {
             Desktop.getDesktop().browse(URI.create(streamUrl));
         } catch (IOException | IllegalArgumentException | UnsupportedOperationException failure) {
+            // The stream address can carry credentials, even when URI parsing fails.
+            LOGGER.log(Level.WARNING, "Could not open live stream: {0}",
+                    failure.toString().replace(streamUrl, "[configured stream]"));
             messages.show("Não foi possível abrir a transmissão ao vivo.");
         }
     }
@@ -166,17 +167,28 @@ public final class VarZinhoWindow extends JFrame {
         });
     }
 
-    private void advance(Feed feed) {
-        captureActivity.ifIdle(() -> tick(feed));
-    }
+    static Timer clockFor(Feed feed, CaptureActivity activity, Runnable refresh, MessageBar messages) {
+        return new Timer(feed.periodMillis(), new ActionListener() {
+            private boolean readFailed;
 
-    private void tick(Feed feed) {
-        try {
-            feed.tick(Instant.now());
-            showBufferStatus();
-        } catch (IOException failure) {
-            messages.show("Não foi possível ler as imagens do celular.");
-        }
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                activity.ifIdle(this::tick);
+            }
+
+            private void tick() {
+                try {
+                    feed.tick(Instant.now());
+                    readFailed = false;
+                    refresh.run();
+                } catch (IOException failure) {
+                    if (readFailed) return;
+                    readFailed = true;
+                    LOGGER.log(Level.WARNING, "Could not read footage from the feed", failure);
+                    messages.show("Não foi possível ler as imagens do celular.");
+                }
+            }
+        });
     }
 
     private void showBufferStatus() {
