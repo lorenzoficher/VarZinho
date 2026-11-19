@@ -65,7 +65,7 @@ class ArchivePanelTest {
         gym.addCourt(new Court(3));
 
         panel.refreshCourts();
-        panel.filter().setSelectedItem("Court 3");
+        panel.filter().setSelectedItem("Quadra 3");
 
         assertEquals(1, panel.table().getRowCount());
         assertEquals("camera-h-3", panel.table().getValueAt(0, 2));
@@ -78,7 +78,7 @@ class ArchivePanelTest {
         repository.save(highlight("h-2", LATE, 2));
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
 
-        panel.filter().setSelectedItem("Court 2");
+        panel.filter().setSelectedItem("Quadra 2");
 
         assertEquals(1, panel.table().getRowCount());
         assertEquals(2, panel.table().getValueAt(0, 1));
@@ -88,9 +88,9 @@ class ArchivePanelTest {
     void filterOffersAllCourtsFollowedByEachCourt() {
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(new InMemoryHighlightRepository()), BRASILIA, errors::add);
 
-        assertEquals("All courts", panel.filter().getItemAt(0));
+        assertEquals("Todas as quadras", panel.filter().getItemAt(0));
         assertEquals(gym.getCourts().size() + 1, panel.filter().getItemCount());
-        assertEquals("Court " + gym.getCourts().get(0).getNumber(), panel.filter().getItemAt(1));
+        assertEquals("Quadra " + gym.getCourts().get(0).getNumber(), panel.filter().getItemAt(1));
     }
 
     @Test
@@ -100,11 +100,11 @@ class ArchivePanelTest {
 
         JTable table = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add).table();
 
-        assertEquals(List.of("Captured at", "Court", "Camera", "Duration", "Clip"), columnNames(table));
-        assertEquals("2026-09-29 18:30:15", table.getValueAt(0, 0));
+        assertEquals(List.of("Data e hora", "Quadra", "Câmera", "Duração", "Clipe"), columnNames(table));
+        assertEquals("29/09/2026 18:30:15", table.getValueAt(0, 0));
         assertEquals(1, table.getValueAt(0, 1));
         assertEquals("camera-h-1", table.getValueAt(0, 2));
-        assertEquals("30s", table.getValueAt(0, 3));
+        assertEquals("30 s", table.getValueAt(0, 3));
         assertEquals("clips/h-1.mp4", table.getValueAt(0, 4));
     }
 
@@ -129,7 +129,7 @@ class ArchivePanelTest {
         panel.refresh();
 
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).contains("disk unplugged"));
+        assertTrue(errors.get(0).contains("ler o acervo"));
         assertEquals(1, panel.table().getRowCount());
     }
 
@@ -148,7 +148,7 @@ class ArchivePanelTest {
         assertEquals("camera-h-3", panel.table().getValueAt(0, 2));
         assertEquals("camera-h-1", panel.table().getValueAt(1, 2));
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).contains("line 3"));
+        assertTrue(errors.get(0).contains("linha 3"));
     }
 
     @Test

@@ -26,12 +26,12 @@ final class CameraPositionPanel extends JPanel {
     private final Consumer<String> errorSink;
     private final Runnable onChanged;
     private final JComboBox<Integer> moveTargetSelector = new JComboBox<>();
-    private final JButton moveToCourt = new JButton("Move to court");
+    private final JButton moveToCourt = new JButton("Mover para a quadra");
     // Wider than the head reaches, so the camera remains responsible for refusing an impossible aim.
     private final JSpinner panSpinner = new JSpinner(new SpinnerNumberModel(0, -999, 999, 5));
     private final JSpinner tiltSpinner = new JSpinner(new SpinnerNumberModel(0, -999, 999, 5));
     private final JSpinner zoomSpinner = new JSpinner(new SpinnerNumberModel(1, -99, 99, 1));
-    private final JButton aim = new JButton("Move");
+    private final JButton aim = new JButton("Mover");
 
     CameraPositionPanel(ManageGym management, IntSupplier selectedCourt,
                         Supplier<Optional<CameraView>> selectedCamera, Consumer<String> errorSink,
@@ -79,8 +79,8 @@ final class CameraPositionPanel extends JPanel {
 
     private JPanel buildMoveRow() {
         JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        row.setBorder(BorderFactory.createTitledBorder("Move the selected camera"));
-        row.add(new JLabel("To court")); row.add(moveTargetSelector); row.add(moveToCourt);
+        row.setBorder(BorderFactory.createTitledBorder("Mover a câmera selecionada"));
+        row.add(new JLabel("Para a quadra")); row.add(moveTargetSelector); row.add(moveToCourt);
         moveToCourt.addActionListener(event -> changeSelected(camera -> management.moveCamera(
                 selectedCourt.getAsInt(), camera.getId(), (Integer) moveTargetSelector.getSelectedItem())));
         return row;
@@ -88,9 +88,9 @@ final class CameraPositionPanel extends JPanel {
 
     private JPanel buildAimRow() {
         JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        row.setBorder(BorderFactory.createTitledBorder("Aim the selected PTZ camera"));
-        row.add(new JLabel("Pan")); row.add(panSpinner);
-        row.add(new JLabel("Tilt")); row.add(tiltSpinner);
+        row.setBorder(BorderFactory.createTitledBorder("Apontar a câmera PTZ selecionada"));
+        row.add(new JLabel("Panorâmica")); row.add(panSpinner);
+        row.add(new JLabel("Inclinação")); row.add(tiltSpinner);
         row.add(new JLabel("Zoom")); row.add(zoomSpinner); row.add(aim);
         aim.addActionListener(event -> changeSelected(camera -> management.aimCamera(
                 selectedCourt.getAsInt(), camera.getId(), (Integer) panSpinner.getValue(),
@@ -101,10 +101,11 @@ final class CameraPositionPanel extends JPanel {
     private void changeSelected(CameraChange change) {
         Optional<CameraView> camera = selectedCamera.get();
         if (camera.isEmpty()) {
-            errorSink.accept("Select a camera first.");
+            errorSink.accept("Selecione uma câmera primeiro.");
             return;
         }
-        GymChangeReporter.attempt(() -> change.apply(camera.get()), errorSink);
+        GymChangeReporter.attempt(() -> change.apply(camera.get()),
+                errorSink);
         onChanged.run();
         updateAimAvailability();
     }

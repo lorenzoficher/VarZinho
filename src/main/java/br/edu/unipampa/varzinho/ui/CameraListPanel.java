@@ -25,10 +25,10 @@ final class CameraListPanel extends JPanel {
     private final Consumer<String> errorSink;
     private final DefaultListModel<String> cameraLines = new DefaultListModel<>();
     private final JList<String> cameraList = new JList<>(cameraLines);
-    private final JButton start = new JButton("Start");
-    private final JButton stop = new JButton("Stop");
-    private final JButton maintenance = new JButton("Send to maintenance");
-    private final JButton remove = new JButton("Remove camera");
+    private final JButton start = new JButton("Iniciar");
+    private final JButton stop = new JButton("Parar");
+    private final JButton maintenance = new JButton("Enviar para manutenção");
+    private final JButton remove = new JButton("Remover câmera");
     private List<CameraView> shownCameras = List.of();
 
     CameraListPanel(ManageGym management, IntSupplier selectedCourt, Consumer<String> errorSink) {
@@ -57,7 +57,8 @@ final class CameraListPanel extends JPanel {
     void refresh() {
         shownCameras = management.court(selectedCourt.getAsInt()).getCameras();
         cameraLines.clear();
-        shownCameras.forEach(camera -> cameraLines.addElement(camera.getDescription()));
+        shownCameras.forEach(camera -> cameraLines.addElement(
+                PortugueseText.cameraDescription(camera)));
     }
 
     void refreshKeepingSelection() {
@@ -87,11 +88,12 @@ final class CameraListPanel extends JPanel {
     private void changeSelected(CameraChange change) {
         Optional<CameraView> camera = selectedCamera();
         if (camera.isEmpty()) {
-            errorSink.accept("Select a camera first.");
+            errorSink.accept("Selecione uma câmera primeiro.");
             return;
         }
         GymChangeReporter.attempt(
-                () -> change.apply(selectedCourt.getAsInt(), camera.get().getId()), errorSink);
+                () -> change.apply(selectedCourt.getAsInt(), camera.get().getId()),
+                errorSink);
         refreshKeepingSelection();
     }
 

@@ -6,8 +6,9 @@ import br.edu.unipampa.varzinho.application.port.RepositoryException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
-import javax.swing.JOptionPane;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import java.awt.BorderLayout;
 import java.awt.Window;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -25,16 +26,23 @@ public final class SignInDialog extends JDialog {
         // shared frame, and the window manager would then leave it off the taskbar, where
         // it is lost the moment another window takes focus.
         super((Window) null, ModalityType.APPLICATION_MODAL);
-        JPanel form = formFor(access, this::showError, this::admit);
+        JLabel feedback = new JLabel(" ");
+        feedback.getAccessibleContext().setAccessibleName("Mensagem de acesso");
+        JPanel form = formFor(access, message -> {
+            feedback.setText(message);
+            pack();
+        }, this::admit);
         if (form instanceof FirstOperatorPanel firstForm) {
-            setTitle("VarZinho - Create the first operator");
+            setTitle("VarZinho — Criar primeiro operador");
             getRootPane().setDefaultButton(firstForm.createButton());
         } else {
-            setTitle("VarZinho - Sign in");
+            setTitle("VarZinho — Entrar");
             getRootPane().setDefaultButton(((SignInPanel) form).signInButton());
         }
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        add(form);
+        add(form, BorderLayout.CENTER);
+        feedback.setBorder(BorderFactory.createEmptyBorder(0, 10, 8, 10));
+        add(feedback, BorderLayout.SOUTH);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         pack();
         setLocationRelativeTo(null);
@@ -67,7 +75,4 @@ public final class SignInDialog extends JDialog {
         dispose();
     }
 
-    private void showError(String message) {
-        JOptionPane.showMessageDialog(this, message, "Could not sign in", JOptionPane.ERROR_MESSAGE);
-    }
 }

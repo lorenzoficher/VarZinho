@@ -80,9 +80,9 @@ class CapturePanelTest {
         awaitFinished(panel);
 
         Highlight highlight = repository.findAll().get(0);
-        String localTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        String localTime = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
                 .withZone(BRASILIA).format(highlight.getCapturedAt());
-        onSwing(() -> assertEquals("Saved: court 1 · camera fixed-1 · " + localTime + " · 30s",
+        onSwing(() -> assertEquals("Salvo: quadra 1 · câmera fixed-1 · " + localTime + " · 30 s",
                 panel.confirmation()));
         assertEquals(highlight.getClip().getFilePath(), saved.get(0).getClipPath());
     }
@@ -90,9 +90,9 @@ class CapturePanelTest {
     @Test
     void buttonLabelFollowsTheSelectedCourt() throws Exception {
         onSwing(() -> {
-            assertEquals("Save highlight - court 1", panel.saveButton().getText());
+            assertEquals("Salvar lance — quadra 1", panel.saveButton().getText());
             courtPanel.selectCourt(2);
-            assertEquals("Save highlight - court 2", panel.saveButton().getText());
+            assertEquals("Salvar lance — quadra 2", panel.saveButton().getText());
         });
     }
 
@@ -143,13 +143,13 @@ class CapturePanelTest {
     @Test
     void phoneThatCannotWriteItsClipReportsTheFailureAndSavesNothing() throws Exception {
         Phone phone = phoneWritingWith((window, target) -> {
-            throw new ClipAssemblyException("ffmpeg is not installed");
+            throw new ClipAssemblyException("ffmpeg could not write " + target + ": Invalid data found");
         });
 
         press(phone.panel());
         awaitFinished(phone.panel());
 
-        assertEquals(List.of("ffmpeg is not installed"), errors);
+        assertEquals(List.of("O FFmpeg não conseguiu gravar o clipe."), errors);
         assertTrue(repository.findAll().isEmpty());
         onSwing(() -> assertEquals("", phone.panel().confirmation()));
     }
@@ -163,7 +163,7 @@ class CapturePanelTest {
         press(phone.panel());
         awaitFinished(phone.panel());
 
-        assertEquals(List.of("The capture failed unexpectedly: NullPointerException"), errors);
+        assertEquals(List.of("Falha inesperada ao capturar o lance."), errors);
         assertTrue(repository.findAll().isEmpty());
         onSwing(() -> {
             assertFalse(phone.activity().isRunning());
@@ -193,7 +193,7 @@ class CapturePanelTest {
             assertTrue(repository.findAll().isEmpty());
             onSwing(() -> {
                 assertTrue(saved.isEmpty());
-                assertEquals("Saving: court 3…", phone.panel().confirmation());
+                assertEquals("Salvando: quadra 3…", phone.panel().confirmation());
             });
         } finally {
             release.countDown();

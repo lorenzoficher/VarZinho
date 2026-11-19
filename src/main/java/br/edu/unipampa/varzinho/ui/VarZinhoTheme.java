@@ -15,6 +15,7 @@ import java.awt.GraphicsEnvironment;
 /** VarZinho's complete visual vocabulary and light/dark theme switch. */
 public final class VarZinhoTheme {
     public static final Color SIDEBAR = Color.decode("#111317");
+    public static final Color SIDEBAR_FOREGROUND = Color.decode("#F5F7FA");
     public static final Color CONTENT_LIGHT = Color.decode("#FFFFFF");
     public static final Color CONTENT_DARK = Color.decode("#202226");
     public static final Color ACCENT = Color.decode("#F2A900");
@@ -78,6 +79,7 @@ public final class VarZinhoTheme {
         UIManager.put("TextComponent.arc", COMPONENT_ARC);
         UIManager.put("PopupMenu.borderCornerRadius", POPUP_ARC);
         UIManager.put("VarZinho.sidebarBackground", SIDEBAR);
+        UIManager.put("VarZinho.sidebarForeground", SIDEBAR_FOREGROUND);
         UIManager.put("VarZinho.contentBackground", content);
         UIManager.put("VarZinho.accent", ACCENT);
         UIManager.put("VarZinho.recording", RECORDING);

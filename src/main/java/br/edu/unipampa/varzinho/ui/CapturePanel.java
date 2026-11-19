@@ -76,7 +76,7 @@ final class CapturePanel extends JPanel {
         activity.begin();
         courtPanel.pauseChanges();
         save.setEnabled(false);
-        confirmation.setText("Saving: court " + courtNumber + "…");
+        confirmation.setText("Salvando: quadra " + courtNumber + "…");
         new Capture(courtNumber).execute();
     }
 
@@ -85,13 +85,14 @@ final class CapturePanel extends JPanel {
         try {
             archived = capture.archive();
         } catch (RepositoryException failure) {
-            refuse("Archive error: " + failure.getMessage());
+            LOGGER.log(Level.WARNING, "Could not archive the captured highlight", failure);
+            refuse("Não foi possível salvar o lance no acervo.");
             return;
         }
-        confirmation.setText("Saved: court " + archived.getCourtNumber()
-                + " · camera " + archived.getCameraId()
+        confirmation.setText("Salvo: quadra " + archived.getCourtNumber()
+                + " · câmera " + archived.getCameraId()
                 + " · " + timeFormat.format(archived.getCapturedAt())
-                + " · " + archived.getDurationSeconds() + "s");
+                + " · " + archived.getDurationSeconds() + " s");
         onSaved.accept(archived);
     }
 
@@ -103,11 +104,13 @@ final class CapturePanel extends JPanel {
     private void captureFailed(Throwable cause) {
         if (cause instanceof NoActiveCameraException || cause instanceof EmptyBufferException
                 || cause instanceof ClipAssemblyException) {
-            String reason = cause.getMessage();
-            refuse(reason == null || reason.isBlank() ? "The capture could not be completed." : reason);
+            if (cause instanceof ClipAssemblyException) {
+                LOGGER.log(Level.WARNING, "Could not assemble the clip", cause);
+            }
+            refuse(PortugueseText.message(cause.getMessage()));
         } else {
             LOGGER.log(Level.SEVERE, "capture failed unexpectedly", cause);
-            refuse("The capture failed unexpectedly: " + cause.getClass().getSimpleName());
+            refuse("Falha inesperada ao capturar o lance.");
         }
     }
 
@@ -131,7 +134,8 @@ final class CapturePanel extends JPanel {
                 captureFailed(failure.getCause());
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
-                refuse("The capture was interrupted before it could be archived.");
+                LOGGER.log(Level.WARNING, "Capture interrupted before archiving", interrupted);
+                refuse("A captura foi interrompida antes de ser salva.");
             } finally {
                 courtPanel.resumeChanges();
                 save.setEnabled(true);
@@ -141,7 +145,7 @@ final class CapturePanel extends JPanel {
     }
 
     private void showCourt() {
-        save.setText("Save highlight - court " + courtPanel.selectedCourtNumber());
+        save.setText("Salvar lance — quadra " + courtPanel.selectedCourtNumber());
         if (!activity.isRunning()) confirmation.setText(" ");
     }
 }

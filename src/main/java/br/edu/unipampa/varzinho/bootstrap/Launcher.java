@@ -20,7 +20,11 @@ import br.edu.unipampa.varzinho.ui.VarZinhoWindow;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The composition root: puts the application together — storage, the saved gym, the use
@@ -29,6 +33,7 @@ import java.util.Optional;
  * camera changes this class, never the window.
  */
 public final class Launcher {
+    private static final Logger LOGGER = Logger.getLogger(Launcher.class.getName());
     private static final String STREAM_URL_VARIABLE = "VARZINHO_STREAM_URL";
     private static final Path DATA_FOLDER = Path.of("data");
     private static final Path SEGMENT_FOLDER = Path.of("buffer");
@@ -51,42 +56,57 @@ public final class Launcher {
             try {
                 storage = Storage.fromEnvironment(System::getenv, DATA_FOLDER);
             } catch (RepositoryException unreachable) {
-                refuseToOpen(unreachable.getMessage(), "Database not reached");
+                // Storage masks the password in this message; the JDBC cause can repeat the raw URL.
+                LOGGER.log(Level.SEVERE, "Database startup failed: {0}", unreachable.getMessage());
+                refuseToOpen("não foi possível conectar ao banco de dados", "Banco de dados indisponível");
                 return;
             }
-            if (signIn(storage).isEmpty()) {
+            Optional<SignedInOperator> signedIn = signIn(storage);
+            if (signedIn.isEmpty()) {
                 return;
             }
             HighlightRepository repository = storage.highlights();
+            List<String> warnings = new ArrayList<>();
             GymSession session = GymSession.start(storage.gym(), SampleGym.build(),
-                    message -> warn(message, "Saved gym not loaded"));
-            Optional<PhoneConnection> phone = PhoneConnection.open(System.getenv(STREAM_URL_VARIABLE),
-                    SEGMENT_FOLDER, BUFFER_SECONDS, message -> warn(message, "Phone not connected"));
+                    message -> {
+                        LOGGER.warning(message);
+                        warnings.add("A academia salva não pôde ser carregada.");
+                    });
+            String streamUrl = System.getenv(STREAM_URL_VARIABLE);
+            Optional<PhoneConnection> phone = PhoneConnection.open(streamUrl, SEGMENT_FOLDER, BUFFER_SECONDS,
+                    message -> {
+                        // An invalid address may contain the phone's credentials.
+                        LOGGER.warning(message.replace(streamUrl, "[configured stream]"));
+                        warnings.add("Celular não conectado. Confira o endereço da transmissão e a instalação do FFmpeg.");
+                    });
+            VarZinhoWindow window;
             if (phone.isEmpty()) {
-                window(session, repository, new LiveFeed(session.gym())).setVisible(true);
+                window = window(session, signedIn.get(), repository, new LiveFeed(session.gym()));
             } else {
-                openWithPhone(session, repository, phone.get());
+                window = windowWithPhone(session, signedIn.get(), repository, phone.get());
             }
+            window.showStartupWarnings(warnings);
+            window.setVisible(true);
         });
     }
 
-    private static void openWithPhone(GymSession session, HighlightRepository repository,
+    private static VarZinhoWindow windowWithPhone(GymSession session, SignedInOperator signedIn, HighlightRepository repository,
                                       PhoneConnection phone) {
         Gym gym = session.gym();
         ConnectStreamCamera connection = new ConnectStreamCamera(gym, phone.camera());
         CourtView court = connection.connect();
         // Two feeds, so the simulated courts keep their clock whatever the phone does.
-        VarZinhoWindow window = window(session, repository, new LiveFeed(gym, court.getNumber()));
+        VarZinhoWindow window = window(session, signedIn, repository, new LiveFeed(gym, court.getNumber()));
         Runnable dropped = () -> window.phoneDropped(connection::phoneDropped);
         window.followPhone(phone.feed(dropped), court.getNumber(), phone.streamUrl());
         phone.onDrop(() -> SwingUtilities.invokeLater(dropped));
-        window.setVisible(true);
+        return window;
     }
 
-    private static VarZinhoWindow window(GymSession session, HighlightRepository repository,
+    private static VarZinhoWindow window(GymSession session, SignedInOperator signedIn, HighlightRepository repository,
                                          Feed feed) {
         Gym gym = session.gym();
-        return new VarZinhoWindow(gym.getName(), session.manageGym(),
+        return new VarZinhoWindow(gym.getName(), signedIn.getOperator(), session.manageGym(),
                 new CaptureHighlight(gym, repository), new BrowseArchive(repository),
                 feed, BUFFER_SECONDS);
     }
@@ -98,8 +118,9 @@ public final class Launcher {
         try {
             operator = SignInDialog.ask(new OperatorAccess(storage.operators()));
         } catch (RepositoryException unreadable) {
-            refuseToOpen("the operators could not be read (" + unreadable.getMessage() + ")",
-                    "Operators not read");
+            LOGGER.log(Level.SEVERE, "Could not open the operator store", unreadable);
+            refuseToOpen("não foi possível ler os operadores",
+                    "Operadores não carregados");
             return Optional.empty();
         }
         if (operator.isEmpty()) {
@@ -109,12 +130,9 @@ public final class Launcher {
     }
 
     private static void refuseToOpen(String reason, String title) {
-        JOptionPane.showMessageDialog(null, "VarZinho will not open: " + reason + ".",
+        JOptionPane.showMessageDialog(null, "O VarZinho não será aberto: " + reason + ".",
                 title, JOptionPane.ERROR_MESSAGE);
         System.exit(1);
     }
 
-    private static void warn(String message, String title) {
-        JOptionPane.showMessageDialog(null, message, title, JOptionPane.WARNING_MESSAGE);
-    }
 }

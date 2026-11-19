@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The archive: every saved highlight as a table row, narrowed to one court on request.
@@ -36,7 +38,8 @@ import java.util.function.Supplier;
  * that could be read, and a lookup that fails outright leaves the rows it already had.
  */
 final class ArchivePanel extends JPanel {
-    private static final String ALL_COURTS = "All courts";
+    private static final Logger LOGGER = Logger.getLogger(ArchivePanel.class.getName());
+    private static final String ALL_COURTS = "Todas as quadras";
 
     private final Supplier<List<CourtView>> courts;
     private final BrowseArchive archive;
@@ -45,7 +48,7 @@ final class ArchivePanel extends JPanel {
     private final JComboBox<String> filter = new JComboBox<>();
     private final HighlightTableModel rows;
     private final JTable table;
-    private final JButton openClip = new JButton("Open clip");
+    private final JButton openClip = new JButton("Assistir ao vídeo");
 
     ArchivePanel(Supplier<List<CourtView>> courts, BrowseArchive archive, ZoneId zone, Consumer<String> errorSink) {
         super(new BorderLayout(4, 4));
@@ -62,7 +65,7 @@ final class ArchivePanel extends JPanel {
         refreshCourts();
         filter.addActionListener(event -> refresh());
         JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-        filterRow.add(new JLabel("Archive:"));
+        filterRow.add(new JLabel("Acervo:"));
         filterRow.add(filter);
         openClip.addActionListener(event -> openSelectedClip());
         filterRow.add(openClip);
@@ -77,7 +80,7 @@ final class ArchivePanel extends JPanel {
      * show the same moment the same way.
      */
     static DateTimeFormatter timeFormatIn(ZoneId zone) {
-        return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(zone);
+        return DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").withZone(zone);
     }
 
     JComboBox<String> filter() { return filter; }
@@ -91,19 +94,20 @@ final class ArchivePanel extends JPanel {
     private void openSelectedClip() {
         int row = table.getSelectedRow();
         if (row < 0) {
-            errorSink.accept("Choose a highlight in the archive to open its clip.");
+            errorSink.accept("Selecione um lance no acervo para abrir o clipe.");
             return;
         }
         Path clip = Path.of(rows.clipAt(table.convertRowIndexToModel(row)));
         if (!Files.exists(clip)) {
-            errorSink.accept("There is no video file at " + clip
-                    + ": only highlights from a stream camera are recorded to disk.");
+            errorSink.accept("Não há arquivo de vídeo em " + clip
+                    + ": somente lances de uma câmera de transmissão são gravados no disco.");
             return;
         }
         try {
             Desktop.getDesktop().open(clip.toFile());
-        } catch (IOException | UnsupportedOperationException failure) {
-            errorSink.accept("The clip could not be opened: " + failure.getMessage());
+        } catch (IOException | UnsupportedOperationException | IllegalArgumentException failure) {
+            LOGGER.log(Level.WARNING, "Could not open the clip in the system player", failure);
+            errorSink.accept("Não foi possível abrir o clipe. Verifique o reprodutor do sistema.");
         }
     }
 
@@ -116,7 +120,7 @@ final class ArchivePanel extends JPanel {
                 .filter(number -> !courtNumbers.contains(number))
                 .forEach(number -> {
                     courtNumbers.add(number);
-                    filter.addItem("Court " + number);
+                    filter.addItem("Quadra " + number);
                 });
     }
 
@@ -129,11 +133,15 @@ final class ArchivePanel extends JPanel {
         try {
             listing = lookup();
         } catch (RepositoryException failure) {
-            errorSink.accept("Archive error: " + failure.getMessage());
+            LOGGER.log(Level.WARNING, "Could not read the highlight archive", failure);
+            errorSink.accept("Não foi possível ler o acervo. Verifique o armazenamento.");
             return;
         }
         rows.show(listing.getHighlights());
-        listing.getWarning().ifPresent(warning -> errorSink.accept("Archive damaged: " + warning));
+        listing.getWarning().ifPresent(warning -> {
+            LOGGER.warning(warning);
+            errorSink.accept("Acervo danificado: " + PortugueseText.message(warning));
+        });
     }
 
     private ArchiveListing lookup() throws RepositoryException {
@@ -143,7 +151,7 @@ final class ArchivePanel extends JPanel {
     }
 
     private static final class HighlightTableModel extends AbstractTableModel {
-        private static final String[] COLUMNS = {"Captured at", "Court", "Camera", "Duration", "Clip"};
+        private static final String[] COLUMNS = {"Data e hora", "Quadra", "Câmera", "Duração", "Clipe"};
 
         private final DateTimeFormatter timeFormat;
         private List<HighlightView> highlights = List.of();
@@ -177,7 +185,7 @@ final class ArchivePanel extends JPanel {
                 case 0: return timeFormat.format(highlight.getCapturedAt());
                 case 1: return highlight.getCourtNumber();
                 case 2: return highlight.getCameraId();
-                case 3: return highlight.getDurationSeconds() + "s";
+                case 3: return highlight.getDurationSeconds() + " s";
                 case 4: return highlight.getClipPath();
                 default: throw new IndexOutOfBoundsException("no column " + column);
             }

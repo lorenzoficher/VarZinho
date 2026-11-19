@@ -64,6 +64,10 @@ class SignInPanelTest {
 
         assertEquals("ana", panel.usernameField().getText());
         assertEquals(0, panel.passwordField().getPassword().length);
+        panel.passwordField().setText(PASSWORD);
+        panel.signInButton().doClick();
+        assertEquals(1, signedIn.size());
+        assertEquals("ana", signedIn.get(0).getOperator().getUsername());
     }
 
     @Test
@@ -77,7 +81,7 @@ class SignInPanelTest {
 
         assertTrue(signedIn.isEmpty());
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).contains("disk is gone"), errors.get(0));
+        assertTrue(errors.get(0).contains("ler os operadores"), errors.get(0));
     }
 
     private static final class UnreadableStore implements OperatorStore {

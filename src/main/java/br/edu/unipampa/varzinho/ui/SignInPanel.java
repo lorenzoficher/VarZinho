@@ -12,6 +12,8 @@ import javax.swing.JTextField;
 import java.awt.GridLayout;
 import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Asks a stored operator for a username and a password. Whether the credentials are
@@ -19,12 +21,13 @@ import java.util.function.Consumer;
  * refusal never says which of the two was wrong.
  */
 final class SignInPanel extends JPanel {
+    private static final Logger LOGGER = Logger.getLogger(SignInPanel.class.getName());
     private final OperatorAccess access;
     private final Consumer<String> errorSink;
     private final Consumer<SignedInOperator> onSignedIn;
     private final JTextField usernameField = new JTextField(16);
     private final JPasswordField passwordField = new JPasswordField(16);
-    private final JButton signIn = new JButton("Sign in");
+    private final JButton signIn = new JButton("Entrar");
 
     SignInPanel(OperatorAccess access, Consumer<String> errorSink, Consumer<SignedInOperator> onSignedIn) {
         super(new GridLayout(3, 2, 6, 6));
@@ -34,8 +37,8 @@ final class SignInPanel extends JPanel {
         this.access = access;
         this.errorSink = errorSink;
         this.onSignedIn = onSignedIn;
-        add(new JLabel("Username")); add(usernameField);
-        add(new JLabel("Password")); add(passwordField);
+        add(new JLabel("Usuário")); add(usernameField);
+        add(new JLabel("Senha")); add(passwordField);
         add(new JLabel()); add(signIn);
         signIn.addActionListener(event -> signIn());
     }
@@ -50,9 +53,10 @@ final class SignInPanel extends JPanel {
             onSignedIn.accept(access.signIn(usernameField.getText(), new String(typed)));
         } catch (IllegalArgumentException refused) {
             passwordField.setText("");
-            errorSink.accept(refused.getMessage());
+            errorSink.accept(PortugueseText.message(refused.getMessage()));
         } catch (RepositoryException unreadable) {
-            errorSink.accept("The operators could not be read: " + unreadable.getMessage());
+            LOGGER.log(Level.WARNING, "Could not read the operator account", unreadable);
+            errorSink.accept("Não foi possível ler os operadores. Verifique o armazenamento.");
         } finally {
             Arrays.fill(typed, '\0');
         }
