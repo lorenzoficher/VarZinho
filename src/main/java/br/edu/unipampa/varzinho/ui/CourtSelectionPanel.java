@@ -20,7 +20,7 @@ final class CourtSelectionPanel extends JPanel {
     private final Consumer<String> errorSink;
     private final JComboBox<Integer> courtSelector = new JComboBox<>();
     private final JTextField courtNumberField = new JTextField(4);
-    private final JButton addCourt = new JButton("Add court");
+    private final JButton addCourt = new JButton("Adicionar quadra");
     private final List<Runnable> courtAddedListeners = new ArrayList<>();
 
     CourtSelectionPanel(ManageGym management, Consumer<String> errorSink) {
@@ -32,7 +32,7 @@ final class CourtSelectionPanel extends JPanel {
         this.errorSink = errorSink;
         for (CourtView court : management.courts()) courtSelector.addItem(court.getNumber());
         JPanel adder = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-        adder.add(new JLabel("New court number"));
+        adder.add(new JLabel("Número da nova quadra"));
         adder.add(courtNumberField);
         adder.add(addCourt);
         add(courtSelector, BorderLayout.CENTER);
@@ -57,10 +57,11 @@ final class CourtSelectionPanel extends JPanel {
         try {
             number = Integer.parseInt(courtNumberField.getText().trim());
         } catch (NumberFormatException notANumber) {
-            errorSink.accept("Type the court number as digits.");
+            errorSink.accept("Digite o número da quadra usando algarismos.");
             return;
         }
-        if (!GymChangeReporter.attempt(() -> management.addCourt(number), errorSink)) return;
+        if (!GymChangeReporter.attempt(() -> management.addCourt(number),
+                message -> errorSink.accept(PortugueseText.message(message)))) return;
         insertInOrder(number);
         courtSelector.setSelectedItem(number);
         courtNumberField.setText("");

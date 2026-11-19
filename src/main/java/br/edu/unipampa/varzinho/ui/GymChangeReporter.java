@@ -14,7 +14,7 @@ final class GymChangeReporter {
             change.apply();
             return true;
         } catch (RepositoryException failure) {
-            errorSink.accept("The gym could not be saved: " + failure.getMessage());
+            errorSink.accept("Não foi possível salvar a academia: " + failure.getMessage());
             return true;
         } catch (IllegalStateException | IllegalArgumentException | DomainException refusal) {
             errorSink.accept(refusal.getMessage());
