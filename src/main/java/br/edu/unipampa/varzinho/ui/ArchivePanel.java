@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The archive: every saved highlight as a table row, narrowed to one court on request.
@@ -36,6 +38,7 @@ import java.util.function.Supplier;
  * that could be read, and a lookup that fails outright leaves the rows it already had.
  */
 final class ArchivePanel extends JPanel {
+    private static final Logger LOGGER = Logger.getLogger(ArchivePanel.class.getName());
     private static final String ALL_COURTS = "Todas as quadras";
 
     private final Supplier<List<CourtView>> courts;
@@ -91,18 +94,19 @@ final class ArchivePanel extends JPanel {
     private void openSelectedClip() {
         int row = table.getSelectedRow();
         if (row < 0) {
-            errorSink.accept("Selecione um destaque no acervo para abrir o clipe.");
+            errorSink.accept("Selecione um lance no acervo para abrir o clipe.");
             return;
         }
         Path clip = Path.of(rows.clipAt(table.convertRowIndexToModel(row)));
         if (!Files.exists(clip)) {
             errorSink.accept("Não há arquivo de vídeo em " + clip
-                    + ": somente destaques de uma câmera de transmissão são gravados no disco.");
+                    + ": somente lances de uma câmera de transmissão são gravados no disco.");
             return;
         }
         try {
             Desktop.getDesktop().open(clip.toFile());
-        } catch (IOException | UnsupportedOperationException failure) {
+        } catch (IOException | UnsupportedOperationException | IllegalArgumentException failure) {
+            LOGGER.log(Level.WARNING, "Could not open the clip in the system player", failure);
             errorSink.accept("Não foi possível abrir o clipe. Verifique o reprodutor do sistema.");
         }
     }
@@ -129,11 +133,15 @@ final class ArchivePanel extends JPanel {
         try {
             listing = lookup();
         } catch (RepositoryException failure) {
+            LOGGER.log(Level.WARNING, "Could not read the highlight archive", failure);
             errorSink.accept("Não foi possível ler o acervo. Verifique o armazenamento.");
             return;
         }
         rows.show(listing.getHighlights());
-        listing.getWarning().ifPresent(warning -> errorSink.accept("Acervo danificado: " + PortugueseText.message(warning)));
+        listing.getWarning().ifPresent(warning -> {
+            LOGGER.warning(warning);
+            errorSink.accept("Acervo danificado: " + PortugueseText.message(warning));
+        });
     }
 
     private ArchiveListing lookup() throws RepositoryException {
