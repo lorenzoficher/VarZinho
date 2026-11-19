@@ -103,7 +103,7 @@ final class ArchivePanel extends JPanel {
         try {
             Desktop.getDesktop().open(clip.toFile());
         } catch (IOException | UnsupportedOperationException failure) {
-            errorSink.accept("Não foi possível abrir o clipe: " + failure.getMessage());
+            errorSink.accept("Não foi possível abrir o clipe. Verifique o reprodutor do sistema.");
         }
     }
 
@@ -129,11 +129,11 @@ final class ArchivePanel extends JPanel {
         try {
             listing = lookup();
         } catch (RepositoryException failure) {
-            errorSink.accept("Erro no acervo: " + failure.getMessage());
+            errorSink.accept("Não foi possível ler o acervo. Verifique o armazenamento.");
             return;
         }
         rows.show(listing.getHighlights());
-        listing.getWarning().ifPresent(warning -> errorSink.accept("Acervo danificado: " + warning));
+        listing.getWarning().ifPresent(warning -> errorSink.accept("Acervo danificado: " + PortugueseText.message(warning)));
     }
 
     private ArchiveListing lookup() throws RepositoryException {

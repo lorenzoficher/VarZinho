@@ -129,7 +129,7 @@ class ArchivePanelTest {
         panel.refresh();
 
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).contains("disk unplugged"));
+        assertTrue(errors.get(0).contains("ler o acervo"));
         assertEquals(1, panel.table().getRowCount());
     }
 
@@ -148,7 +148,7 @@ class ArchivePanelTest {
         assertEquals("camera-h-3", panel.table().getValueAt(0, 2));
         assertEquals("camera-h-1", panel.table().getValueAt(1, 2));
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).contains("line 3"));
+        assertTrue(errors.get(0).contains("linha 3"));
     }
 
     @Test
