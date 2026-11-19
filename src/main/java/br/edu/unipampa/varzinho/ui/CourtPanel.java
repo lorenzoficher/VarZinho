@@ -31,6 +31,26 @@ final class CourtPanel extends JPanel {
         cameraPosition = new CameraPositionPanel(management, courtSelection::selectedCourtNumber,
                 cameraList::selectedCamera, errorSink, cameraList::refreshKeepingSelection);
         courtOverview = new CourtOverviewPanel(management, this::selectCourt);
+        cameraList.onAdd(() -> {
+            javax.swing.JDialog dialog = new javax.swing.JDialog(javax.swing.SwingUtilities.getWindowAncestor(cameraList),
+                    "Adicionar câmera", java.awt.Dialog.ModalityType.DOCUMENT_MODAL);
+            dialog.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+            javax.swing.JLabel feedback = new javax.swing.JLabel(" ");
+            CameraInstallPanel form = new CameraInstallPanel(management, this::selectedCourtNumber, bufferSeconds,
+                    msg -> { feedback.setText(msg); errorSink.accept(msg); },
+                    () -> { cameraList.refresh(); dialog.dispose(); });
+            JButton cancel = new JButton("Cancelar");
+            cancel.addActionListener(event -> dialog.dispose());
+            JPanel footer = new JPanel(new BorderLayout());
+            footer.add(feedback, BorderLayout.CENTER);
+            footer.add(cancel, BorderLayout.EAST);
+            dialog.add(form);
+            dialog.add(footer, BorderLayout.SOUTH);
+            dialog.getRootPane().setDefaultButton(form.installButton());
+            dialog.pack();
+            dialog.setLocationRelativeTo(cameraList);
+            dialog.setVisible(true);
+        });
 
         courtSelection.onCourtChange(() -> {
             cameraList.refresh();
@@ -61,6 +81,7 @@ final class CourtPanel extends JPanel {
     }
 
     JPanel cameraPage() {
+        cameraForms.remove(cameraInstallation);
         remove(cameraList);
         remove(cameraForms);
         JPanel page = new JPanel(new BorderLayout(12, 12));
@@ -68,6 +89,8 @@ final class CourtPanel extends JPanel {
         page.add(cameraForms, BorderLayout.SOUTH);
         return page;
     }
+
+    CameraListPanel devices() { return cameraList; }
 
     int selectedCourtNumber() { return courtSelection.selectedCourtNumber(); }
     void selectCourt(int number) { courtSelection.selectCourt(number); }

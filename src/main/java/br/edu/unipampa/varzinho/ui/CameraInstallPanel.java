@@ -33,7 +33,7 @@ final class CameraInstallPanel extends JPanel {
 
     CameraInstallPanel(ManageGym management, IntSupplier selectedCourt, int bufferSeconds,
                        Consumer<String> errorSink, Runnable onInstalled) {
-        super(new MigLayout("insets 16, fillx, wrap 6", "[][grow,fill]16[][grow,fill]16[][grow,fill]", "[][]12[][]"));
+        super(new MigLayout("insets 16, fillx, wrap 2", "[180:220,grow,fill]12[180:220,grow,fill]"));
         if (management == null) throw new IllegalArgumentException("camera installation needs gym management");
         if (selectedCourt == null) throw new IllegalArgumentException("camera installation needs a selected court");
         if (bufferSeconds <= 0) throw new IllegalArgumentException("a buffer holds at least one second");
@@ -63,13 +63,15 @@ final class CameraInstallPanel extends JPanel {
         });
         JLabel title = new JLabel("Adicionar câmera");
         VarZinhoTheme.styleTitle(title);
-        add(title, "span 6, wrap");
-        add(new JLabel("ID")); add(idField);
-        add(new JLabel("Modelo")); add(modelField);
-        add(new JLabel("Tipo")); add(typeSelector);
-        add(new JLabel("Resolução")); add(resolutionSelector);
-        add(new JLabel("Ângulo")); add(angleSpinner);
-        add(install, "h 38!");
+        add(new JLabel("NOVO DISPOSITIVO"), "span");
+        add(title, "span, gapbottom 14");
+        add(new JLabel("ID da câmera")); add(new JLabel("Modelo"));
+        add(idField, "h 34!"); add(modelField, "h 34!");
+        add(new JLabel("Tipo")); add(new JLabel("Resolução"));
+        add(typeSelector); add(resolutionSelector);
+        add(new JLabel("Ângulo de visão (graus)"), "span"); add(angleSpinner, "span, growx");
+        add(new JLabel("A câmera será cadastrada como parada."), "span, gapy 12");
+        add(install, "skip 1, h 38!");
         typeSelector.addActionListener(
                 event -> angleSpinner.setEnabled(typeSelector.getSelectedItem() == CameraKind.FIXED));
         install.addActionListener(event -> install());
@@ -86,8 +88,7 @@ final class CameraInstallPanel extends JPanel {
         CameraSpec specification = new CameraSpec(idField.getText(), modelField.getText(),
                 (CameraKind) typeSelector.getSelectedItem(), (Resolution) resolutionSelector.getSelectedItem(),
                 bufferSeconds, (Integer) angleSpinner.getValue());
-        GymChangeReporter.attempt(() -> management.installCamera(selectedCourt.getAsInt(), specification),
-                message -> errorSink.accept(PortugueseText.message(message)));
-        onInstalled.run();
+        if (GymChangeReporter.attempt(() -> management.installCamera(selectedCourt.getAsInt(), specification),
+                message -> errorSink.accept(PortugueseText.message(message)))) onInstalled.run();
     }
 }
