@@ -133,16 +133,21 @@ A stream camera is never written to this file. It is runtime equipment,
 installed afresh on every start, and a court that holds only stream cameras is
 left out with it, or every start would add another.
 
-**One kind of camera, one branch.** `CsvGymRepository` tells the kinds apart
-with `instanceof` when it writes and with the `kind` column when it reads, so a
-new kind of camera means editing the repository as well as adding the class.
-That is a deliberate exception to the open/closed principle, not an oversight.
-The alternatives cost more than they save here: a `toCsv()` on `Camera` would
-make the domain know the storage format, which the dependency rule above
-forbids, and a visitor in `domain/capture/` would add an interface and a method
-to every camera for the sake of three kinds. The branching is confined to the
-one class that owns the format, and each kind it does not know is refused
-explicitly rather than written wrong.
+**One CSV format per camera kind.** `CsvGymRepository` owns the seven shared
+columns: kind, court number, id, model, resolution, buffer length and status.
+A `CameraCsvFormat<C>` owns only its kind's additional columns and rebuilds
+that camera through its domain behaviour. `FixedCameraCsvFormat` stores the
+angle; `PtzCameraCsvFormat` stores pan, tilt and zoom and restores them through
+`moveTo`. `CameraCsvFormats.standard()` lists both without changing the file
+format, so existing gym files still load.
+
+The default constructor uses those standard formats. The constructor accepting
+a format list allows a new camera kind to round-trip without editing the
+repository: saving selects its exact camera class, and loading selects its
+kind. Duplicate kinds or classes and the reserved kinds `gym` and `court` are
+refused at construction. Unregistered cameras are refused before a save
+changes the file; an unknown kind on load fails with its line number. The
+domain remains independent of CSV.
 
 Unlike the highlight archive, one unreadable line fails the whole load: half a
 gym would be a gym nobody built. The window then opens on the sample gym and
