@@ -69,6 +69,10 @@ public final class ManageGym {
         return changeCamera(courtNumber, cameraId, Camera::sendToMaintenance);
     }
 
+    public CourtView releaseFromMaintenance(int courtNumber, String cameraId) throws RepositoryException {
+        return changeCamera(courtNumber, cameraId, Camera::releaseFromMaintenance);
+    }
+
     public CourtView removeCamera(int courtNumber, String cameraId) throws RepositoryException {
         Court court = requireCourt(courtNumber);
         court.removeCamera(requireCamera(court, cameraId));
