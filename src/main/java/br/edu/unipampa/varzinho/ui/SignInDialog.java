@@ -4,6 +4,7 @@ import br.edu.unipampa.varzinho.application.OperatorAccess;
 import br.edu.unipampa.varzinho.application.SignedInOperator;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 
+import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -32,10 +33,10 @@ public final class SignInDialog extends JDialog {
             setTitle("VarZinho — Entrar");
             getRootPane().setDefaultButton(((SignInPanel) form).signInButton());
         }
+        form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         add(form);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         pack();
-        setResizable(false);
         setLocationRelativeTo(null);
     }
 
