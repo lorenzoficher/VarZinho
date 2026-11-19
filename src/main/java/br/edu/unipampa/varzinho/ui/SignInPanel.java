@@ -24,7 +24,7 @@ final class SignInPanel extends JPanel {
     private final Consumer<SignedInOperator> onSignedIn;
     private final JTextField usernameField = new JTextField(16);
     private final JPasswordField passwordField = new JPasswordField(16);
-    private final JButton signIn = new JButton("Sign in");
+    private final JButton signIn = new JButton("Entrar");
 
     SignInPanel(OperatorAccess access, Consumer<String> errorSink, Consumer<SignedInOperator> onSignedIn) {
         super(new GridLayout(3, 2, 6, 6));
@@ -34,8 +34,8 @@ final class SignInPanel extends JPanel {
         this.access = access;
         this.errorSink = errorSink;
         this.onSignedIn = onSignedIn;
-        add(new JLabel("Username")); add(usernameField);
-        add(new JLabel("Password")); add(passwordField);
+        add(new JLabel("Usuário")); add(usernameField);
+        add(new JLabel("Senha")); add(passwordField);
         add(new JLabel()); add(signIn);
         signIn.addActionListener(event -> signIn());
     }
@@ -50,9 +50,9 @@ final class SignInPanel extends JPanel {
             onSignedIn.accept(access.signIn(usernameField.getText(), new String(typed)));
         } catch (IllegalArgumentException refused) {
             passwordField.setText("");
-            errorSink.accept(refused.getMessage());
+            errorSink.accept(PortugueseText.message(refused.getMessage()));
         } catch (RepositoryException unreadable) {
-            errorSink.accept("The operators could not be read: " + unreadable.getMessage());
+            errorSink.accept("Não foi possível ler os operadores: " + unreadable.getMessage());
         } finally {
             Arrays.fill(typed, '\0');
         }
