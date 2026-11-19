@@ -239,6 +239,19 @@ was captured — which is the whole reason the exception exists instead of a
 
 ## The interface
 
+`ManageGym` returns immutable snapshots through `CameraView` and `CourtView`.
+Each camera view carries its id, `CameraKind`, `Resolution`, `CameraStatus` and
+aiming capability as data. PTZ pan, tilt and zoom are `OptionalInt` values:
+they are present for a PTZ and empty for other kinds. A court view reports
+its total camera count and its recording count from the captured statuses,
+so a previous view never changes when the gym is modified. The existing
+description remains available for the current camera list; status badges can
+use `getStatus()` directly without comparing that text or importing domain types.
+
+Stream cameras appear as `CameraKind.STREAM` with their actual status. They
+remain outside `CameraKind.installable()`: a manual `CameraSpec` cannot build
+a phone camera without its stream connection and assembler.
+
 `Main` starts the application and hands control to Swing. `GymSession` loads
 the saved gym or creates the sample gym on the first run. The court panel
 creates courts, installs and moves cameras, changes camera status and points a
