@@ -33,6 +33,15 @@ public final class CourtView {
         return cameras;
     }
 
+    public int getCameraCount() {
+        return cameras.size();
+    }
+
+    /** Counts this snapshot's recording states, never the live domain objects. */
+    public int getRecordingCameraCount() {
+        return (int) cameras.stream().filter(camera -> camera.getStatus().canRecord()).count();
+    }
+
     public int getSecondsRecorded() {
         return secondsRecorded;
     }

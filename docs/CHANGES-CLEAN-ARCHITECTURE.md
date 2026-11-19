@@ -145,6 +145,13 @@ moved from `ui/` to `application/`.
 the use case's and is tested without Swing; which thread runs each step stays
 the window's decision, as fixed in #115.
 
+**Follow-up #113.** The camera now receives the real assembler and completes
+the file before `CaptureHighlight.capture` returns. The window runs that whole
+operation on a worker, pausing feeds and camera changes until it finishes.
+`PendingCapture` only archives an already completed capture; `writeClip()` and
+`PendingClipWrites` have been removed. Direct callers no longer depend on the
+panel to collect and execute a write.
+
 ### 7. The archive is listed through `BrowseArchive` — #131, PR #134
 
 **Before.** `ArchivePanel` called the repository and caught

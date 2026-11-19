@@ -69,6 +69,25 @@ This is **dependency inversion**: the high-level policy depends on an
 abstraction, not on the low-level detail. It is also the project's clearest
 justification for declaring an interface at all.
 
+### Browsing by local day
+
+`BrowseArchive.byDay(day)` lists a local calendar day, newest first;
+`byDay(day, courtNumber)` narrows it to one court. Each capture instant is
+converted to the gym's `ZoneId` before comparing dates, so UTC midnight and
+daylight-saving changes cannot move a highlight to the wrong local day.
+
+The constructor accepting a `Clock` and `ZoneId` makes the gym's zone explicit
+and lets tests fix the current instant independently of the machine. The
+original constructor still uses the system clock and zone, like the current
+window. `all()` and `byCourt()` retain their existing behaviour.
+
+`todaySummary()` and `todaySummary(courtNumber)` use the injected clock in the
+gym's zone. The immutable `ArchiveSummary` reports a count and the latest
+capture as `Optional<Instant>`; an empty day has zero highlights and no last
+instant. Both day listings and summaries retain the warning when damaged
+records are skipped, and filter only the readable highlights. An unreadable
+archive still propagates `RepositoryException`.
+
 ### The CSV format
 
 ```csv
@@ -133,16 +152,21 @@ A stream camera is never written to this file. It is runtime equipment,
 installed afresh on every start, and a court that holds only stream cameras is
 left out with it, or every start would add another.
 
-**One kind of camera, one branch.** `CsvGymRepository` tells the kinds apart
-with `instanceof` when it writes and with the `kind` column when it reads, so a
-new kind of camera means editing the repository as well as adding the class.
-That is a deliberate exception to the open/closed principle, not an oversight.
-The alternatives cost more than they save here: a `toCsv()` on `Camera` would
-make the domain know the storage format, which the dependency rule above
-forbids, and a visitor in `domain/capture/` would add an interface and a method
-to every camera for the sake of three kinds. The branching is confined to the
-one class that owns the format, and each kind it does not know is refused
-explicitly rather than written wrong.
+**One CSV format per camera kind.** `CsvGymRepository` owns the seven shared
+columns: kind, court number, id, model, resolution, buffer length and status.
+A `CameraCsvFormat<C>` owns only its kind's additional columns and rebuilds
+that camera through its domain behaviour. `FixedCameraCsvFormat` stores the
+angle; `PtzCameraCsvFormat` stores pan, tilt and zoom and restores them through
+`moveTo`. `CameraCsvFormats.standard()` lists both without changing the file
+format, so existing gym files still load.
+
+The default constructor uses those standard formats. The constructor accepting
+a format list allows a new camera kind to round-trip without editing the
+repository: saving selects its exact camera class, and loading selects its
+kind. Duplicate kinds or classes and the reserved kinds `gym` and `court` are
+refused at construction. Unregistered cameras are refused before a save
+changes the file; an unknown kind on load fails with its line number. The
+domain remains independent of CSV.
 
 Unlike the highlight archive, one unreadable line fails the whole load: half a
 gym would be a gym nobody built. The window then opens on the sample gym and
@@ -239,6 +263,19 @@ was captured — which is the whole reason the exception exists instead of a
 
 ## The interface
 
+`ManageGym` returns immutable snapshots through `CameraView` and `CourtView`.
+Each camera view carries its id, `CameraKind`, `Resolution`, `CameraStatus` and
+aiming capability as data. PTZ pan, tilt and zoom are `OptionalInt` values:
+they are present for a PTZ and empty for other kinds. A court view reports
+its total camera count and its recording count from the captured statuses,
+so a previous view never changes when the gym is modified. The existing
+description remains available for the current camera list; status badges can
+use `getStatus()` directly without comparing that text or importing domain types.
+
+Stream cameras appear as `CameraKind.STREAM` with their actual status. They
+remain outside `CameraKind.installable()`: a manual `CameraSpec` cannot build
+a phone camera without its stream connection and assembler.
+
 `Main` starts the application and hands control to Swing. `GymSession` loads
 the saved gym or creates the sample gym on the first run. The court panel
 creates courts, installs and moves cameras, changes camera status and points a
@@ -246,6 +283,23 @@ PTZ camera. The capture panel saves a highlight from the selected court, and
 the archive panel lists persisted highlights with an optional court filter.
 People registration remains in `ConsoleDemo`, because people do not
 participate in the capture operation.
+
+The stream camera receives the real `FfmpegClipAssembler`: capture returns only
+after its clip is written. `CapturePanel` runs the whole capture on a
+`SwingWorker`, then archives the completed highlight on the Swing thread.
+While the worker uses the model, the window skips feed ticks and disables
+court and camera changes. A phone disconnect waits for capture to finish.
+Both success and failure restore the controls and feeds. There is no registry
+of deferred clip writes; a caller outside the panel gets the same completed
+capture as the window.
+
+Every window action that feeds or changes the gym or its cameras must respect
+`CaptureActivity`, including actions added by future screens. A worker borrows
+the model exclusively until capture finishes; callers outside the window must
+provide equivalent exclusion. The current sign-in runs before the window opens.
+Expected capture refusals are shown to the operator. Unexpected worker failures
+also log their original exception and stack trace, and always show a nonempty
+message before the controls and feeds resume.
 
 They are deliberately thin. Every rule lives in the domain and the interface
 only calls it. If logic starts accumulating in a window class, it belongs in a

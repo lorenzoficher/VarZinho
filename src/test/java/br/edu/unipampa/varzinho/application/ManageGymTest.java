@@ -220,6 +220,19 @@ class ManageGymTest {
         return gym;
     }
 
+    @Test
+    void aStreamCannotBeInstalledWithoutItsConnectionAndAssembler() {
+        Gym gym = gymWithCourts(1);
+        InMemoryGymRepository repository = new InMemoryGymRepository();
+        ManageGym management = new ManageGym(gym, repository);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> management.installCamera(1, spec("phone-1", CameraKind.STREAM, 0)));
+
+        assertTrue(management.court(1).getCameras().isEmpty());
+        assertTrue(repository.load().isEmpty());
+    }
+
     private static CameraSpec spec(String id, CameraKind kind, int angle) {
         return new CameraSpec(id, "Model " + id, kind, Resolution.FULL_HD, 30, angle);
     }

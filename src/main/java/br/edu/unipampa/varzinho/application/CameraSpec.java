@@ -17,6 +17,9 @@ public final class CameraSpec {
         if (kind == null) {
             throw new IllegalArgumentException("a camera specification needs a kind");
         }
+        if (!CameraKind.installable().contains(kind)) {
+            throw new IllegalArgumentException("a stream camera must be connected with its stream and assembler");
+        }
         this.id = id;
         this.model = model;
         this.kind = kind;

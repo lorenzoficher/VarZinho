@@ -11,11 +11,15 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 /** Arranges the four independent parts of the court area. */
 final class CourtPanel extends JPanel {
+    private final List<Component> pausedControls = new ArrayList<>();
     private final CourtSelectionPanel courtSelection;
     private final CameraListPanel cameraList;
     private final CameraInstallPanel cameraInstallation;
@@ -44,6 +48,25 @@ final class CourtPanel extends JPanel {
         add(courtSelection, BorderLayout.NORTH);
         add(cameraList, BorderLayout.CENTER);
         add(forms, BorderLayout.SOUTH);
+    }
+
+    void pauseChanges() {
+        pause(this);
+    }
+
+    private void pause(Component control) {
+        if (control.isEnabled()) {
+            pausedControls.add(control);
+            control.setEnabled(false);
+        }
+        if (control instanceof Container container) {
+            for (Component child : container.getComponents()) pause(child);
+        }
+    }
+
+    void resumeChanges() {
+        pausedControls.forEach(control -> control.setEnabled(true));
+        pausedControls.clear();
     }
 
     int selectedCourtNumber() { return courtSelection.selectedCourtNumber(); }

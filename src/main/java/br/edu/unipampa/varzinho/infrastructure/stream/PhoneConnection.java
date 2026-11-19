@@ -1,7 +1,6 @@
 package br.edu.unipampa.varzinho.infrastructure.stream;
 
 import br.edu.unipampa.varzinho.application.Feed;
-import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.enums.Resolution;
 
@@ -32,13 +31,12 @@ public final class PhoneConnection {
      * Starts recording the phone at {@code streamUrl} into {@code segmentFolder}.
      *
      * @param bufferSeconds how many seconds the phone's camera keeps, and so how long its clips are
-     * @param pendingWrites where the camera leaves its clip writes for the capture panel
      * @param onFailure told why, in words for the operator, when an address was given but
      *     the phone could not be reached
      * @return the connected phone; empty when no address was given, or when it failed
      */
     public static Optional<PhoneConnection> open(String streamUrl, Path segmentFolder, int bufferSeconds,
-                                                 PendingClipWrites pendingWrites, Consumer<String> onFailure) {
+                                                 Consumer<String> onFailure) {
         if (streamUrl == null || streamUrl.isBlank()) {
             return Optional.empty();
         }
@@ -52,9 +50,13 @@ public final class PhoneConnection {
             return Optional.empty();
         }
         SegmentIndex index = new SegmentIndex(FfmpegRecorder.RING_SEGMENTS);
-        StreamCamera camera = new StreamCamera("phone-1", "Phone", Resolution.HD, bufferSeconds,
-                streamUrl, pendingWrites.deferring(new FfmpegClipAssembler(index)));
+        StreamCamera camera = cameraFor(streamUrl, bufferSeconds, index);
         return Optional.of(new PhoneConnection(streamUrl, recorder, index, camera));
+    }
+
+    static StreamCamera cameraFor(String streamUrl, int bufferSeconds, SegmentIndex index) {
+        return new StreamCamera("phone-1", "Phone", Resolution.HD, bufferSeconds,
+                streamUrl, new FfmpegClipAssembler(index));
     }
 
     public StreamCamera camera() {

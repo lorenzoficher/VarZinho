@@ -35,6 +35,7 @@ public final class VarZinhoWindow extends JFrame {
     private final ManageGym management;
     private final int bufferSeconds;
     private final List<Timer> clocks = new ArrayList<>();
+    private final CaptureActivity captureActivity = new CaptureActivity();
     private final CourtPanel courtPanel;
     private final ArchivePanel archivePanel;
     private final CapturePanel capturePanel;
@@ -64,7 +65,10 @@ public final class VarZinhoWindow extends JFrame {
         this.courtPanel = new CourtPanel(management, bufferSeconds, messages::show);
         this.archivePanel = new ArchivePanel(management::courts, archive, ZoneId.systemDefault(), messages::show);
         this.capturePanel = new CapturePanel(courtPanel, captureHighlight, ZoneId.systemDefault(),
-                messages::show, highlight -> archivePanel.refresh());
+                messages::show, highlight -> {
+                    messages.show("Melhor momento salvo na quadra " + highlight.getCourtNumber() + ".");
+                    archivePanel.refresh();
+                }, captureActivity);
         courtPanel.onCourtAdded(archivePanel::refreshCourts);
         setTitle("VarZinho Arena — " + gymName);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -139,7 +143,7 @@ public final class VarZinhoWindow extends JFrame {
         try {
             Desktop.getDesktop().browse(URI.create(streamUrl));
         } catch (IOException | IllegalArgumentException | UnsupportedOperationException failure) {
-            messages.show("Não foi possível abrir a transmissão ao vivo: " + failure.getMessage());
+            messages.show("Não foi possível abrir a transmissão ao vivo.");
         }
     }
 
@@ -147,22 +151,27 @@ public final class VarZinhoWindow extends JFrame {
      * Tells the operator, once, that the phone's court can no longer capture. FFmpeg
      * exiting and the phone going silent are two signs of the same drop.
      */
-    public void phoneDropped() {
-        if (phoneDropReported) {
-            return;
-        }
-        phoneDropReported = true;
-        showBufferStatus();
-        messages.show("O celular parou de transmitir e a quadra não pode mais capturar. "
-                + "Reinicie o VarZinho para reconectar.");
+    public void phoneDropped(Runnable disconnect) {
+        captureActivity.whenIdle(() -> {
+            if (phoneDropReported) return;
+            disconnect.run();
+            phoneDropReported = true;
+            showBufferStatus();
+            messages.show("O celular parou de transmitir. "
+                    + "Reinicie o VarZinho para reconectar.");
+        });
     }
 
     private void advance(Feed feed) {
+        captureActivity.ifIdle(() -> tick(feed));
+    }
+
+    private void tick(Feed feed) {
         try {
             feed.tick(Instant.now());
             showBufferStatus();
         } catch (IOException failure) {
-            messages.show("Não foi possível ler as imagens do celular: " + failure.getMessage());
+            messages.show("Não foi possível ler as imagens do celular.");
         }
     }
 

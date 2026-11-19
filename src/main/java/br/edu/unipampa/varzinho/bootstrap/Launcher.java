@@ -7,7 +7,6 @@ import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.GymSession;
 import br.edu.unipampa.varzinho.application.OperatorAccess;
-import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import br.edu.unipampa.varzinho.application.SignedInOperator;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
@@ -52,7 +51,7 @@ public final class Launcher {
             try {
                 storage = Storage.fromEnvironment(System::getenv, DATA_FOLDER);
             } catch (RepositoryException unreachable) {
-                refuseToOpen(unreachable.getMessage(), "Banco de dados indisponível");
+                refuseToOpen("não foi possível conectar ao banco de dados", "Banco de dados indisponível");
                 return;
             }
             Optional<SignedInOperator> signedIn = signIn(storage);
@@ -61,41 +60,35 @@ public final class Launcher {
             }
             HighlightRepository repository = storage.highlights();
             GymSession session = GymSession.start(storage.gym(), SampleGym.build(),
-                    message -> warn(message, "Academia salva não carregada"));
-            PendingClipWrites pendingWrites = new PendingClipWrites();
+                    message -> warn("A academia salva não pôde ser carregada.", "Academia indisponível"));
             Optional<PhoneConnection> phone = PhoneConnection.open(System.getenv(STREAM_URL_VARIABLE),
-                    SEGMENT_FOLDER, BUFFER_SECONDS, pendingWrites, message -> warn(message, "Celular não conectado"));
+                    SEGMENT_FOLDER, BUFFER_SECONDS, message -> warn("Confira o endereço da transmissão e a instalação do FFmpeg.", "Celular não conectado"));
             if (phone.isEmpty()) {
-                window(session, signedIn.get(), repository, pendingWrites, new LiveFeed(session.gym())).setVisible(true);
+                window(session, signedIn.get(), repository, new LiveFeed(session.gym())).setVisible(true);
             } else {
-                openWithPhone(session, signedIn.get(), repository, pendingWrites, phone.get());
+                openWithPhone(session, signedIn.get(), repository, phone.get());
             }
         });
     }
 
     private static void openWithPhone(GymSession session, SignedInOperator signedIn, HighlightRepository repository,
-                                      PendingClipWrites pendingWrites, PhoneConnection phone) {
+                                      PhoneConnection phone) {
         Gym gym = session.gym();
         ConnectStreamCamera connection = new ConnectStreamCamera(gym, phone.camera());
         CourtView court = connection.connect();
         // Two feeds, so the simulated courts keep their clock whatever the phone does.
-        VarZinhoWindow window = window(session, signedIn, repository, pendingWrites,
-                new LiveFeed(gym, court.getNumber()));
-        Runnable dropped = () -> {
-            connection.phoneDropped();
-            window.phoneDropped();
-        };
+        VarZinhoWindow window = window(session, signedIn, repository, new LiveFeed(gym, court.getNumber()));
+        Runnable dropped = () -> window.phoneDropped(connection::phoneDropped);
         window.followPhone(phone.feed(dropped), court.getNumber(), phone.streamUrl());
         phone.onDrop(() -> SwingUtilities.invokeLater(dropped));
         window.setVisible(true);
     }
 
-    private static VarZinhoWindow window(GymSession session, SignedInOperator signedIn,
-                                         HighlightRepository repository,
-                                         PendingClipWrites pendingWrites, Feed feed) {
+    private static VarZinhoWindow window(GymSession session, SignedInOperator signedIn, HighlightRepository repository,
+                                         Feed feed) {
         Gym gym = session.gym();
         return new VarZinhoWindow(gym.getName(), signedIn.getOperator(), session.manageGym(),
-                new CaptureHighlight(gym, repository, pendingWrites), new BrowseArchive(repository),
+                new CaptureHighlight(gym, repository), new BrowseArchive(repository),
                 feed, BUFFER_SECONDS);
     }
 
@@ -106,7 +99,7 @@ public final class Launcher {
         try {
             operator = SignInDialog.ask(new OperatorAccess(storage.operators()));
         } catch (RepositoryException unreadable) {
-            refuseToOpen("não foi possível ler os operadores (" + unreadable.getMessage() + ")",
+            refuseToOpen("não foi possível ler os operadores",
                     "Operadores não carregados");
             return Optional.empty();
         }
