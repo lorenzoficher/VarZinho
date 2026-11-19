@@ -112,8 +112,11 @@ final class ArchivePanel extends JPanel {
         dateField.setEnabled(false);
         dayFilter.addActionListener(event -> {
             dateField.setEnabled(CHOSEN_DATE.equals(dayFilter.getSelectedItem()));
-            // A chosen date waits for one to be typed before it is looked up.
-            if (!dateField.isEnabled() || !dateField.getText().isBlank()) refresh();
+            // A chosen date starts from today, so the rows shown always match a day the filter names.
+            if (dateField.isEnabled() && dateField.getText().isBlank()) {
+                dateField.setText(DATE_FORMAT.format(LocalDate.now(clock.withZone(zone))));
+            }
+            refresh();
         });
         dateField.addActionListener(event -> refresh());
         JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));

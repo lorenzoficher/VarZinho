@@ -198,12 +198,29 @@ class ArchivePanelTest {
     }
 
     @Test
+    void choosingADateStartsFromTodaySoTheRowsAlwaysMatchTheFilter() throws RepositoryException {
+        InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
+        repository.save(highlight("h-1", EARLY, 2));
+        repository.save(highlight("today", Instant.parse("2026-11-20T00:07:00Z"), 2));
+        ArchivePanel panel = panelAt(repository);
+
+        panel.dayFilter().setSelectedItem("Escolher data");
+        panel.filter().setSelectedItem("Quadra 2");
+
+        assertEquals("19/11/2026", panel.dateField().getText());
+        assertEquals(List.of("camera-today"), cameras(panel));
+        assertTrue(errors.isEmpty(), errors.toString());
+    }
+
+    @Test
     void anUnreadableDateIsReportedAndTheRowsAreKept() throws RepositoryException {
         InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
         repository.save(highlight("h-1", EARLY, 1));
         ArchivePanel panel = panelAt(repository);
 
         panel.dayFilter().setSelectedItem("Escolher data");
+        panel.dateField().setText("29/09/2026");
+        panel.dateField().postActionEvent();
         panel.dateField().setText("31/02/2026");
         panel.dateField().postActionEvent();
 
