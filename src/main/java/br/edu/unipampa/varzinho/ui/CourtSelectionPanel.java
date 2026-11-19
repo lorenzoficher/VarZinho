@@ -61,7 +61,7 @@ final class CourtSelectionPanel extends JPanel {
             return;
         }
         if (!GymChangeReporter.attempt(() -> management.addCourt(number),
-                message -> errorSink.accept(PortugueseText.message(message)))) return;
+                errorSink)) return;
         insertInOrder(number);
         courtSelector.setSelectedItem(number);
         courtNumberField.setText("");

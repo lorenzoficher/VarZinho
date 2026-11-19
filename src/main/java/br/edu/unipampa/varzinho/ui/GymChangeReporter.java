@@ -14,10 +14,10 @@ final class GymChangeReporter {
             change.apply();
             return true;
         } catch (RepositoryException failure) {
-            errorSink.accept("Não foi possível salvar a academia: " + failure.getMessage());
+            errorSink.accept("Não foi possível salvar a academia. Verifique o armazenamento.");
             return true;
         } catch (IllegalStateException | IllegalArgumentException | DomainException refusal) {
-            errorSink.accept(refusal.getMessage());
+            errorSink.accept(PortugueseText.message(refusal.getMessage()));
             return false;
         }
     }
