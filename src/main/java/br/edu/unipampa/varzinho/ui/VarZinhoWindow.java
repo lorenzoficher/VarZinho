@@ -98,7 +98,8 @@ public final class VarZinhoWindow extends JFrame {
             if (page == SidebarPanel.Page.DASHBOARD && dashboardHolder[0] != null) dashboardHolder[0].refresh();
             if (page == SidebarPanel.Page.ARCHIVE) archivePanel.refresh();
         };
-        DashboardPanel dashboard = new DashboardPanel(management, courtPanel, navigate);
+        DashboardPanel dashboard = new DashboardPanel(
+                management, courtPanel, capturePanel, navigate, messages::show);
         dashboardHolder[0] = dashboard;
         pages.add(dashboard, SidebarPanel.Page.DASHBOARD.name());
         courtPanel.onCourtAdded(() -> {
