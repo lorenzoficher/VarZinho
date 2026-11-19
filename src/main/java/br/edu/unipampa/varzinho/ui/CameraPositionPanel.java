@@ -105,7 +105,7 @@ final class CameraPositionPanel extends JPanel {
             return;
         }
         GymChangeReporter.attempt(() -> change.apply(camera.get()),
-                message -> errorSink.accept(PortugueseText.message(message)));
+                errorSink);
         onChanged.run();
         updateAimAvailability();
     }
