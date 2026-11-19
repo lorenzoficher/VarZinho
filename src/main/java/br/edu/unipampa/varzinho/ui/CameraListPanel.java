@@ -93,7 +93,7 @@ final class CameraListPanel extends JPanel {
         }
         GymChangeReporter.attempt(
                 () -> change.apply(selectedCourt.getAsInt(), camera.get().getId()),
-                message -> errorSink.accept(PortugueseText.message(message)));
+                errorSink);
         refreshKeepingSelection();
     }
 

@@ -89,7 +89,7 @@ final class CameraInstallPanel extends JPanel {
                 (CameraKind) typeSelector.getSelectedItem(), (Resolution) resolutionSelector.getSelectedItem(),
                 bufferSeconds, (Integer) angleSpinner.getValue());
         GymChangeReporter.attempt(() -> management.installCamera(selectedCourt.getAsInt(), specification),
-                message -> errorSink.accept(PortugueseText.message(message)));
+                errorSink);
         onInstalled.run();
     }
 }
