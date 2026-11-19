@@ -42,10 +42,12 @@ public final class VarZinhoWindow extends JFrame {
     private final CourtPanel courtPanel;
     private final ArchivePanel archivePanel;
     private final CapturePanel capturePanel;
+    private DashboardPanel dashboard;
     private final JPanel header = new JPanel(new MigLayout("insets 4 2 14 2, fillx", "[grow][]", "[][]"));
     private final JLabel pageTitle = buildTitle("Visão geral da arena");
     private final MessageBar messages = new MessageBar();
     private final JLabel bufferStatus = new JLabel();
+    private SidebarPanel sidebar;
     private boolean phoneDropReported;
 
     /**
@@ -98,7 +100,7 @@ public final class VarZinhoWindow extends JFrame {
             if (page == SidebarPanel.Page.DASHBOARD && dashboardHolder[0] != null) dashboardHolder[0].refresh();
             if (page == SidebarPanel.Page.ARCHIVE) archivePanel.refresh();
         };
-        DashboardPanel dashboard = new DashboardPanel(
+        dashboard = new DashboardPanel(
                 management, courtPanel, capturePanel, navigate, messages::show);
         dashboardHolder[0] = dashboard;
         pages.add(dashboard, SidebarPanel.Page.DASHBOARD.name());
@@ -110,7 +112,7 @@ public final class VarZinhoWindow extends JFrame {
             dashboard.refresh();
             showBufferStatus();
         });
-        SidebarPanel sidebar = new SidebarPanel(gymName, operator, navigate);
+        sidebar = new SidebarPanel(gymName, operator, navigate);
         sidebarHolder[0] = sidebar;
         navigate.accept(SidebarPanel.Page.DASHBOARD);
         add(sidebar, BorderLayout.WEST);
@@ -220,5 +222,7 @@ public final class VarZinhoWindow extends JFrame {
         CourtView court = management.court(courtPanel.selectedCourtNumber());
         bufferStatus.setText("Buffer da quadra " + court.getNumber() + ": "
                 + court.getSecondsRecorded() + " de " + bufferSeconds + " segundos.");
+        if (sidebar != null) sidebar.updateStatus(management.courts());
+        if (dashboard != null) dashboard.refresh();
     }
 }

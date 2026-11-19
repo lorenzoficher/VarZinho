@@ -1,6 +1,7 @@
 package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.application.OperatorView;
+import br.edu.unipampa.varzinho.application.CourtView;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.ButtonGroup;
@@ -8,9 +9,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.UIManager;
+import javax.swing.JProgressBar;
 import java.awt.Font;
 import java.awt.Dimension;
 import java.util.function.Consumer;
+import java.util.List;
 
 /** Navigation and session identity kept at the left of the operator window. */
 final class SidebarPanel extends JPanel {
@@ -22,6 +25,8 @@ final class SidebarPanel extends JPanel {
     private final JToggleButton highlights = navigation("Melhores momentos", "highlights");
     private final JToggleButton archive = navigation("Arquivos", "archive");
     private final JToggleButton settings = navigation("Configurações", "settings");
+    private final JLabel cameraStatus = sidebarLabel("0 câmeras ativas");
+    private final JProgressBar cameraProgress = new JProgressBar();
 
     SidebarPanel(String gymName, OperatorView operator, Consumer<Page> onPageChange) {
         super(new MigLayout("insets 24 18, fillx, wrap 1", "[grow,fill]", "[][]32[]8[][][][][][]push[]16[][]"));
@@ -74,10 +79,20 @@ final class SidebarPanel extends JPanel {
         add(archive, "h 46!");
         add(settings, "h 46!");
 
+        JPanel statusCard = new JPanel(new MigLayout("insets 14, fillx, wrap 1", "[grow,fill]", "[]8[]8[]6[]"));
+        statusCard.putClientProperty("FlatLaf.style", "background: lighten($VarZinho.sidebarBackground,5%); "
+                + "arc: 14; borderWidth: 1; borderColor: lighten($VarZinho.sidebarBackground,15%)");
         JLabel status = sidebarLabel("●  SISTEMA OPERACIONAL");
         status.setForeground(VarZinhoTheme.ACCENT);
         status.setFont(status.getFont().deriveFont(Font.BOLD, 10f));
-        add(status);
+        cameraStatus.setFont(cameraStatus.getFont().deriveFont(Font.BOLD));
+        cameraProgress.setForeground(VarZinhoTheme.ACCENT);
+        cameraProgress.setBackground(VarZinhoTheme.SIDEBAR_MUTED.darker());
+        statusCard.add(status);
+        statusCard.add(cameraStatus);
+        statusCard.add(cameraProgress, "h 5!");
+        statusCard.add(sidebarLabel("Atualizado agora"));
+        add(statusCard);
         JLabel operatorName = sidebarLabel(operator.getName());
         operatorName.setFont(operatorName.getFont().deriveFont(Font.BOLD));
         add(operatorName);
@@ -101,6 +116,16 @@ final class SidebarPanel extends JPanel {
             case SETTINGS: settings.setSelected(true); break;
             default: throw new IllegalArgumentException("unknown page " + page);
         }
+    }
+
+    void updateStatus(List<CourtView> courts) {
+        int total = courts.stream().mapToInt(court -> court.getCameras().size()).sum();
+        int active = (int) courts.stream().flatMap(court -> court.getCameras().stream())
+                .filter(camera -> camera.getDescription().contains("ACTIVE"))
+                .count();
+        cameraStatus.setText(active + " de " + total + " câmeras ativas");
+        cameraProgress.setMaximum(Math.max(1, total));
+        cameraProgress.setValue(active);
     }
 
     private static JLabel sidebarLabel(String text) {
