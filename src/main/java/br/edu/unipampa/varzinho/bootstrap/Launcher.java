@@ -23,6 +23,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The composition root: puts the application together — storage, the saved gym, the use
@@ -31,6 +33,7 @@ import java.util.Optional;
  * camera changes this class, never the window.
  */
 public final class Launcher {
+    private static final Logger LOGGER = Logger.getLogger(Launcher.class.getName());
     private static final String STREAM_URL_VARIABLE = "VARZINHO_STREAM_URL";
     private static final Path DATA_FOLDER = Path.of("data");
     private static final Path SEGMENT_FOLDER = Path.of("buffer");
@@ -53,6 +56,8 @@ public final class Launcher {
             try {
                 storage = Storage.fromEnvironment(System::getenv, DATA_FOLDER);
             } catch (RepositoryException unreachable) {
+                // Storage masks the password in this message; the JDBC cause can repeat the raw URL.
+                LOGGER.log(Level.SEVERE, "Database startup failed: {0}", unreachable.getMessage());
                 refuseToOpen("não foi possível conectar ao banco de dados", "Banco de dados indisponível");
                 return;
             }
@@ -63,10 +68,17 @@ public final class Launcher {
             HighlightRepository repository = storage.highlights();
             List<String> warnings = new ArrayList<>();
             GymSession session = GymSession.start(storage.gym(), SampleGym.build(),
-                    message -> warnings.add("A academia salva não pôde ser carregada."));
-            Optional<PhoneConnection> phone = PhoneConnection.open(System.getenv(STREAM_URL_VARIABLE),
-                    SEGMENT_FOLDER, BUFFER_SECONDS, message -> warnings.add(
-                            "Celular não conectado. Confira o endereço da transmissão e a instalação do FFmpeg."));
+                    message -> {
+                        LOGGER.warning(message);
+                        warnings.add("A academia salva não pôde ser carregada.");
+                    });
+            String streamUrl = System.getenv(STREAM_URL_VARIABLE);
+            Optional<PhoneConnection> phone = PhoneConnection.open(streamUrl, SEGMENT_FOLDER, BUFFER_SECONDS,
+                    message -> {
+                        // An invalid address may contain the phone's credentials.
+                        LOGGER.warning(message.replace(streamUrl, "[configured stream]"));
+                        warnings.add("Celular não conectado. Confira o endereço da transmissão e a instalação do FFmpeg.");
+                    });
             VarZinhoWindow window;
             if (phone.isEmpty()) {
                 window = window(session, signedIn.get(), repository, new LiveFeed(session.gym()));
@@ -106,6 +118,7 @@ public final class Launcher {
         try {
             operator = SignInDialog.ask(new OperatorAccess(storage.operators()));
         } catch (RepositoryException unreadable) {
+            LOGGER.log(Level.SEVERE, "Could not open the operator store", unreadable);
             refuseToOpen("não foi possível ler os operadores",
                     "Operadores não carregados");
             return Optional.empty();

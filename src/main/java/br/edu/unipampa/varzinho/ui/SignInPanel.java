@@ -12,6 +12,8 @@ import javax.swing.JTextField;
 import java.awt.GridLayout;
 import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Asks a stored operator for a username and a password. Whether the credentials are
@@ -19,6 +21,7 @@ import java.util.function.Consumer;
  * refusal never says which of the two was wrong.
  */
 final class SignInPanel extends JPanel {
+    private static final Logger LOGGER = Logger.getLogger(SignInPanel.class.getName());
     private final OperatorAccess access;
     private final Consumer<String> errorSink;
     private final Consumer<SignedInOperator> onSignedIn;
@@ -52,6 +55,7 @@ final class SignInPanel extends JPanel {
             passwordField.setText("");
             errorSink.accept(PortugueseText.message(refused.getMessage()));
         } catch (RepositoryException unreadable) {
+            LOGGER.log(Level.WARNING, "Could not read the operator account", unreadable);
             errorSink.accept("Não foi possível ler os operadores. Verifique o armazenamento.");
         } finally {
             Arrays.fill(typed, '\0');
