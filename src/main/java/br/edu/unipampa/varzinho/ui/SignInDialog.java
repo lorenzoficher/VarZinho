@@ -26,10 +26,10 @@ public final class SignInDialog extends JDialog {
         super((Window) null, ModalityType.APPLICATION_MODAL);
         JPanel form = formFor(access, this::showError, this::admit);
         if (form instanceof FirstOperatorPanel firstForm) {
-            setTitle("VarZinho — Criar primeiro operador");
+            setTitle("VarZinho Arena");
             getRootPane().setDefaultButton(firstForm.createButton());
         } else {
-            setTitle("VarZinho — Entrar");
+            setTitle("VarZinho Arena");
             getRootPane().setDefaultButton(((SignInPanel) form).signInButton());
         }
         add(form);
