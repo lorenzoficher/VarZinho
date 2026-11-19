@@ -9,6 +9,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
@@ -30,7 +31,7 @@ final class CameraInstallPanel extends JPanel {
     private final JComboBox<CameraKind> typeSelector = new JComboBox<>(CameraKind.values());
     private final JComboBox<Resolution> resolutionSelector = new JComboBox<>(Resolution.values());
     private final JSpinner angleSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 359, 1));
-    private final JButton install = new JButton("Install camera");
+    private final JButton install = new JButton("Cadastrar câmera");
 
     CameraInstallPanel(ManageGym management, IntSupplier selectedCourt, int bufferSeconds,
                        Consumer<String> errorSink, Runnable onInstalled) {
@@ -45,14 +46,30 @@ final class CameraInstallPanel extends JPanel {
         this.bufferSeconds = bufferSeconds;
         this.errorSink = errorSink;
         this.onInstalled = onInstalled;
-        setBorder(BorderFactory.createTitledBorder("Install camera on this court"));
+        typeSelector.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list, Object value,
+                    int index, boolean selected, boolean focused) {
+                String label = value == CameraKind.FIXED ? "Fixa" : "PTZ";
+                return super.getListCellRendererComponent(list, label, index, selected, focused);
+            }
+        });
+        resolutionSelector.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list, Object value,
+                    int index, boolean selected, boolean focused) {
+                String label = value instanceof Resolution resolution ? resolution.label() : "";
+                return super.getListCellRendererComponent(list, label, index, selected, focused);
+            }
+        });
+        setBorder(BorderFactory.createTitledBorder("Adicionar câmera nesta quadra"));
         JPanel identity = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        identity.add(new JLabel("Id")); identity.add(idField);
-        identity.add(new JLabel("Model")); identity.add(modelField);
-        identity.add(new JLabel("Type")); identity.add(typeSelector);
+        identity.add(new JLabel("ID da câmera")); identity.add(idField);
+        identity.add(new JLabel("Modelo")); identity.add(modelField);
+        identity.add(new JLabel("Tipo")); identity.add(typeSelector);
         JPanel settings = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        settings.add(new JLabel("Resolution")); settings.add(resolutionSelector);
-        settings.add(new JLabel("Angle")); settings.add(angleSpinner); settings.add(install);
+        settings.add(new JLabel("Resolução")); settings.add(resolutionSelector);
+        settings.add(new JLabel("Ângulo de visão")); settings.add(angleSpinner); settings.add(install);
         add(identity); add(settings);
         typeSelector.addActionListener(
                 event -> angleSpinner.setEnabled(typeSelector.getSelectedItem() == CameraKind.FIXED));
@@ -70,7 +87,8 @@ final class CameraInstallPanel extends JPanel {
         CameraSpec specification = new CameraSpec(idField.getText(), modelField.getText(),
                 (CameraKind) typeSelector.getSelectedItem(), (Resolution) resolutionSelector.getSelectedItem(),
                 bufferSeconds, (Integer) angleSpinner.getValue());
-        GymChangeReporter.attempt(() -> management.installCamera(selectedCourt.getAsInt(), specification), errorSink);
+        GymChangeReporter.attempt(() -> management.installCamera(selectedCourt.getAsInt(), specification),
+                message -> errorSink.accept(PortugueseText.message(message)));
         onInstalled.run();
     }
 }
