@@ -39,6 +39,13 @@ class CourtPanelTest {
     private final CourtPanel panel = new CourtPanel(new ManageGym(gym, gymRepository), 30, errors::add);
 
     @Test
+    void manualInstallationOffersOnlyKindsThatNeedNoStreamConnection() {
+        assertEquals(2, panel.typeSelector().getItemCount());
+        assertEquals(CameraKind.FIXED, panel.typeSelector().getItemAt(0));
+        assertEquals(CameraKind.PTZ, panel.typeSelector().getItemAt(1));
+    }
+
+    @Test
     void composesOnePanelForEachCourtAreaResponsibility() {
         assertEquals(1, descendantsOfType(panel, CourtSelectionPanel.class));
         assertEquals(1, descendantsOfType(panel, CameraListPanel.class));
