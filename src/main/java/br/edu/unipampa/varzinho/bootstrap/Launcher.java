@@ -52,33 +52,35 @@ public final class Launcher {
             try {
                 storage = Storage.fromEnvironment(System::getenv, DATA_FOLDER);
             } catch (RepositoryException unreachable) {
-                refuseToOpen(unreachable.getMessage(), "Database not reached");
+                refuseToOpen(unreachable.getMessage(), "Banco de dados indisponível");
                 return;
             }
-            if (signIn(storage).isEmpty()) {
+            Optional<SignedInOperator> signedIn = signIn(storage);
+            if (signedIn.isEmpty()) {
                 return;
             }
             HighlightRepository repository = storage.highlights();
             GymSession session = GymSession.start(storage.gym(), SampleGym.build(),
-                    message -> warn(message, "Saved gym not loaded"));
+                    message -> warn(message, "Academia salva não carregada"));
             PendingClipWrites pendingWrites = new PendingClipWrites();
             Optional<PhoneConnection> phone = PhoneConnection.open(System.getenv(STREAM_URL_VARIABLE),
-                    SEGMENT_FOLDER, BUFFER_SECONDS, pendingWrites, message -> warn(message, "Phone not connected"));
+                    SEGMENT_FOLDER, BUFFER_SECONDS, pendingWrites, message -> warn(message, "Celular não conectado"));
             if (phone.isEmpty()) {
-                window(session, repository, pendingWrites, new LiveFeed(session.gym())).setVisible(true);
+                window(session, signedIn.get(), repository, pendingWrites, new LiveFeed(session.gym())).setVisible(true);
             } else {
-                openWithPhone(session, repository, pendingWrites, phone.get());
+                openWithPhone(session, signedIn.get(), repository, pendingWrites, phone.get());
             }
         });
     }
 
-    private static void openWithPhone(GymSession session, HighlightRepository repository,
+    private static void openWithPhone(GymSession session, SignedInOperator signedIn, HighlightRepository repository,
                                       PendingClipWrites pendingWrites, PhoneConnection phone) {
         Gym gym = session.gym();
         ConnectStreamCamera connection = new ConnectStreamCamera(gym, phone.camera());
         CourtView court = connection.connect();
         // Two feeds, so the simulated courts keep their clock whatever the phone does.
-        VarZinhoWindow window = window(session, repository, pendingWrites, new LiveFeed(gym, court.getNumber()));
+        VarZinhoWindow window = window(session, signedIn, repository, pendingWrites,
+                new LiveFeed(gym, court.getNumber()));
         Runnable dropped = () -> {
             connection.phoneDropped();
             window.phoneDropped();
@@ -88,10 +90,11 @@ public final class Launcher {
         window.setVisible(true);
     }
 
-    private static VarZinhoWindow window(GymSession session, HighlightRepository repository,
+    private static VarZinhoWindow window(GymSession session, SignedInOperator signedIn,
+                                         HighlightRepository repository,
                                          PendingClipWrites pendingWrites, Feed feed) {
         Gym gym = session.gym();
-        return new VarZinhoWindow(gym.getName(), session.manageGym(),
+        return new VarZinhoWindow(gym.getName(), signedIn.getOperator(), session.manageGym(),
                 new CaptureHighlight(gym, repository, pendingWrites), new BrowseArchive(repository),
                 feed, BUFFER_SECONDS);
     }
@@ -103,8 +106,8 @@ public final class Launcher {
         try {
             operator = SignInDialog.ask(new OperatorAccess(storage.operators()));
         } catch (RepositoryException unreadable) {
-            refuseToOpen("the operators could not be read (" + unreadable.getMessage() + ")",
-                    "Operators not read");
+            refuseToOpen("não foi possível ler os operadores (" + unreadable.getMessage() + ")",
+                    "Operadores não carregados");
             return Optional.empty();
         }
         if (operator.isEmpty()) {
@@ -114,7 +117,7 @@ public final class Launcher {
     }
 
     private static void refuseToOpen(String reason, String title) {
-        JOptionPane.showMessageDialog(null, "VarZinho will not open: " + reason + ".",
+        JOptionPane.showMessageDialog(null, "O VarZinho não será aberto: " + reason + ".",
                 title, JOptionPane.ERROR_MESSAGE);
         System.exit(1);
     }
