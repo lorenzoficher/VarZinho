@@ -6,8 +6,6 @@ import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
 
 import javax.swing.AbstractButton;
-import javax.swing.BorderFactory;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.UIManager;
 import java.awt.Color;
@@ -16,22 +14,21 @@ import java.awt.GraphicsEnvironment;
 
 /** VarZinho's complete visual vocabulary and light/dark theme switch. */
 public final class VarZinhoTheme {
-    public static final Color SIDEBAR = Color.decode("#082A33");
+    public static final Color SIDEBAR = Color.decode("#111317");
     public static final Color SIDEBAR_FOREGROUND = Color.decode("#F5F7FA");
-    public static final Color CONTENT_LIGHT = Color.decode("#F4F8F7");
-    public static final Color CONTENT_DARK = Color.decode("#172328");
-    public static final Color ACCENT = Color.decode("#B8F34A");
-    public static final Color ON_ACCENT = Color.decode("#062A32");
-    public static final Color EMERALD = Color.decode("#078B68");
+    public static final Color CONTENT_LIGHT = Color.decode("#FFFFFF");
+    public static final Color CONTENT_DARK = Color.decode("#202226");
+    public static final Color ACCENT = Color.decode("#F2A900");
+    public static final Color ON_ACCENT = Color.decode("#111317");
     public static final Color RECORDING = Color.decode("#D64545");
     public static final Color STOPPED = Color.decode("#6B7280");
     public static final Color MAINTENANCE = Color.decode("#7A4FD6");
 
     public static final int TITLE_FONT_SIZE = 18;
     public static final int PROMINENT_ACTION_FONT_SIZE = 20;
-    public static final int COMPONENT_ARC = 14;
-    public static final int BUTTON_ARC = 14;
-    public static final int POPUP_ARC = 14;
+    public static final int COMPONENT_ARC = 10;
+    public static final int BUTTON_ARC = 10;
+    public static final int POPUP_ARC = 10;
 
     private VarZinhoTheme() { }
 
@@ -55,19 +52,6 @@ public final class VarZinhoTheme {
 
     static void styleProminentAction(AbstractButton action) {
         action.setFont(action.getFont().deriveFont(Font.BOLD, (float) PROMINENT_ACTION_FONT_SIZE));
-        action.putClientProperty("JButton.buttonType", "default");
-        action.putClientProperty("FlatLaf.style", "background: $VarZinho.accent; "
-                + "foreground: $VarZinho.onAccent; borderWidth: 0; arc: 16");
-    }
-
-    static void styleCard(JComponent component) {
-        component.putClientProperty("FlatLaf.style", "arc: 18; background: $VarZinho.cardBackground");
-        component.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
-    }
-
-    static void styleEyebrow(JLabel label) {
-        label.setForeground(EMERALD);
-        label.setFont(label.getFont().deriveFont(Font.BOLD, 11f));
     }
 
     private static void apply(boolean dark, boolean animate) {
@@ -96,11 +80,8 @@ public final class VarZinhoTheme {
         UIManager.put("PopupMenu.borderCornerRadius", POPUP_ARC);
         UIManager.put("VarZinho.sidebarBackground", SIDEBAR);
         UIManager.put("VarZinho.sidebarForeground", SIDEBAR_FOREGROUND);
-        UIManager.put("VarZinho.cardBackground", dark ? Color.decode("#213138") : Color.WHITE);
         UIManager.put("VarZinho.contentBackground", content);
         UIManager.put("VarZinho.accent", ACCENT);
-        UIManager.put("VarZinho.onAccent", ON_ACCENT);
-        UIManager.put("VarZinho.emerald", EMERALD);
         UIManager.put("VarZinho.recording", RECORDING);
         UIManager.put("VarZinho.stopped", STOPPED);
         UIManager.put("VarZinho.maintenance", MAINTENANCE);

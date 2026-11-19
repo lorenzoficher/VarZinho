@@ -8,7 +8,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.UIManager;
-import java.awt.Font;
 import java.awt.Dimension;
 import java.util.function.Consumer;
 
@@ -20,21 +19,18 @@ final class SidebarPanel extends JPanel {
     private final JToggleButton archive = new JToggleButton("Acervo", VarZinhoIcons.archive());
 
     SidebarPanel(String gymName, OperatorView operator, Consumer<Page> onPageChange) {
-        super(new MigLayout("insets 24 18, fillx, wrap 1", "[grow,fill]", "[][]32[][]push[]16[][]"));
+        super(new MigLayout("insets 18, fillx, wrap 1", "[grow,fill]", "[][]24[][]push[][][]"));
         if (gymName == null || gymName.isBlank()) throw new IllegalArgumentException("a sidebar needs the gym name");
         if (operator == null) throw new IllegalArgumentException("a sidebar needs the signed-in operator");
         if (onPageChange == null) throw new IllegalArgumentException("a sidebar needs a page destination");
-        setPreferredSize(new Dimension(235, 0));
+        setPreferredSize(new Dimension(210, 0));
         putClientProperty("FlatLaf.style", "background: $VarZinho.sidebarBackground");
 
         JLabel product = new JLabel("VarZinho Arena");
         product.setForeground(UIManager.getColor("VarZinho.sidebarForeground"));
         VarZinhoTheme.styleTitle(product);
-        add(product, "h 28!");
-        JLabel arena = sidebarLabel(gymName);
-        arena.setForeground(VarZinhoTheme.ACCENT);
-        arena.setFont(arena.getFont().deriveFont(Font.BOLD, 11f));
-        add(arena);
+        add(product);
+        add(sidebarLabel(gymName));
 
         ButtonGroup pages = new ButtonGroup();
         pages.add(courts);
@@ -44,16 +40,11 @@ final class SidebarPanel extends JPanel {
         styleNavigation(archive);
         courts.addActionListener(event -> onPageChange.accept(Page.COURTS));
         archive.addActionListener(event -> onPageChange.accept(Page.ARCHIVE));
-        add(courts, "h 46!");
-        add(archive, "h 46!");
+        add(courts);
+        add(archive);
 
-        javax.swing.JButton theme = VarZinhoWindow.buildThemeButton();
-        theme.putClientProperty("FlatLaf.style", "background: $VarZinho.sidebarBackground; "
-                + "foreground: $VarZinho.sidebarForeground; borderWidth: 1; arc: 12");
-        add(theme, "h 42!");
-        JLabel operatorName = sidebarLabel(operator.getName());
-        operatorName.setFont(operatorName.getFont().deriveFont(Font.BOLD));
-        add(operatorName);
+        add(VarZinhoWindow.buildThemeButton());
+        add(sidebarLabel(operator.getName()));
         add(sidebarLabel("@" + operator.getUsername()));
     }
 
@@ -68,7 +59,6 @@ final class SidebarPanel extends JPanel {
 
     private static void styleNavigation(JToggleButton button) {
         button.putClientProperty("FlatLaf.style", "foreground: $VarZinho.sidebarForeground; "
-                + "background: $VarZinho.sidebarBackground; selectedBackground: $VarZinho.accent; "
-                + "selectedForeground: $VarZinho.sidebarBackground; borderWidth: 0; arc: 12; iconTextGap: 12");
+                + "selectedBackground: $VarZinho.accent; selectedForeground: $VarZinho.sidebarBackground");
     }
 }
