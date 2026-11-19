@@ -18,7 +18,10 @@ import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.swing.JComponent;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import java.awt.event.ActionEvent;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -90,10 +93,39 @@ class CapturePanelTest {
     @Test
     void buttonLabelFollowsTheSelectedCourt() throws Exception {
         onSwing(() -> {
-            assertEquals("Salvar lance — quadra 1", panel.saveButton().getText());
+            assertEquals("Salvar lance (F2) — quadra 1", panel.saveButton().getText());
             courtPanel.selectCourt(2);
-            assertEquals("Salvar lance — quadra 2", panel.saveButton().getText());
+            assertEquals("Salvar lance (F2) — quadra 2", panel.saveButton().getText());
         });
+    }
+
+    @Test
+    void pressingF2SavesAHighlightFromTheSelectedCourt() throws Exception {
+        onSwing(() -> {
+            fillBuffers(gym);
+            courtPanel.selectCourt(2);
+        });
+
+        onSwing(() -> pressF2(panel));
+        awaitFinished(panel);
+
+        assertEquals(1, repository.findByCourt(2).size());
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    void f2WithNoCameraRecordingIsRefusedWithTheReason() throws Exception {
+        onSwing(() -> {
+            fillBuffers(gym);
+            courtPanel.selectCourt(2);
+            gym.findCourt(2).getCameras().get(0).stopRecording();
+        });
+
+        onSwing(() -> pressF2(panel));
+        awaitFinished(panel);
+
+        assertEquals(List.of("Não há câmera ativa na quadra 2."), errors);
+        assertTrue(repository.findAll().isEmpty());
     }
 
     @Test
@@ -359,6 +391,11 @@ class CapturePanelTest {
             result.set(new Phone(capture, courts, activity, feed, camera, model));
         });
         return result.get();
+    }
+
+    private static void pressF2(CapturePanel capture) {
+        Object key = capture.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(KeyStroke.getKeyStroke("F2"));
+        capture.getActionMap().get(key).actionPerformed(new ActionEvent(capture, ActionEvent.ACTION_PERFORMED, "F2"));
     }
 
     private static void press(CapturePanel capture) throws Exception {
