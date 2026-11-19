@@ -38,7 +38,7 @@ class FirstOperatorPanelTest {
 
         panel.createButton().doClick();
 
-        assertEquals(List.of("a senha precisa de um número"), errors);
+        assertEquals(List.of("A senha precisa de um número."), errors);
         assertFalse(store.hasAny());
         assertTrue(signedIn.isEmpty());
     }

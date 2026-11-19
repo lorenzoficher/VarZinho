@@ -12,12 +12,15 @@ import javax.swing.JTextField;
 import java.awt.GridLayout;
 import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Creates the first operator account, on a run where none is stored yet, and signs it
  * in. The password rules belong to the model; a refusal is shown in the model's words.
  */
 final class FirstOperatorPanel extends JPanel {
+    private static final Logger LOGGER = Logger.getLogger(FirstOperatorPanel.class.getName());
     private final OperatorAccess access;
     private final Consumer<String> errorSink;
     private final Consumer<SignedInOperator> onSignedIn;
@@ -54,6 +57,7 @@ final class FirstOperatorPanel extends JPanel {
             passwordField.setText("");
             errorSink.accept(PortugueseText.message(refused.getMessage()));
         } catch (RepositoryException unwritable) {
+            LOGGER.log(Level.WARNING, "Could not create the first operator account", unwritable);
             errorSink.accept("Não foi possível salvar o operador. Verifique o armazenamento.");
         } finally {
             Arrays.fill(typed, '\0');
