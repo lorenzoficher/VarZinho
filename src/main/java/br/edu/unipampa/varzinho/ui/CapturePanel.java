@@ -16,8 +16,6 @@ import java.awt.BorderLayout;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutionException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -35,7 +33,6 @@ final class CapturePanel extends JPanel {
     private final Consumer<HighlightView> onSaved;
     private final DateTimeFormatter timeFormat;
     private final JButton save = new JButton();
-    private final List<JButton> saveActions = new ArrayList<>();
     private final JLabel confirmation = new JLabel(" ");
 
     CapturePanel(CourtPanel courtPanel, CaptureHighlight captureHighlight, ZoneId zone,
@@ -55,22 +52,12 @@ final class CapturePanel extends JPanel {
         VarZinhoTheme.styleProminentAction(save);
         save.setPreferredSize(new java.awt.Dimension(0, 58));
         save.addActionListener(event -> saveHighlight());
-        saveActions.add(save);
         courtPanel.onCourtChange(this::showCourt);
         add(save, BorderLayout.CENTER);
         showCourt();
     }
 
     JButton saveButton() { return save; }
-
-    JButton additionalSaveButton() {
-        JButton action = new JButton();
-        VarZinhoTheme.styleProminentAction(action);
-        action.setIcon(VarZinhoIcons.record());
-        action.addActionListener(event -> saveHighlight());
-        action.setText("Salvar melhor momento");
-        return action;
-    }
 
     String confirmation() {
         return confirmation.getText().trim();
@@ -148,11 +135,7 @@ final class CapturePanel extends JPanel {
     }
 
     private void showCourt() {
-        saveActions.forEach(this::updateActionLabel);
+        save.setText("Salvar melhor momento — quadra " + courtPanel.selectedCourtNumber());
         confirmation.setText(" ");
-    }
-
-    private void updateActionLabel(JButton action) {
-        action.setText("Salvar melhor momento — quadra " + courtPanel.selectedCourtNumber());
     }
 }
