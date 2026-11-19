@@ -4,6 +4,7 @@ import br.edu.unipampa.varzinho.application.CameraKind;
 import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.enums.Resolution;
 
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
@@ -36,11 +37,11 @@ final class CourtPanel extends JPanel {
         courtSelection.onCourtAdded(() -> cameraPosition.addCourt(courtSelection.selectedCourtNumber()));
         cameraList.onSelectionChange(cameraPosition::updateAimAvailability);
 
-        JPanel forms = new JPanel(new net.miginfocom.swing.MigLayout(
-                "insets 0, fillx, wrap 1", "[grow,fill]", "[][]"));
+        JPanel forms = new JPanel();
+        forms.setLayout(new BoxLayout(forms, BoxLayout.Y_AXIS));
         forms.putClientProperty("FlatLaf.style", "background: $VarZinho.contentBackground");
-        forms.add(cameraPosition, "growx");
-        forms.add(cameraInstallation, "growx");
+        forms.add(cameraPosition);
+        forms.add(cameraInstallation);
         add(courtSelection, BorderLayout.NORTH);
         add(cameraList, BorderLayout.CENTER);
         add(forms, BorderLayout.SOUTH);
