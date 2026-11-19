@@ -58,7 +58,7 @@ final class CameraListPanel extends JPanel {
         shownCameras = management.court(selectedCourt.getAsInt()).getCameras();
         cameraLines.clear();
         shownCameras.forEach(camera -> cameraLines.addElement(
-                PortugueseText.cameraDescription(camera.getDescription())));
+                PortugueseText.cameraDescription(camera)));
     }
 
     void refreshKeepingSelection() {
