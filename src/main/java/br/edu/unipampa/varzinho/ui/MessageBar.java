@@ -11,9 +11,10 @@ final class MessageBar extends JPanel {
 
     MessageBar() {
         super(new BorderLayout());
-        putClientProperty("FlatLaf.style", "background: $VarZinho.cardBackground; arc: 14");
+        putClientProperty("FlatLaf.style", "background: $VarZinho.sidebarBackground; arc: 14");
+        text.setForeground(VarZinhoTheme.SIDEBAR_FOREGROUND);
         setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
-        text.setIcon(VarZinhoIcons.record());
+        text.setIcon(VarZinhoIcons.highlights(VarZinhoTheme.ACCENT));
         text.setIconTextGap(10);
         add(text, BorderLayout.CENTER);
     }
@@ -24,5 +25,26 @@ final class MessageBar extends JPanel {
 
     String message() {
         return text.getText();
+    }
+
+    void saved() {
+        javax.swing.JRootPane root = javax.swing.SwingUtilities.getRootPane(this);
+        if (root == null) return;
+        javax.swing.JLayeredPane surface = root.getLayeredPane();
+        JLabel toast = new JLabel("✓   Melhor momento salvo com sucesso");
+        toast.setOpaque(true);
+        toast.setBackground(VarZinhoTheme.SIDEBAR);
+        toast.setForeground(VarZinhoTheme.SIDEBAR_FOREGROUND);
+        toast.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
+        java.awt.Dimension size = toast.getPreferredSize();
+        toast.setBounds(Math.max(0, surface.getWidth() - size.width - 20),
+                Math.max(0, surface.getHeight() - size.height - 58), size.width, size.height);
+        surface.add(toast, javax.swing.JLayeredPane.POPUP_LAYER);
+        javax.swing.Timer timeout = new javax.swing.Timer(2600, event -> {
+            surface.remove(toast);
+            surface.repaint(toast.getBounds());
+        });
+        timeout.setRepeats(false);
+        timeout.start();
     }
 }

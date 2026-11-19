@@ -29,6 +29,12 @@ final class VarZinhoIcons {
     static Icon openClip() { return icon("external-link"); }
     static Icon theme() { return icon("sun-moon"); }
 
+    static Icon arena(String name, int size, Color color) {
+        return new FlatSVGIcon("icons/arena/" + name + ".svg", size, size)
+                .setColorFilter(new FlatSVGIcon.ColorFilter(ink ->
+                        ink.equals(Color.WHITE) ? Color.WHITE : color));
+    }
+
     private static Icon icon(String name) {
         return new FlatSVGIcon(ROOT + name + ".svg", SIZE, SIZE);
     }
