@@ -21,7 +21,7 @@ class VarZinhoWindowThemeTest {
         JButton[] button = new JButton[1];
         SwingUtilities.invokeAndWait(() -> {
             VarZinhoTheme.install();
-            button[0] = VarZinhoWindow.buildThemeButton();
+            button[0] = SidebarPanel.buildThemeButton();
             button[0].doClick();
             assertTrue(VarZinhoTheme.isDark());
             button[0].doClick();

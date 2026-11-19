@@ -4,6 +4,7 @@ import br.edu.unipampa.varzinho.application.OperatorView;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.ButtonGroup;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
@@ -43,13 +44,20 @@ final class SidebarPanel extends JPanel {
         add(courts);
         add(archive);
 
-        add(VarZinhoWindow.buildThemeButton());
+        add(buildThemeButton());
         add(sidebarLabel(operator.getName()));
         add(sidebarLabel("@" + operator.getUsername()));
     }
 
     JToggleButton courtsButton() { return courts; }
     JToggleButton archiveButton() { return archive; }
+
+    static JButton buildThemeButton() {
+        JButton button = new JButton("Alternar tema", VarZinhoIcons.theme());
+        button.setToolTipText("Alternar entre os temas claro e escuro");
+        button.addActionListener(event -> VarZinhoTheme.toggle());
+        return button;
+    }
 
     private static JLabel sidebarLabel(String text) {
         JLabel label = new JLabel(text);
