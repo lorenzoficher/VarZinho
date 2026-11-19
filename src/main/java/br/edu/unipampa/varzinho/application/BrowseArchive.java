@@ -55,6 +55,16 @@ public final class BrowseArchive {
         return browse(() -> repository.findByCourt(courtNumber), capturedOn(day));
     }
 
+    /** Counts today's readable highlights in the gym's zone and reports the latest one. */
+    public ArchiveSummary todaySummary() throws RepositoryException {
+        return ArchiveSummary.from(byDay(LocalDate.now(clock.withZone(zone))));
+    }
+
+    /** Counts today's readable highlights for one court, retaining any recovery warning. */
+    public ArchiveSummary todaySummary(int courtNumber) throws RepositoryException {
+        return ArchiveSummary.from(byDay(LocalDate.now(clock.withZone(zone)), courtNumber));
+    }
+
     private Predicate<Highlight> capturedOn(LocalDate day) {
         if (day == null) throw new IllegalArgumentException("browsing a day needs a date");
         return highlight -> highlight.getCapturedAt().atZone(zone).toLocalDate().equals(day);

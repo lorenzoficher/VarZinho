@@ -165,6 +165,78 @@ class BrowseArchiveTest {
                 .collect(Collectors.toList());
     }
 
+    @Test
+    void todaysSummaryUsesTheGymZoneEvenWhenTheFixedClockHasAnotherDate() throws Exception {
+        InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
+        repository.save(highlight("before", "2026-09-12T02:59:59Z", 1));
+        repository.save(highlight("morning", "2026-09-12T13:00:00Z", 1));
+        repository.save(highlight("2330", "2026-09-13T02:30:00Z", 1));
+        repository.save(highlight("other-court", "2026-09-13T02:35:00Z", 2));
+        repository.save(highlight("tomorrow", "2026-09-13T03:00:00Z", 1));
+        BrowseArchive archive = new BrowseArchive(repository, CLOCK, GYM_ZONE);
+
+        ArchiveSummary all = archive.todaySummary();
+        ArchiveSummary court = archive.todaySummary(1);
+
+        assertEquals(3, all.getCount());
+        assertEquals(2, court.getCount());
+        assertEquals(Instant.parse("2026-09-13T02:30:00Z"), court.getLastCapturedAt().orElseThrow());
+        assertEquals(Instant.parse("2026-09-13T02:35:00Z"), all.getLastCapturedAt().orElseThrow());
+        assertTrue(all.getWarning().isEmpty());
+        repository.save(highlight("later", "2026-09-13T02:40:00Z", 1));
+        assertEquals(2, court.getCount());
+        assertEquals(3, archive.todaySummary(1).getCount());
+        assertEquals(Instant.parse("2026-09-13T02:40:00Z"),
+                archive.todaySummary(1).getLastCapturedAt().orElseThrow());
+    }
+
+    @Test
+    void aDayWithNoHighlightsHasZeroCountAndNoLastTimeEvenWhenOlderClipsExist() throws Exception {
+        InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
+        repository.save(highlight("yesterday", "2026-09-11T20:00:00Z", 1));
+        BrowseArchive archive = new BrowseArchive(repository, CLOCK, GYM_ZONE);
+
+        ArchiveSummary all = archive.todaySummary();
+        ArchiveSummary court = archive.todaySummary(1);
+
+        assertEquals(0, all.getCount());
+        assertTrue(all.getLastCapturedAt().isEmpty());
+        assertEquals(0, court.getCount());
+        assertTrue(court.getLastCapturedAt().isEmpty());
+        assertTrue(all.getWarning().isEmpty());
+    }
+
+    @Test
+    void aSummaryCountsOnlyRecoveredHighlightsAndKeepsTheDamageWarning() throws Exception {
+        Path file = temporary.resolve("damaged-summary.csv");
+        Files.write(file, List.of(HEADER,
+                csvHighlight("yesterday", "2026-09-11T20:00:00Z", 1),
+                "broken,record",
+                csvHighlight("today", "2026-09-13T02:30:00Z", 1),
+                csvHighlight("other-court", "2026-09-12T20:00:00Z", 2)));
+        BrowseArchive archive = new BrowseArchive(new CsvHighlightRepository(file), CLOCK, GYM_ZONE);
+
+        ArchiveSummary summary = archive.todaySummary(1);
+        ArchiveSummary empty = archive.todaySummary(99);
+
+        assertEquals(1, summary.getCount());
+        assertEquals(Instant.parse("2026-09-13T02:30:00Z"), summary.getLastCapturedAt().orElseThrow());
+        assertTrue(summary.getWarning().orElseThrow().contains("line 3"));
+        assertEquals(0, empty.getCount());
+        assertTrue(empty.getLastCapturedAt().isEmpty());
+        assertEquals(summary.getWarning(), empty.getWarning());
+    }
+
+    @Test
+    void dayQueriesAndSummariesStillPropagateAnUnreadableArchive() {
+        BrowseArchive archive = new BrowseArchive(new CsvHighlightRepository(temporary), CLOCK, GYM_ZONE);
+
+        assertThrows(RepositoryException.class, () -> archive.byDay(DAY));
+        assertThrows(RepositoryException.class, () -> archive.byDay(DAY, 1));
+        assertThrows(RepositoryException.class, archive::todaySummary);
+        assertThrows(RepositoryException.class, () -> archive.todaySummary(1));
+    }
+
     private static Highlight highlight(String id, String capturedAt, int courtNumber) {
         VideoClip clip = new VideoClip("clips/" + id + ".mp4", 30, Resolution.FULL_HD, 42.5);
         return new Highlight("highlight-" + id, Instant.parse(capturedAt), courtNumber,
