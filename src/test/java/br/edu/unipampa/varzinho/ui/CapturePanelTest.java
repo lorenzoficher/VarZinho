@@ -90,9 +90,9 @@ class CapturePanelTest {
     @Test
     void buttonLabelFollowsTheSelectedCourt() throws Exception {
         onSwing(() -> {
-            assertEquals("Salvar melhor momento — quadra 1", panel.saveButton().getText());
+            assertEquals("Salvar lance — quadra 1", panel.saveButton().getText());
             courtPanel.selectCourt(2);
-            assertEquals("Salvar melhor momento — quadra 2", panel.saveButton().getText());
+            assertEquals("Salvar lance — quadra 2", panel.saveButton().getText());
         });
     }
 
@@ -143,13 +143,13 @@ class CapturePanelTest {
     @Test
     void phoneThatCannotWriteItsClipReportsTheFailureAndSavesNothing() throws Exception {
         Phone phone = phoneWritingWith((window, target) -> {
-            throw new ClipAssemblyException("ffmpeg is not installed");
+            throw new ClipAssemblyException("ffmpeg could not write " + target + ": Invalid data found");
         });
 
         press(phone.panel());
         awaitFinished(phone.panel());
 
-        assertEquals(List.of("O FFmpeg não está instalado."), errors);
+        assertEquals(List.of("O FFmpeg não conseguiu gravar o clipe."), errors);
         assertTrue(repository.findAll().isEmpty());
         onSwing(() -> assertEquals("", phone.panel().confirmation()));
     }
@@ -163,7 +163,7 @@ class CapturePanelTest {
         press(phone.panel());
         awaitFinished(phone.panel());
 
-        assertEquals(List.of("Falha inesperada ao capturar o melhor momento."), errors);
+        assertEquals(List.of("Falha inesperada ao capturar o lance."), errors);
         assertTrue(repository.findAll().isEmpty());
         onSwing(() -> {
             assertFalse(phone.activity().isRunning());

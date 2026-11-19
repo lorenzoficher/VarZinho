@@ -85,7 +85,8 @@ final class CapturePanel extends JPanel {
         try {
             archived = capture.archive();
         } catch (RepositoryException failure) {
-            refuse("Não foi possível salvar o melhor momento no acervo.");
+            LOGGER.log(Level.WARNING, "Could not archive the captured highlight", failure);
+            refuse("Não foi possível salvar o lance no acervo.");
             return;
         }
         confirmation.setText("Salvo: quadra " + archived.getCourtNumber()
@@ -103,11 +104,13 @@ final class CapturePanel extends JPanel {
     private void captureFailed(Throwable cause) {
         if (cause instanceof NoActiveCameraException || cause instanceof EmptyBufferException
                 || cause instanceof ClipAssemblyException) {
-            String reason = cause.getMessage();
-            refuse(PortugueseText.message(reason));
+            if (cause instanceof ClipAssemblyException) {
+                LOGGER.log(Level.WARNING, "Could not assemble the clip", cause);
+            }
+            refuse(PortugueseText.message(cause.getMessage()));
         } else {
             LOGGER.log(Level.SEVERE, "capture failed unexpectedly", cause);
-            refuse("Falha inesperada ao capturar o melhor momento.");
+            refuse("Falha inesperada ao capturar o lance.");
         }
     }
 
@@ -131,6 +134,7 @@ final class CapturePanel extends JPanel {
                 captureFailed(failure.getCause());
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
+                LOGGER.log(Level.WARNING, "Capture interrupted before archiving", interrupted);
                 refuse("A captura foi interrompida antes de ser salva.");
             } finally {
                 courtPanel.resumeChanges();
@@ -141,7 +145,7 @@ final class CapturePanel extends JPanel {
     }
 
     private void showCourt() {
-        save.setText("Salvar melhor momento — quadra " + courtPanel.selectedCourtNumber());
+        save.setText("Salvar lance — quadra " + courtPanel.selectedCourtNumber());
         if (!activity.isRunning()) confirmation.setText(" ");
     }
 }
