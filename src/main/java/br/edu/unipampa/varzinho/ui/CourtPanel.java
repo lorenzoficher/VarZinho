@@ -19,7 +19,6 @@ final class CourtPanel extends JPanel {
     private final CameraListPanel cameraList;
     private final CameraInstallPanel cameraInstallation;
     private final CameraPositionPanel cameraPosition;
-    private final JPanel cameraForms;
 
     CourtPanel(ManageGym management, int bufferSeconds, Consumer<String> errorSink) {
         super(new BorderLayout(12, 12));
@@ -37,30 +36,14 @@ final class CourtPanel extends JPanel {
         courtSelection.onCourtAdded(() -> cameraPosition.addCourt(courtSelection.selectedCourtNumber()));
         cameraList.onSelectionChange(cameraPosition::updateAimAvailability);
 
-        cameraForms = new JPanel(new net.miginfocom.swing.MigLayout(
+        JPanel forms = new JPanel(new net.miginfocom.swing.MigLayout(
                 "insets 0, fillx, wrap 1", "[grow,fill]", "[][]"));
-        cameraForms.putClientProperty("FlatLaf.style", "background: $VarZinho.contentBackground");
-        cameraForms.add(cameraPosition, "growx");
-        cameraForms.add(cameraInstallation, "growx");
+        forms.putClientProperty("FlatLaf.style", "background: $VarZinho.contentBackground");
+        forms.add(cameraPosition, "growx");
+        forms.add(cameraInstallation, "growx");
         add(courtSelection, BorderLayout.NORTH);
         add(cameraList, BorderLayout.CENTER);
-        add(cameraForms, BorderLayout.SOUTH);
-    }
-
-    JPanel courtPage() {
-        remove(courtSelection);
-        JPanel page = new JPanel(new BorderLayout());
-        page.add(courtSelection, BorderLayout.NORTH);
-        return page;
-    }
-
-    JPanel cameraPage() {
-        remove(cameraList);
-        remove(cameraForms);
-        JPanel page = new JPanel(new BorderLayout(12, 12));
-        page.add(cameraList, BorderLayout.CENTER);
-        page.add(cameraForms, BorderLayout.SOUTH);
-        return page;
+        add(forms, BorderLayout.SOUTH);
     }
 
     int selectedCourtNumber() { return courtSelection.selectedCourtNumber(); }

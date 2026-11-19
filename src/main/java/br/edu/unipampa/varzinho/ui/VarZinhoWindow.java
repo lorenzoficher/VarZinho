@@ -27,7 +27,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * The operator's window: the courts, the capture button and the archive, kept moving by
@@ -42,8 +41,7 @@ public final class VarZinhoWindow extends JFrame {
     private final CourtPanel courtPanel;
     private final ArchivePanel archivePanel;
     private final CapturePanel capturePanel;
-    private final JPanel header = new JPanel(new MigLayout("insets 4 2 14 2, fillx", "[grow][]", "[][]"));
-    private final JLabel pageTitle = buildTitle("Visão geral da arena");
+    private final JPanel header = new JPanel(new MigLayout("insets 4 2 14 2, fillx, wrap 1", "[grow]", "[][]"));
     private final MessageBar messages = new MessageBar();
     private final JLabel bufferStatus = new JLabel();
     private boolean phoneDropReported;
@@ -70,48 +68,27 @@ public final class VarZinhoWindow extends JFrame {
         this.archivePanel = new ArchivePanel(management::courts, archive, ZoneId.systemDefault(), messages::show);
         this.capturePanel = new CapturePanel(courtPanel, captureHighlight, ZoneId.systemDefault(),
                 messages::show, highlight -> archivePanel.refresh());
+        courtPanel.onCourtAdded(archivePanel::refreshCourts);
         setTitle("VarZinho Arena");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         CardLayout pageLayout = new CardLayout();
         JPanel pages = new JPanel(pageLayout);
+        JPanel top = new JPanel(new BorderLayout(8, 8));
         JLabel eyebrow = new JLabel("CENTRAL DE OPERAÇÕES");
         VarZinhoTheme.styleEyebrow(eyebrow);
-        header.add(eyebrow, "cell 0 0");
-        header.add(pageTitle, "cell 0 1");
-
-        pages.add(courtPanel.courtPage(), SidebarPanel.Page.COURTS.name());
-        pages.add(courtPanel.cameraPage(), SidebarPanel.Page.CAMERAS.name());
-        JPanel highlightsPage = new JPanel(new BorderLayout(12, 12));
-        highlightsPage.add(capturePanel, BorderLayout.NORTH);
-        highlightsPage.add(bufferStatus, BorderLayout.CENTER);
-        pages.add(highlightsPage, SidebarPanel.Page.HIGHLIGHTS.name());
+        header.add(eyebrow);
+        header.add(buildTitle("Visão geral da arena"));
+        top.add(header, BorderLayout.NORTH);
+        top.add(courtPanel, BorderLayout.CENTER);
+        top.add(capturePanel, BorderLayout.SOUTH);
+        JPanel courtsPage = new JPanel(new BorderLayout(8, 8));
+        courtsPage.add(top, BorderLayout.CENTER);
+        courtsPage.add(bufferStatus, BorderLayout.SOUTH);
+        pages.add(courtsPage, SidebarPanel.Page.COURTS.name());
         pages.add(archivePanel, SidebarPanel.Page.ARCHIVE.name());
-        pages.add(new SettingsPanel(), SidebarPanel.Page.SETTINGS.name());
-
-        SidebarPanel[] sidebarHolder = new SidebarPanel[1];
-        DashboardPanel[] dashboardHolder = new DashboardPanel[1];
-        Consumer<SidebarPanel.Page> navigate = page -> {
-            pageLayout.show(pages, page.name());
-            pageTitle.setText(titleOf(page));
-            if (sidebarHolder[0] != null) sidebarHolder[0].select(page);
-            if (page == SidebarPanel.Page.DASHBOARD && dashboardHolder[0] != null) dashboardHolder[0].refresh();
-            if (page == SidebarPanel.Page.ARCHIVE) archivePanel.refresh();
-        };
-        DashboardPanel dashboard = new DashboardPanel(management, courtPanel, navigate);
-        dashboardHolder[0] = dashboard;
-        pages.add(dashboard, SidebarPanel.Page.DASHBOARD.name());
-        courtPanel.onCourtAdded(() -> {
-            archivePanel.refreshCourts();
-            dashboard.refresh();
-        });
-        courtPanel.onCourtChange(() -> {
-            dashboard.refresh();
-            showBufferStatus();
-        });
-        SidebarPanel sidebar = new SidebarPanel(gymName, operator, navigate);
-        sidebarHolder[0] = sidebar;
-        navigate.accept(SidebarPanel.Page.DASHBOARD);
+        SidebarPanel sidebar = new SidebarPanel(gymName, operator,
+                page -> pageLayout.show(pages, page.name()));
         add(sidebar, BorderLayout.WEST);
         JPanel content = new JPanel(new BorderLayout(8, 8));
         content.setBorder(BorderFactory.createEmptyBorder(24, 28, 20, 28));
@@ -120,7 +97,6 @@ public final class VarZinhoWindow extends JFrame {
                 ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         pageScroll.setBorder(BorderFactory.createEmptyBorder());
         pageScroll.getVerticalScrollBar().setUnitIncrement(16);
-        content.add(header, BorderLayout.NORTH);
         content.add(pageScroll, BorderLayout.CENTER);
         content.add(messages, BorderLayout.SOUTH);
         add(content, BorderLayout.CENTER);
@@ -130,18 +106,6 @@ public final class VarZinhoWindow extends JFrame {
         pack();
         setLocationRelativeTo(null);
         clocks.forEach(Timer::start);
-    }
-
-    private static String titleOf(SidebarPanel.Page page) {
-        switch (page) {
-            case DASHBOARD: return "Visão geral da arena";
-            case COURTS: return "Gerenciamento de quadras";
-            case CAMERAS: return "Controle de câmeras";
-            case HIGHLIGHTS: return "Melhores momentos";
-            case ARCHIVE: return "Arquivos de destaques";
-            case SETTINGS: return "Configurações";
-            default: throw new IllegalArgumentException("unknown page " + page);
-        }
     }
 
     private static JLabel buildTitle(String gymName) {
@@ -180,7 +144,7 @@ public final class VarZinhoWindow extends JFrame {
         JButton liveView = new JButton("Abrir transmissão ao vivo");
         liveView.setIcon(VarZinhoIcons.openClip());
         liveView.addActionListener(event -> openLiveView(streamUrl));
-        header.add(liveView, "cell 1 0, span 1 2");
+        header.add(liveView, "cell 0 0");
         pack();
     }
 
