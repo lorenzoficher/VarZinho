@@ -27,7 +27,7 @@ class VarZinhoThemeTest {
     }
 
     @Test
-    void switchesToDarkAndBackWithoutRememberingTheChoice() {
+    void togglesToDarkAndInstallRestoresLight() {
         VarZinhoTheme.install();
 
         VarZinhoTheme.toggle();
