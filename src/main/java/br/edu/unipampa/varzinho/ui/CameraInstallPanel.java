@@ -4,8 +4,8 @@ import br.edu.unipampa.varzinho.application.CameraKind;
 import br.edu.unipampa.varzinho.application.CameraSpec;
 import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.enums.Resolution;
+import net.miginfocom.swing.MigLayout;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -14,8 +14,6 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 
@@ -35,7 +33,7 @@ final class CameraInstallPanel extends JPanel {
 
     CameraInstallPanel(ManageGym management, IntSupplier selectedCourt, int bufferSeconds,
                        Consumer<String> errorSink, Runnable onInstalled) {
-        super(new GridLayout(2, 1));
+        super(new MigLayout("insets 16, fillx, wrap 6", "[][grow,fill]16[][grow,fill]16[][grow,fill]", "[][]12[][]"));
         if (management == null) throw new IllegalArgumentException("camera installation needs gym management");
         if (selectedCourt == null) throw new IllegalArgumentException("camera installation needs a selected court");
         if (bufferSeconds <= 0) throw new IllegalArgumentException("a buffer holds at least one second");
@@ -46,6 +44,7 @@ final class CameraInstallPanel extends JPanel {
         this.bufferSeconds = bufferSeconds;
         this.errorSink = errorSink;
         this.onInstalled = onInstalled;
+        VarZinhoTheme.styleCard(this);
         typeSelector.setRenderer(new DefaultListCellRenderer() {
             @Override
             public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list, Object value,
@@ -62,15 +61,15 @@ final class CameraInstallPanel extends JPanel {
                 return super.getListCellRendererComponent(list, label, index, selected, focused);
             }
         });
-        setBorder(BorderFactory.createTitledBorder("Adicionar câmera nesta quadra"));
-        JPanel identity = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        identity.add(new JLabel("ID da câmera")); identity.add(idField);
-        identity.add(new JLabel("Modelo")); identity.add(modelField);
-        identity.add(new JLabel("Tipo")); identity.add(typeSelector);
-        JPanel settings = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        settings.add(new JLabel("Resolução")); settings.add(resolutionSelector);
-        settings.add(new JLabel("Ângulo de visão")); settings.add(angleSpinner); settings.add(install);
-        add(identity); add(settings);
+        JLabel title = new JLabel("Adicionar câmera");
+        VarZinhoTheme.styleTitle(title);
+        add(title, "span 6, wrap");
+        add(new JLabel("ID")); add(idField);
+        add(new JLabel("Modelo")); add(modelField);
+        add(new JLabel("Tipo")); add(typeSelector);
+        add(new JLabel("Resolução")); add(resolutionSelector);
+        add(new JLabel("Ângulo")); add(angleSpinner);
+        add(install, "h 38!");
         typeSelector.addActionListener(
                 event -> angleSpinner.setEnabled(typeSelector.getSelectedItem() == CameraKind.FIXED));
         install.addActionListener(event -> install());
