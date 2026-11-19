@@ -52,7 +52,8 @@ class CourtPanelTest {
 
         panel.selectCourt(2);
 
-        assertEquals(List.of(gym.findCourt(2).getCameras().get(0).describe()), panel.cameraLines());
+        assertEquals(List.of(PortugueseText.cameraDescription(
+                gym.findCourt(2).getCameras().get(0).describe())), panel.cameraLines());
         assertEquals(2, panel.selectedCourtNumber());
     }
 
@@ -64,7 +65,7 @@ class CourtPanelTest {
         panel.stopButton().doClick();
 
         assertEquals(CameraStatus.INACTIVE, camera.getStatus());
-        assertEquals(camera.describe(), panel.cameraLines().get(1));
+        assertEquals(PortugueseText.cameraDescription(camera.describe()), panel.cameraLines().get(1));
         assertEquals(CameraStatus.ACTIVE, gym.findCourt(1).getCameras().get(0).getStatus());
     }
 
@@ -96,7 +97,7 @@ class CourtPanelTest {
         assertInstanceOf(FixedCamera.class, installed);
         assertEquals("fixed-3", installed.getId());
         assertEquals(CameraStatus.INACTIVE, installed.getStatus());
-        assertEquals(installed.describe(), panel.cameraLines().get(1));
+        assertEquals(PortugueseText.cameraDescription(installed.describe()), panel.cameraLines().get(1));
         assertTrue(errors.isEmpty());
     }
 
@@ -121,7 +122,7 @@ class CourtPanelTest {
 
         panel.installButton().doClick();
 
-        assertEquals(List.of("a camera needs an identifier"), errors);
+        assertEquals(List.of("a câmera precisa de um identificador"), errors);
         assertEquals(2, gym.findCourt(1).getCameras().size());
         assertEquals("Fixed Lite", panel.modelField().getText());
     }
@@ -177,7 +178,7 @@ class CourtPanelTest {
 
         panel.addCourtButton().doClick();
 
-        assertEquals(List.of("court number is already registered"), errors);
+        assertEquals(List.of("o número da quadra já está cadastrado"), errors);
         assertEquals(2, gym.getCourts().size());
     }
 
@@ -187,7 +188,7 @@ class CourtPanelTest {
 
         panel.addCourtButton().doClick();
 
-        assertEquals(List.of("a court number must be positive"), errors);
+        assertEquals(List.of("o número da quadra deve ser positivo"), errors);
     }
 
     @Test
@@ -196,7 +197,7 @@ class CourtPanelTest {
 
         panel.addCourtButton().doClick();
 
-        assertEquals(List.of("Type the court number as digits."), errors);
+        assertEquals(List.of("Digite o número da quadra usando algarismos."), errors);
         assertEquals(2, gym.getCourts().size());
     }
 
@@ -219,14 +220,14 @@ class CourtPanelTest {
         panel.removeCameraButton().doClick();
 
         assertEquals(List.of(kept), gym.findCourt(1).getCameras());
-        assertEquals(List.of(kept.describe()), panel.cameraLines());
+        assertEquals(List.of(PortugueseText.cameraDescription(kept.describe())), panel.cameraLines());
     }
 
     @Test
     void removingWithNoCameraSelectedAsksForOneAndRemovesNothing() {
         panel.removeCameraButton().doClick();
 
-        assertEquals(List.of("Select a camera first."), errors);
+        assertEquals(List.of("Selecione uma câmera primeiro."), errors);
         assertEquals(2, gym.findCourt(1).getCameras().size());
     }
 
@@ -243,7 +244,7 @@ class CourtPanelTest {
         assertEquals(90, ptz.getPan());
         assertEquals(-10, ptz.getTilt());
         assertEquals(3, ptz.getZoom());
-        assertEquals(ptz.describe(), panel.cameraLines().get(1));
+        assertEquals(PortugueseText.cameraDescription(ptz.describe()), panel.cameraLines().get(1));
     }
 
     @Test
@@ -269,7 +270,7 @@ class CourtPanelTest {
 
         panel.moveButton().doClick();
 
-        assertEquals(List.of("camera " + fixed.getId() + " cannot be aimed"), errors);
+        assertEquals(List.of("camera " + fixed.getId() + " não pode ser apontada"), errors);
         assertSame(fixed, gym.findCourt(1).getCameras().get(0));
         assertEquals(statusBefore, fixed.getStatus());
         assertEquals(angleBefore, fixed.getAngle());
@@ -357,7 +358,7 @@ class CourtPanelTest {
 
         panel.addCourtButton().doClick();
 
-        assertEquals(List.of("The gym could not be saved: disk unplugged"), errors);
+        assertEquals(List.of("Não foi possível salvar a academia: disk unplugged"), errors);
         assertEquals(3, panel.selectedCourtNumber());
         assertEquals(3, gym.getCourts().size());
     }
@@ -377,7 +378,7 @@ class CourtPanelTest {
         csvPanel.addCourtButton().doClick();
 
         assertEquals(2, errors.size());
-        assertTrue(errors.get(0).startsWith("The gym could not be saved: "), errors.get(0));
+        assertTrue(errors.get(0).startsWith("Não foi possível salvar a academia: "), errors.get(0));
         assertTrue(gym.findCourt(2).getCameras().stream().anyMatch(camera -> camera.getId().equals("fixed-9")));
         assertEquals(3, csvPanel.selectedCourtNumber());
         assertEquals(3, gym.getCourts().size());
