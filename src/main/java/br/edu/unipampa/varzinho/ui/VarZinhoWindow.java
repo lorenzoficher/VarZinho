@@ -224,6 +224,5 @@ public final class VarZinhoWindow extends JFrame {
                 + court.getSecondsRecorded() + " de " + bufferSeconds + " segundos.");
         if (sidebar != null) sidebar.updateStatus(management.courts());
         if (dashboard != null) dashboard.refresh();
-        courtPanel.refreshCourtOverview();
     }
 }
