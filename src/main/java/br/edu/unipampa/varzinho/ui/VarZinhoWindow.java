@@ -5,6 +5,7 @@ import br.edu.unipampa.varzinho.application.CaptureHighlight;
 import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.ManageGym;
+import net.miginfocom.swing.MigLayout;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -15,7 +16,6 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
-import java.awt.FlowLayout;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
@@ -36,7 +36,8 @@ public final class VarZinhoWindow extends JFrame {
     private final CourtPanel courtPanel;
     private final ArchivePanel archivePanel;
     private final CapturePanel capturePanel;
-    private final JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+    private final JPanel header = new JPanel(new MigLayout("insets 0, fillx", "[grow][]", "[]"));
+    private final JButton theme = buildThemeButton();
     private final JLabel bufferStatus = new JLabel();
     private boolean phoneDropReported;
 
@@ -66,7 +67,8 @@ public final class VarZinhoWindow extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(8, 8));
         JPanel top = new JPanel(new BorderLayout(8, 8));
-        header.add(buildTitle(gymName));
+        header.add(buildTitle(gymName), "cell 0 0");
+        header.add(theme, "cell 1 0");
         top.add(header, BorderLayout.NORTH);
         top.add(courtPanel, BorderLayout.CENTER);
         top.add(capturePanel, BorderLayout.SOUTH);
@@ -84,6 +86,13 @@ public final class VarZinhoWindow extends JFrame {
         JLabel title = new JLabel(gymName);
         VarZinhoTheme.styleTitle(title);
         return title;
+    }
+
+    static JButton buildThemeButton() {
+        JButton button = new JButton(VarZinhoIcons.theme());
+        button.setToolTipText("Switch light/dark theme");
+        button.addActionListener(event -> VarZinhoTheme.toggle());
+        return button;
     }
 
     /**
@@ -108,7 +117,7 @@ public final class VarZinhoWindow extends JFrame {
         JButton liveView = new JButton("Open live view");
         liveView.setIcon(VarZinhoIcons.openClip());
         liveView.addActionListener(event -> openLiveView(streamUrl));
-        header.add(liveView);
+        header.add(liveView, "cell 0 0");
         pack();
     }
 
