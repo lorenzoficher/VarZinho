@@ -36,16 +36,23 @@ final class SidebarPanel extends JPanel {
         setPreferredSize(new Dimension(235, 0));
         putClientProperty("FlatLaf.style", "background: $VarZinho.sidebarBackground");
 
-        JLabel product = new JLabel("VarZinho Arena");
-        product.setIcon(VarZinhoIcons.brand(VarZinhoTheme.ACCENT));
-        product.setIconTextGap(12);
+        JPanel identity = new JPanel(new MigLayout("insets 0, fillx", "[42!]10[grow]", "[][]"));
+        identity.setOpaque(false);
+        JLabel mark = new JLabel(VarZinhoIcons.brand(VarZinhoTheme.SIDEBAR), JLabel.CENTER);
+        mark.setOpaque(true);
+        mark.setBackground(VarZinhoTheme.ACCENT);
+        identity.add(mark, "cell 0 0, spany 2, h 42!, growx");
+        JLabel product = new JLabel("VarZinho");
         product.setForeground(UIManager.getColor("VarZinho.sidebarForeground"));
         VarZinhoTheme.styleTitle(product);
-        add(product, "h 28!");
-        JLabel arena = sidebarLabel(gymName);
+        identity.add(product, "cell 1 0");
+        JLabel arena = sidebarLabel("A R E N A");
+        product.setToolTipText(gymName);
+        arena.setToolTipText(gymName);
         arena.setForeground(VarZinhoTheme.ACCENT);
         arena.setFont(arena.getFont().deriveFont(Font.BOLD, 11f));
-        add(arena);
+        identity.add(arena, "cell 1 1");
+        add(identity, "gapy 0 22");
 
         JLabel menu = sidebarLabel("MENU PRINCIPAL");
         menu.setForeground(VarZinhoTheme.STOPPED);
@@ -80,8 +87,7 @@ final class SidebarPanel extends JPanel {
         add(settings, "h 46!");
 
         JPanel statusCard = new JPanel(new MigLayout("insets 14, fillx, wrap 1", "[grow,fill]", "[]8[]8[]6[]"));
-        statusCard.putClientProperty("FlatLaf.style", "background: lighten($VarZinho.sidebarBackground,5%); "
-                + "arc: 14; borderWidth: 1; borderColor: lighten($VarZinho.sidebarBackground,15%)");
+        statusCard.putClientProperty("FlatLaf.style", "background: #16383E; arc: 14");
         JLabel status = sidebarLabel("●  SISTEMA OPERACIONAL");
         status.setForeground(VarZinhoTheme.ACCENT);
         status.setFont(status.getFont().deriveFont(Font.BOLD, 10f));
@@ -92,7 +98,7 @@ final class SidebarPanel extends JPanel {
         statusCard.add(cameraStatus);
         statusCard.add(cameraProgress, "h 5!");
         statusCard.add(sidebarLabel("Atualizado agora"));
-        add(statusCard);
+        add(statusCard, "gaptop push");
         JLabel operatorName = sidebarLabel(operator.getName());
         operatorName.setFont(operatorName.getFont().deriveFont(Font.BOLD));
         add(operatorName);
@@ -105,6 +111,10 @@ final class SidebarPanel extends JPanel {
     JToggleButton highlightsButton() { return highlights; }
     JToggleButton archiveButton() { return archive; }
     JToggleButton settingsButton() { return settings; }
+
+    void showArchiveCount(int count) {
+        highlights.setText(count == 0 ? "Melhores momentos" : "Melhores momentos  ·  " + count);
+    }
 
     void select(Page page) {
         switch (page) {
@@ -121,7 +131,7 @@ final class SidebarPanel extends JPanel {
     void updateStatus(List<CourtView> courts) {
         int total = courts.stream().mapToInt(court -> court.getCameras().size()).sum();
         int active = (int) courts.stream().flatMap(court -> court.getCameras().stream())
-                .filter(camera -> camera.getDescription().contains("ACTIVE"))
+                .filter(camera -> camera.isRecording())
                 .count();
         cameraStatus.setText(active + " de " + total + " câmeras ativas");
         cameraProgress.setMaximum(Math.max(1, total));
@@ -135,14 +145,15 @@ final class SidebarPanel extends JPanel {
     }
 
     private static void styleNavigation(JToggleButton button) {
+        button.setHorizontalAlignment(JToggleButton.LEFT);
         button.putClientProperty("FlatLaf.style", "foreground: $VarZinho.sidebarForeground; "
-                + "background: $VarZinho.sidebarBackground; selectedBackground: $VarZinho.accent; "
-                + "selectedForeground: $VarZinho.sidebarBackground; borderWidth: 0; arc: 12; iconTextGap: 12");
+                + "background: $VarZinho.sidebarBackground; selectedBackground: #104440; "
+                + "selectedForeground: $VarZinho.sidebarForeground; borderWidth: 0; arc: 12; iconTextGap: 12");
     }
 
     private static JToggleButton navigation(String text, String icon) {
         JToggleButton button = new JToggleButton(text, icon(icon, VarZinhoTheme.SIDEBAR_MUTED));
-        button.setSelectedIcon(icon(icon, VarZinhoTheme.ON_ACCENT));
+        button.setSelectedIcon(icon(icon, VarZinhoTheme.ACCENT));
         return button;
     }
 

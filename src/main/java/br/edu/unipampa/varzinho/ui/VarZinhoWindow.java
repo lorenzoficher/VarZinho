@@ -71,7 +71,10 @@ public final class VarZinhoWindow extends JFrame {
         this.courtPanel = new CourtPanel(management, bufferSeconds, messages::show);
         this.archivePanel = new ArchivePanel(management::courts, archive, ZoneId.systemDefault(), messages::show);
         this.capturePanel = new CapturePanel(courtPanel, captureHighlight, ZoneId.systemDefault(),
-                messages::show, highlight -> archivePanel.refresh());
+                messages::show, highlight -> {
+                    archivePanel.refresh();
+                    messages.saved();
+                });
         setTitle("VarZinho Arena");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
@@ -83,12 +86,14 @@ public final class VarZinhoWindow extends JFrame {
         header.add(pageTitle, "cell 0 1");
 
         pages.add(courtPanel.courtPage(), SidebarPanel.Page.COURTS.name());
-        pages.add(courtPanel.cameraPage(), SidebarPanel.Page.CAMERAS.name());
+        JPanel cameraPage = courtPanel.cameraPage();
+        pages.add(cameraPage, SidebarPanel.Page.CAMERAS.name());
         JPanel highlightsPage = new JPanel(new BorderLayout(12, 12));
         highlightsPage.add(capturePanel, BorderLayout.NORTH);
         highlightsPage.add(bufferStatus, BorderLayout.CENTER);
         pages.add(highlightsPage, SidebarPanel.Page.HIGHLIGHTS.name());
-        pages.add(archivePanel, SidebarPanel.Page.ARCHIVE.name());
+        JPanel filesPage = new JPanel(new BorderLayout());
+        pages.add(filesPage, SidebarPanel.Page.ARCHIVE.name());
         pages.add(new SettingsPanel(), SidebarPanel.Page.SETTINGS.name());
 
         SidebarPanel[] sidebarHolder = new SidebarPanel[1];
@@ -97,13 +102,48 @@ public final class VarZinhoWindow extends JFrame {
             pageLayout.show(pages, page.name());
             pageTitle.setText(titleOf(page));
             if (sidebarHolder[0] != null) sidebarHolder[0].select(page);
-            if (page == SidebarPanel.Page.DASHBOARD && dashboardHolder[0] != null) dashboardHolder[0].refresh();
-            if (page == SidebarPanel.Page.ARCHIVE) archivePanel.refresh();
+            if (page == SidebarPanel.Page.DASHBOARD) {
+                dashboardHolder[0].attach(courtPanel.devices(), archivePanel);
+                dashboardHolder[0].refresh();
+                archivePanel.refresh();
+            }
+            if (page == SidebarPanel.Page.CAMERAS) cameraPage.add(courtPanel.devices(), BorderLayout.CENTER);
+            if (page == SidebarPanel.Page.ARCHIVE) {
+                filesPage.add(archivePanel);
+                archivePanel.refresh();
+            }
+            pages.revalidate();
+            pages.repaint();
         };
         dashboard = new DashboardPanel(
                 management, courtPanel, capturePanel, navigate, messages::show);
         dashboardHolder[0] = dashboard;
-        pages.add(dashboard, SidebarPanel.Page.DASHBOARD.name());
+        courtPanel.devices().onRefresh(dashboard::refresh);
+        courtPanel.devices().onPosition(() -> navigate.accept(SidebarPanel.Page.CAMERAS));
+        JPanel context = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 10, 2));
+        context.setOpaque(false);
+        JLabel selection = new JLabel("Quadra selecionada");
+        selection.setLabelFor(dashboard.selector());
+        context.add(selection);
+        context.add(dashboard.selector());
+        JButton notices = new JButton(VarZinhoIcons.arena("bell", 20, VarZinhoTheme.EMERALD));
+        notices.setToolTipText("Avisos da arena");
+        notices.getAccessibleContext().setAccessibleName("Avisos da arena");
+        notices.addActionListener(e -> {
+            javax.swing.JPopupMenu popup = new javax.swing.JPopupMenu();
+            popup.add(new JLabel(messages.message()));
+            popup.show(notices, 0, notices.getHeight());
+        });
+        context.add(notices);
+        JLabel profile = new JLabel(operator.getName());
+        profile.setToolTipText("@" + operator.getUsername());
+        context.add(profile);
+        header.add(context, "cell 1 0, spany 2");
+        JScrollPane dashboardScroll = new JScrollPane(dashboard,
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        dashboardScroll.setBorder(BorderFactory.createEmptyBorder());
+        dashboardScroll.getVerticalScrollBar().setUnitIncrement(20);
+        pages.add(dashboardScroll, SidebarPanel.Page.DASHBOARD.name());
         courtPanel.onCourtAdded(() -> {
             archivePanel.refreshCourts();
             dashboard.refresh();
@@ -114,21 +154,18 @@ public final class VarZinhoWindow extends JFrame {
         });
         sidebar = new SidebarPanel(gymName, operator, navigate);
         sidebarHolder[0] = sidebar;
+        archivePanel.onCount(sidebar::showArchiveCount);
         navigate.accept(SidebarPanel.Page.DASHBOARD);
         add(sidebar, BorderLayout.WEST);
         JPanel content = new JPanel(new BorderLayout(8, 8));
         content.setBorder(BorderFactory.createEmptyBorder(24, 28, 20, 28));
-        JScrollPane pageScroll = new JScrollPane(pages,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        pageScroll.setBorder(BorderFactory.createEmptyBorder());
-        pageScroll.getVerticalScrollBar().setUnitIncrement(16);
         content.add(header, BorderLayout.NORTH);
-        content.add(pageScroll, BorderLayout.CENTER);
+        content.add(pages, BorderLayout.CENTER);
         content.add(messages, BorderLayout.SOUTH);
         add(content, BorderLayout.CENTER);
-        setMinimumSize(new Dimension(1180, 780));
-        setPreferredSize(new Dimension(1320, 880));
+        java.awt.Rectangle bounds = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getMaximumWindowBounds();
+        setPreferredSize(new Dimension(Math.min(1460, bounds.width), Math.min(900, bounds.height)));
         showBufferStatus();
         pack();
         setLocationRelativeTo(null);
@@ -183,7 +220,7 @@ public final class VarZinhoWindow extends JFrame {
         JButton liveView = new JButton("Abrir transmissão ao vivo");
         liveView.setIcon(VarZinhoIcons.openClip());
         liveView.addActionListener(event -> openLiveView(streamUrl));
-        header.add(liveView, "cell 1 0, span 1 2");
+        header.add(liveView, "cell 2 0, spany 2");
         pack();
     }
 
@@ -223,7 +260,7 @@ public final class VarZinhoWindow extends JFrame {
         bufferStatus.setText("Buffer da quadra " + court.getNumber() + ": "
                 + court.getSecondsRecorded() + " de " + bufferSeconds + " segundos.");
         if (sidebar != null) sidebar.updateStatus(management.courts());
-        if (dashboard != null) dashboard.refresh();
+        if (dashboard != null) dashboard.tick(court);
         courtPanel.refreshCourtOverview();
     }
 }
