@@ -43,7 +43,8 @@ public final class VarZinhoWindow extends JFrame {
     private final CourtPanel courtPanel;
     private final ArchivePanel archivePanel;
     private final CapturePanel capturePanel;
-    private final JPanel header = new JPanel(new MigLayout("insets 0, fillx", "[grow][]", "[]"));
+    private final CourtSummaryPanel courtSummary;
+    private final JPanel header = new JPanel(new MigLayout("insets 0, fillx", "[grow][]", "[]8[]"));
     private final MessageBar messages = new MessageBar();
     private final JLabel bufferStatus = new JLabel();
     private boolean phoneDropReported;
@@ -68,10 +69,13 @@ public final class VarZinhoWindow extends JFrame {
         clocks.add(clockFor(feed, captureActivity, this::showBufferStatus, messages));
         this.courtPanel = new CourtPanel(management, bufferSeconds, messages::show);
         this.archivePanel = new ArchivePanel(management::courts, archive, ZoneId.systemDefault(), messages::show);
+        this.courtSummary = new CourtSummaryPanel(courtPanel, management, archive, ZoneId.systemDefault(),
+                messages::show);
         this.capturePanel = new CapturePanel(courtPanel, captureHighlight, ZoneId.systemDefault(),
                 messages::show, highlight -> {
                     messages.show("Lance salvo na quadra " + highlight.getCourtNumber() + ".");
                     archivePanel.refresh();
+                    courtSummary.refresh();
                 }, captureActivity);
         courtPanel.onCourtAdded(archivePanel::refreshCourts);
         setTitle("VarZinho Arena — " + gymName);
@@ -80,6 +84,7 @@ public final class VarZinhoWindow extends JFrame {
         JLabel title = new JLabel("Quadras");
         VarZinhoTheme.styleTitle(title);
         header.add(title, "cell 0 0");
+        header.add(courtSummary, "cell 0 1, span 2, growx");
         top.add(header, BorderLayout.NORTH);
         top.add(courtPanel, BorderLayout.CENTER);
         top.add(capturePanel, BorderLayout.SOUTH);
