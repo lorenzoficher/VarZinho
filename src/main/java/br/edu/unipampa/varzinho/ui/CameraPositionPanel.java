@@ -3,14 +3,15 @@ package br.edu.unipampa.varzinho.ui;
 import br.edu.unipampa.varzinho.application.CameraView;
 import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.ManageGym;
-import net.miginfocom.swing.MigLayout;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -35,7 +36,7 @@ final class CameraPositionPanel extends JPanel {
     CameraPositionPanel(ManageGym management, IntSupplier selectedCourt,
                         Supplier<Optional<CameraView>> selectedCamera, Consumer<String> errorSink,
                         Runnable onChanged) {
-        super(new GridLayout(1, 2, 12, 0));
+        super(new GridLayout(2, 1));
         if (management == null) throw new IllegalArgumentException("camera positioning needs gym management");
         if (selectedCourt == null) throw new IllegalArgumentException("camera positioning needs a selected court");
         if (selectedCamera == null) throw new IllegalArgumentException("camera positioning needs a selected camera");
@@ -77,26 +78,20 @@ final class CameraPositionPanel extends JPanel {
     JButton moveToCourtButton() { return moveToCourt; }
 
     private JPanel buildMoveRow() {
-        JPanel row = new JPanel(new MigLayout("insets 16, fillx, wrap 3", "[][grow,fill][]", "[]12[]"));
-        VarZinhoTheme.styleCard(row);
-        JLabel title = new JLabel("Mover câmera");
-        VarZinhoTheme.styleTitle(title);
-        row.add(title, "span 3, wrap");
-        row.add(new JLabel("Quadra de destino")); row.add(moveTargetSelector); row.add(moveToCourt, "h 38!");
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
+        row.setBorder(BorderFactory.createTitledBorder("Mover a câmera selecionada"));
+        row.add(new JLabel("Para a quadra")); row.add(moveTargetSelector); row.add(moveToCourt);
         moveToCourt.addActionListener(event -> changeSelected(camera -> management.moveCamera(
                 selectedCourt.getAsInt(), camera.getId(), (Integer) moveTargetSelector.getSelectedItem())));
         return row;
     }
 
     private JPanel buildAimRow() {
-        JPanel row = new JPanel(new MigLayout("insets 16, fillx, wrap 7", "[][grow,fill][][grow,fill][][grow,fill][]", "[]12[]"));
-        VarZinhoTheme.styleCard(row);
-        JLabel title = new JLabel("Controle PTZ");
-        VarZinhoTheme.styleTitle(title);
-        row.add(title, "span 7, wrap");
-        row.add(new JLabel("Pan")); row.add(panSpinner);
-        row.add(new JLabel("Tilt")); row.add(tiltSpinner);
-        row.add(new JLabel("Zoom")); row.add(zoomSpinner); row.add(aim, "h 38!");
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
+        row.setBorder(BorderFactory.createTitledBorder("Apontar a câmera PTZ selecionada"));
+        row.add(new JLabel("Panorâmica")); row.add(panSpinner);
+        row.add(new JLabel("Inclinação")); row.add(tiltSpinner);
+        row.add(new JLabel("Zoom")); row.add(zoomSpinner); row.add(aim);
         aim.addActionListener(event -> changeSelected(camera -> management.aimCamera(
                 selectedCourt.getAsInt(), camera.getId(), (Integer) panSpinner.getValue(),
                 (Integer) tiltSpinner.getValue(), (Integer) zoomSpinner.getValue())));
