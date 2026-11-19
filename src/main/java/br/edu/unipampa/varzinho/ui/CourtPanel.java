@@ -22,7 +22,7 @@ final class CourtPanel extends JPanel {
     private final CameraPositionPanel cameraPosition;
 
     CourtPanel(ManageGym management, int bufferSeconds, Consumer<String> errorSink) {
-        super(new BorderLayout(8, 8));
+        super(new BorderLayout(12, 12));
         courtSelection = new CourtSelectionPanel(management, errorSink);
         cameraList = new CameraListPanel(management, courtSelection::selectedCourtNumber, errorSink);
         cameraInstallation = new CameraInstallPanel(management, courtSelection::selectedCourtNumber,
@@ -39,6 +39,7 @@ final class CourtPanel extends JPanel {
 
         JPanel forms = new JPanel();
         forms.setLayout(new BoxLayout(forms, BoxLayout.Y_AXIS));
+        forms.putClientProperty("FlatLaf.style", "background: $VarZinho.contentBackground");
         forms.add(cameraPosition);
         forms.add(cameraInstallation);
         add(courtSelection, BorderLayout.NORTH);
