@@ -59,8 +59,7 @@ class CourtPanelTest {
 
         panel.selectCourt(2);
 
-        assertEquals(List.of(PortugueseText.cameraDescription(
-                gym.findCourt(2).getCameras().get(0).describe())), panel.cameraLines());
+        assertEquals(List.of("fixed-2 · Fixa · Full HD (1920x1080) · Ativa"), panel.cameraLines());
         assertEquals(2, panel.selectedCourtNumber());
     }
 
@@ -72,7 +71,7 @@ class CourtPanelTest {
         panel.stopButton().doClick();
 
         assertEquals(CameraStatus.INACTIVE, camera.getStatus());
-        assertEquals(PortugueseText.cameraDescription(camera.describe()), panel.cameraLines().get(1));
+        assertEquals("ptz-1 · PTZ · HD (1280x720) · Parada · panorâmica 0 inclinação 0 zoom 1", panel.cameraLines().get(1));
         assertEquals(CameraStatus.ACTIVE, gym.findCourt(1).getCameras().get(0).getStatus());
     }
 
@@ -85,7 +84,7 @@ class CourtPanelTest {
         panel.startButton().doClick();
 
         assertEquals(CameraStatus.MAINTENANCE, camera.getStatus());
-        assertEquals(List.of("a câmera " + camera.getId() + " está em manutenção e não pode gravar"), errors);
+        assertEquals(List.of("A câmera " + camera.getId() + " está em manutenção e não pode gravar."), errors);
     }
 
     @Test
@@ -104,7 +103,7 @@ class CourtPanelTest {
         assertInstanceOf(FixedCamera.class, installed);
         assertEquals("fixed-3", installed.getId());
         assertEquals(CameraStatus.INACTIVE, installed.getStatus());
-        assertEquals(PortugueseText.cameraDescription(installed.describe()), panel.cameraLines().get(1));
+        assertEquals("fixed-3 · Fixa · HD (1280x720) · Parada", panel.cameraLines().get(1));
         assertTrue(errors.isEmpty());
     }
 
@@ -129,7 +128,7 @@ class CourtPanelTest {
 
         panel.installButton().doClick();
 
-        assertEquals(List.of("a câmera precisa de um identificador"), errors);
+        assertEquals(List.of("A câmera precisa de um identificador."), errors);
         assertEquals(2, gym.findCourt(1).getCameras().size());
         assertEquals("Fixed Lite", panel.modelField().getText());
     }
@@ -142,7 +141,7 @@ class CourtPanelTest {
 
         panel.installButton().doClick();
 
-        assertEquals(List.of("a câmera fixed-1 já está instalada na quadra 1"), errors);
+        assertEquals(List.of("A câmera fixed-1 já está instalada na quadra 1."), errors);
         assertEquals(1, gym.findCourt(2).getCameras().size());
     }
 
@@ -185,7 +184,7 @@ class CourtPanelTest {
 
         panel.addCourtButton().doClick();
 
-        assertEquals(List.of("o número da quadra já está cadastrado"), errors);
+        assertEquals(List.of("O número da quadra já está cadastrado."), errors);
         assertEquals(2, gym.getCourts().size());
     }
 
@@ -195,7 +194,7 @@ class CourtPanelTest {
 
         panel.addCourtButton().doClick();
 
-        assertEquals(List.of("o número da quadra deve ser positivo"), errors);
+        assertEquals(List.of("O número da quadra deve ser positivo."), errors);
     }
 
     @Test
@@ -227,7 +226,7 @@ class CourtPanelTest {
         panel.removeCameraButton().doClick();
 
         assertEquals(List.of(kept), gym.findCourt(1).getCameras());
-        assertEquals(List.of(PortugueseText.cameraDescription(kept.describe())), panel.cameraLines());
+        assertEquals(List.of("fixed-1 · Fixa · Full HD (1920x1080) · Ativa"), panel.cameraLines());
     }
 
     @Test
@@ -251,7 +250,7 @@ class CourtPanelTest {
         assertEquals(90, ptz.getPan());
         assertEquals(-10, ptz.getTilt());
         assertEquals(3, ptz.getZoom());
-        assertEquals(PortugueseText.cameraDescription(ptz.describe()), panel.cameraLines().get(1));
+        assertEquals("ptz-1 · PTZ · HD (1280x720) · Ativa · panorâmica 90 inclinação -10 zoom 3", panel.cameraLines().get(1));
     }
 
     @Test
@@ -277,7 +276,7 @@ class CourtPanelTest {
 
         panel.moveButton().doClick();
 
-        assertEquals(List.of("a câmera " + fixed.getId() + " não pode ser apontada"), errors);
+        assertEquals(List.of("A câmera " + fixed.getId() + " não pode ser apontada."), errors);
         assertSame(fixed, gym.findCourt(1).getCameras().get(0));
         assertEquals(statusBefore, fixed.getStatus());
         assertEquals(angleBefore, fixed.getAngle());
@@ -342,7 +341,7 @@ class CourtPanelTest {
 
         panel.moveToCourtButton().doClick();
 
-        assertEquals(List.of("a câmera fixed-1 já está na quadra 1"), errors);
+        assertEquals(List.of("A câmera fixed-1 já está na quadra 1."), errors);
     }
 
     @Test
