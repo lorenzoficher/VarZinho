@@ -18,7 +18,11 @@ import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import javax.swing.JComponent;
+import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import java.awt.Component;
+import java.awt.event.KeyEvent;
 import java.awt.Container;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -61,6 +65,57 @@ class CourtPanelTest {
 
         assertEquals(List.of("fixed-2 · Fixa · Full HD (1920x1080) · Ativa"), panel.cameraLines());
         assertEquals(2, panel.selectedCourtNumber());
+    }
+
+    @Test
+    void showsTheCamerasAsATableOfCameraKindResolutionAndStatus() {
+        assertEquals(List.of("Câmera", "Tipo", "Resolução", "Status"), panel.cameraColumns());
+        assertEquals(List.of("ptz-1", "PTZ", "HD (1280x720)", "Gravando"), panel.cameraRow(1));
+    }
+
+    @Test
+    void eachStatusShowsItsOwnBadge() {
+        panel.selectCamera(1);
+        panel.stopButton().doClick();
+        assertEquals(List.of(StatusBadge.RECORDING, StatusBadge.STOPPED), panel.statusBadges());
+
+        panel.selectCamera(0);
+        panel.maintenanceButton().doClick();
+        assertEquals(List.of(StatusBadge.MAINTENANCE, StatusBadge.STOPPED), panel.statusBadges());
+
+        panel.selectCamera(1);
+        panel.startButton().doClick();
+        assertEquals(List.of(StatusBadge.MAINTENANCE, StatusBadge.RECORDING), panel.statusBadges());
+    }
+
+    @Test
+    void theBadgeComesFromTheStatusAloneForEveryStatus() {
+        assertEquals(StatusBadge.RECORDING, StatusBadge.of(CameraStatus.ACTIVE));
+        assertEquals(StatusBadge.STOPPED, StatusBadge.of(CameraStatus.INACTIVE));
+        assertEquals(StatusBadge.MAINTENANCE, StatusBadge.of(CameraStatus.MAINTENANCE));
+    }
+
+    @Test
+    void theCameraTableLeavesF2ToTheSaveShortcut() {
+        JTable table = descendantOfType(panel, JTable.class);
+
+        Object binding = table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .get(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0));
+
+        assertTrue(binding == null || "none".equals(binding), String.valueOf(binding));
+    }
+
+    @Test
+    void changingACameraTellsWhoeverFollowsTheCameras() {
+        List<String> changes = new ArrayList<>();
+        panel.onCamerasChanged(() -> changes.add("changed"));
+
+        panel.selectCamera(0);
+        panel.stopButton().doClick();
+        panel.startButton().doClick();
+        panel.maintenanceButton().doClick();
+
+        assertEquals(3, changes.size());
     }
 
     @Test
@@ -388,6 +443,17 @@ class CourtPanelTest {
         assertTrue(gym.findCourt(2).getCameras().stream().anyMatch(camera -> camera.getId().equals("fixed-9")));
         assertEquals(3, csvPanel.selectedCourtNumber());
         assertEquals(3, gym.getCourts().size());
+    }
+
+    private static <T extends Component> T descendantOfType(Container root, Class<T> type) {
+        for (Component component : root.getComponents()) {
+            if (type.isInstance(component)) return type.cast(component);
+            if (component instanceof Container child) {
+                T found = descendantOfType(child, type);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     private static int descendantsOfType(Container root, Class<? extends Component> type) {

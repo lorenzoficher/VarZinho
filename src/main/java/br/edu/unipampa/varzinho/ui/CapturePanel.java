@@ -8,11 +8,15 @@ import br.edu.unipampa.varzinho.exception.ClipAssemblyException;
 import br.edu.unipampa.varzinho.exception.EmptyBufferException;
 import br.edu.unipampa.varzinho.exception.NoActiveCameraException;
 
+import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
 import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutionException;
@@ -21,11 +25,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The Save highlight button. The whole capture runs on a worker, while the Swing
+ * The Save highlight button, also on F2. The whole capture runs on a worker, while the Swing
  * thread pauses feeds and camera changes until the model is returned to it.
  */
 final class CapturePanel extends JPanel {
     private static final Logger LOGGER = Logger.getLogger(CapturePanel.class.getName());
+    private static final String SAVE_SHORTCUT = "save-highlight";
     private final CourtPanel courtPanel;
     private final CaptureHighlight captureHighlight;
     private final CaptureActivity activity;
@@ -57,6 +62,7 @@ final class CapturePanel extends JPanel {
         this.onSaved = onSaved;
         VarZinhoTheme.styleProminentAction(save);
         save.addActionListener(event -> saveHighlight());
+        bindShortcut();
         courtPanel.onCourtChange(this::showCourt);
         add(save, BorderLayout.CENTER);
         add(confirmation, BorderLayout.SOUTH);
@@ -64,6 +70,18 @@ final class CapturePanel extends JPanel {
     }
 
     JButton saveButton() { return save; }
+
+    // F2 works wherever the focus is in the window, and goes through the button so a
+    // disabled button (a capture already running) refuses the key too.
+    private void bindShortcut() {
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0), SAVE_SHORTCUT);
+        getActionMap().put(SAVE_SHORTCUT, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                save.doClick();
+            }
+        });
+    }
 
     String confirmation() {
         return confirmation.getText().trim();
@@ -145,7 +163,7 @@ final class CapturePanel extends JPanel {
     }
 
     private void showCourt() {
-        save.setText("Salvar lance — quadra " + courtPanel.selectedCourtNumber());
+        save.setText("Salvar lance (F2) — quadra " + courtPanel.selectedCourtNumber());
         if (!activity.isRunning()) confirmation.setText(" ");
     }
 }
