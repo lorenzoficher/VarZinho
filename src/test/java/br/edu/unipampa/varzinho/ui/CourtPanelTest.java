@@ -64,6 +64,47 @@ class CourtPanelTest {
     }
 
     @Test
+    void showsTheCamerasAsATableOfCameraKindResolutionAndStatus() {
+        assertEquals(List.of("Câmera", "Tipo", "Resolução", "Status"), panel.cameraColumns());
+        assertEquals(List.of("ptz-1", "PTZ", "HD (1280x720)", "Gravando"), panel.cameraRow(1));
+    }
+
+    @Test
+    void eachStatusShowsItsOwnBadge() {
+        panel.selectCamera(1);
+        panel.stopButton().doClick();
+        assertEquals(List.of(StatusBadge.RECORDING, StatusBadge.STOPPED), panel.statusBadges());
+
+        panel.selectCamera(0);
+        panel.maintenanceButton().doClick();
+        assertEquals(List.of(StatusBadge.MAINTENANCE, StatusBadge.STOPPED), panel.statusBadges());
+
+        panel.selectCamera(1);
+        panel.startButton().doClick();
+        assertEquals(List.of(StatusBadge.MAINTENANCE, StatusBadge.RECORDING), panel.statusBadges());
+    }
+
+    @Test
+    void theBadgeComesFromTheStatusAloneForEveryStatus() {
+        assertEquals(StatusBadge.RECORDING, StatusBadge.of(CameraStatus.ACTIVE));
+        assertEquals(StatusBadge.STOPPED, StatusBadge.of(CameraStatus.INACTIVE));
+        assertEquals(StatusBadge.MAINTENANCE, StatusBadge.of(CameraStatus.MAINTENANCE));
+    }
+
+    @Test
+    void changingACameraTellsWhoeverFollowsTheCameras() {
+        List<String> changes = new ArrayList<>();
+        panel.onCamerasChanged(() -> changes.add("changed"));
+
+        panel.selectCamera(0);
+        panel.stopButton().doClick();
+        panel.startButton().doClick();
+        panel.maintenanceButton().doClick();
+
+        assertEquals(3, changes.size());
+    }
+
+    @Test
     void stopSwitchesOffTheSelectedCameraAndItsLineFollows() {
         Camera camera = gym.findCourt(1).getCameras().get(1);
 

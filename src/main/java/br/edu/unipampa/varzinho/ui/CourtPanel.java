@@ -73,8 +73,12 @@ final class CourtPanel extends JPanel {
     void selectCourt(int number) { courtSelection.selectCourt(number); }
     void onCourtChange(Runnable listener) { courtSelection.onCourtChange(listener); }
     void onCourtAdded(Runnable listener) { courtSelection.onCourtAdded(listener); }
+    void onCamerasChanged(Runnable listener) { cameraList.onCamerasChanged(listener); }
     void selectCamera(int index) { cameraList.selectCamera(index); }
     List<String> cameraLines() { return cameraList.cameraLines(); }
+    List<String> cameraColumns() { return cameraList.cameraColumns(); }
+    List<String> cameraRow(int index) { return cameraList.cameraRow(index); }
+    List<StatusBadge> statusBadges() { return cameraList.statusBadges(); }
     JButton startButton() { return cameraList.startButton(); }
     JButton stopButton() { return cameraList.stopButton(); }
     JButton maintenanceButton() { return cameraList.maintenanceButton(); }
