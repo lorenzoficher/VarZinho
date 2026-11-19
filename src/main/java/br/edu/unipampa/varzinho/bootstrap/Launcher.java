@@ -20,6 +20,8 @@ import br.edu.unipampa.varzinho.ui.VarZinhoWindow;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -59,19 +61,24 @@ public final class Launcher {
                 return;
             }
             HighlightRepository repository = storage.highlights();
+            List<String> warnings = new ArrayList<>();
             GymSession session = GymSession.start(storage.gym(), SampleGym.build(),
-                    message -> warn("A academia salva não pôde ser carregada.", "Academia indisponível"));
+                    message -> warnings.add("A academia salva não pôde ser carregada."));
             Optional<PhoneConnection> phone = PhoneConnection.open(System.getenv(STREAM_URL_VARIABLE),
-                    SEGMENT_FOLDER, BUFFER_SECONDS, message -> warn("Confira o endereço da transmissão e a instalação do FFmpeg.", "Celular não conectado"));
+                    SEGMENT_FOLDER, BUFFER_SECONDS, message -> warnings.add(
+                            "Celular não conectado. Confira o endereço da transmissão e a instalação do FFmpeg."));
+            VarZinhoWindow window;
             if (phone.isEmpty()) {
-                window(session, signedIn.get(), repository, new LiveFeed(session.gym())).setVisible(true);
+                window = window(session, signedIn.get(), repository, new LiveFeed(session.gym()));
             } else {
-                openWithPhone(session, signedIn.get(), repository, phone.get());
+                window = windowWithPhone(session, signedIn.get(), repository, phone.get());
             }
+            window.showStartupWarnings(warnings);
+            window.setVisible(true);
         });
     }
 
-    private static void openWithPhone(GymSession session, SignedInOperator signedIn, HighlightRepository repository,
+    private static VarZinhoWindow windowWithPhone(GymSession session, SignedInOperator signedIn, HighlightRepository repository,
                                       PhoneConnection phone) {
         Gym gym = session.gym();
         ConnectStreamCamera connection = new ConnectStreamCamera(gym, phone.camera());
@@ -81,7 +88,7 @@ public final class Launcher {
         Runnable dropped = () -> window.phoneDropped(connection::phoneDropped);
         window.followPhone(phone.feed(dropped), court.getNumber(), phone.streamUrl());
         phone.onDrop(() -> SwingUtilities.invokeLater(dropped));
-        window.setVisible(true);
+        return window;
     }
 
     private static VarZinhoWindow window(GymSession session, SignedInOperator signedIn, HighlightRepository repository,
@@ -115,7 +122,4 @@ public final class Launcher {
         System.exit(1);
     }
 
-    private static void warn(String message, String title) {
-        JOptionPane.showMessageDialog(null, message, title, JOptionPane.WARNING_MESSAGE);
-    }
 }

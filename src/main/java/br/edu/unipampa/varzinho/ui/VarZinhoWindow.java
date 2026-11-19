@@ -99,6 +99,10 @@ public final class VarZinhoWindow extends JFrame {
         clocks.forEach(Timer::start);
     }
 
+    public void showStartupWarnings(List<String> warnings) {
+        messages.showStartupWarnings(warnings);
+    }
+
     private static JLabel buildTitle(String gymName) {
         JLabel title = new JLabel(gymName);
         VarZinhoTheme.styleTitle(title);
