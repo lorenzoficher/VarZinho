@@ -69,6 +69,25 @@ This is **dependency inversion**: the high-level policy depends on an
 abstraction, not on the low-level detail. It is also the project's clearest
 justification for declaring an interface at all.
 
+### Browsing by local day
+
+`BrowseArchive.byDay(day)` lists a local calendar day, newest first;
+`byDay(day, courtNumber)` narrows it to one court. Each capture instant is
+converted to the gym's `ZoneId` before comparing dates, so UTC midnight and
+daylight-saving changes cannot move a highlight to the wrong local day.
+
+The constructor accepting a `Clock` and `ZoneId` makes the gym's zone explicit
+and lets tests fix the current instant independently of the machine. The
+original constructor still uses the system clock and zone, like the current
+window. `all()` and `byCourt()` retain their existing behaviour.
+
+`todaySummary()` and `todaySummary(courtNumber)` use the injected clock in the
+gym's zone. The immutable `ArchiveSummary` reports a count and the latest
+capture as `Optional<Instant>`; an empty day has zero highlights and no last
+instant. Both day listings and summaries retain the warning when damaged
+records are skipped, and filter only the readable highlights. An unreadable
+archive still propagates `RepositoryException`.
+
 ### The CSV format
 
 ```csv
