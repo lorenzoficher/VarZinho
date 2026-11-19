@@ -106,7 +106,7 @@ public final class Launcher {
     private static VarZinhoWindow window(GymSession session, SignedInOperator signedIn, HighlightRepository repository,
                                          Feed feed) {
         Gym gym = session.gym();
-        return new VarZinhoWindow(gym.getName(), signedIn.getOperator(), session.manageGym(),
+        return new VarZinhoWindow(gym.getName(), signedIn, session.manageGym(),
                 new CaptureHighlight(gym, repository), new BrowseArchive(repository),
                 feed, BUFFER_SECONDS);
     }

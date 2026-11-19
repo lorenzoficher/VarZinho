@@ -26,7 +26,9 @@ class VarZinhoWindowTest {
         SwingUtilities.invokeAndWait(() -> {
             JPanel courts = new JPanel();
             JPanel archive = new JPanel();
-            JPanel content = VarZinhoWindow.navigation("Arena", operator, courts, archive, new MessageBar());
+            JPanel operators = new JPanel();
+            JPanel content = VarZinhoWindow.navigation("Arena", operator, courts, archive, operators,
+                    new MessageBar());
             BorderLayout layout = (BorderLayout) content.getLayout();
             SidebarPanel sidebar = (SidebarPanel) layout.getLayoutComponent(BorderLayout.WEST);
             assertTrue(courts.isVisible());
@@ -34,8 +36,11 @@ class VarZinhoWindowTest {
             sidebar.archiveButton().doClick();
             assertTrue(archive.isVisible());
             assertFalse(courts.isVisible());
-            sidebar.courtsButton().doClick();
+            sidebar.operatorsButton().doClick();
+            assertTrue(operators.isVisible());
             assertFalse(archive.isVisible());
+            sidebar.courtsButton().doClick();
+            assertFalse(operators.isVisible());
             assertTrue(courts.isVisible());
         });
     }

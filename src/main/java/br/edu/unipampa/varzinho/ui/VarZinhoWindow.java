@@ -6,6 +6,7 @@ import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.application.OperatorView;
+import br.edu.unipampa.varzinho.application.SignedInOperator;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.BorderFactory;
@@ -29,9 +30,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The operator's window: the courts, the capture button and the archive, kept moving by
- * the feeds it is handed. It reaches the gym and the archive only through the use cases
- * it is given, and never holds a domain object. It builds none of what it shows —
+ * The operator's window: the courts, the capture button, the archive and the operators,
+ * kept moving by the feeds it is handed. It reaches the gym, the archive and the
+ * operators only through the use cases it is given, and never holds a domain object. It builds none of what it shows —
  * {@link br.edu.unipampa.varzinho.bootstrap.Launcher} does.
  */
 public final class VarZinhoWindow extends JFrame {
@@ -53,7 +54,7 @@ public final class VarZinhoWindow extends JFrame {
      * @param bufferSeconds how long each camera's buffer is, for the status line and for
      *     the cameras installed from the window
      */
-    public VarZinhoWindow(String gymName, OperatorView operator, ManageGym management, CaptureHighlight captureHighlight,
+    public VarZinhoWindow(String gymName, SignedInOperator operator, ManageGym management, CaptureHighlight captureHighlight,
                           BrowseArchive archive, Feed feed, int bufferSeconds) {
         super("VarZinho Arena");
         if (gymName == null || gymName.isBlank()) throw new IllegalArgumentException("a window needs the gym's name");
@@ -86,7 +87,8 @@ public final class VarZinhoWindow extends JFrame {
         JPanel courtsPage = new JPanel(new BorderLayout(8, 8));
         courtsPage.add(top, BorderLayout.CENTER);
         courtsPage.add(bufferStatus, BorderLayout.SOUTH);
-        setContentPane(navigation(gymName, operator, courtsPage, archivePanel, messages));
+        setContentPane(navigation(gymName, operator.getOperator(), courtsPage, archivePanel,
+                new OperatorsPanel(operator, messages::show), messages));
         showBufferStatus();
         pack();
         setLocationRelativeTo(null);
@@ -94,11 +96,12 @@ public final class VarZinhoWindow extends JFrame {
     }
 
     static JPanel navigation(String gymName, OperatorView operator, JPanel courtsPage, JPanel archivePage,
-                             MessageBar messages) {
+                             JPanel operatorsPage, MessageBar messages) {
         CardLayout pageLayout = new CardLayout();
         JPanel pages = new JPanel(pageLayout);
         pages.add(courtsPage, SidebarPanel.Page.COURTS.name());
         pages.add(archivePage, SidebarPanel.Page.ARCHIVE.name());
+        pages.add(operatorsPage, SidebarPanel.Page.OPERATORS.name());
         SidebarPanel sidebar = new SidebarPanel(gymName, operator,
                 page -> pageLayout.show(pages, page.name()));
         JPanel content = new JPanel(new BorderLayout(8, 8));
