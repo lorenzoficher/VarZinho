@@ -85,6 +85,19 @@ class ArchivePanelTest {
     }
 
     @Test
+    void searchingNarrowsRowsAndClearingRestoresThem() {
+        InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
+        repository.save(highlight("first", EARLY, 1));
+        repository.save(highlight("second", LATE, 2));
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        panel.searchField().setText("SECOND");
+        assertEquals(1, panel.table().getRowCount());
+        assertEquals("camera-second", panel.table().getValueAt(0, 2));
+        panel.searchField().setText("");
+        assertEquals(2, panel.table().getRowCount());
+    }
+
+    @Test
     void filterOffersAllCourtsFollowedByEachCourt() {
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(new InMemoryHighlightRepository()), BRASILIA, errors::add);
 
@@ -100,12 +113,15 @@ class ArchivePanelTest {
 
         JTable table = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add).table();
 
-        assertEquals(List.of("Data e hora", "Quadra", "Câmera", "Duração", "Clipe"), columnNames(table));
+        assertEquals(List.of("Data e hora", "Quadra", "Câmera", "Duração", "Categoria", "Clipe"), columnNames(table));
         assertEquals("29/09/2026 18:30:15", table.getValueAt(0, 0));
         assertEquals(1, table.getValueAt(0, 1));
         assertEquals("camera-h-1", table.getValueAt(0, 2));
         assertEquals("30 s", table.getValueAt(0, 3));
-        assertEquals("clips/h-1.mp4", table.getValueAt(0, 4));
+        assertEquals("Lance", table.getValueAt(0, 4));
+        table.setValueAt("Gol", 0, 4);
+        assertEquals("Gol", table.getValueAt(0, 4));
+        assertEquals("clips/h-1.mp4", table.getValueAt(0, 5));
     }
 
     @Test

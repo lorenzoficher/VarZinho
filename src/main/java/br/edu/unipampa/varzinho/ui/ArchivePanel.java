@@ -12,12 +12,16 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.RowFilter;
+import javax.swing.table.TableRowSorter;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
 import java.awt.BorderLayout;
-import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -46,6 +50,9 @@ final class ArchivePanel extends JPanel {
     private final HighlightTableModel rows;
     private final JTable table;
     private final JButton openClip = new JButton("Assistir ao vídeo");
+    private final JTextField search = new JTextField(12);
+    private final JToggleButton today = new JToggleButton("Hoje");
+    private java.util.function.IntConsumer onCount = count -> { };
 
     ArchivePanel(Supplier<List<CourtView>> courts, BrowseArchive archive, ZoneId zone, Consumer<String> errorSink) {
         super(new BorderLayout(4, 4));
@@ -59,6 +66,28 @@ final class ArchivePanel extends JPanel {
         VarZinhoTheme.styleCard(this);
         this.rows = new HighlightTableModel(timeFormatIn(zone));
         this.table = new JTable(rows);
+        TableRowSorter<HighlightTableModel> sorter = new TableRowSorter<>(rows);
+        table.setRowSorter(sorter);
+        table.getColumnModel().getColumn(4).setCellEditor(new javax.swing.DefaultCellEditor(
+                new JComboBox<>(new String[]{"Lance", "Defesa", "Gol", "Ponto"})));
+        Runnable applyFilters = () -> sorter.setRowFilter(new RowFilter<>() {
+            public boolean include(Entry<? extends HighlightTableModel, ? extends Integer> entry) {
+                HighlightView item = rows.highlights.get(entry.getIdentifier());
+                String keywords = ("Quadra " + item.getCourtNumber() + " " + item.getCameraId()
+                        + " " + item.getClipPath()).toLowerCase(java.util.Locale.ROOT);
+                return keywords.contains(search.getText().strip().toLowerCase(java.util.Locale.ROOT))
+                        && (!today.isSelected() || item.getCapturedAt().atZone(zone).toLocalDate()
+                        .equals(java.time.LocalDate.now(zone)));
+            }
+        });
+        search.putClientProperty("JTextField.placeholderText", "Buscar gravação");
+        search.getAccessibleContext().setAccessibleName("Buscar gravação");
+        search.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { applyFilters.run(); }
+            public void removeUpdate(DocumentEvent e) { applyFilters.run(); }
+            public void changedUpdate(DocumentEvent e) { applyFilters.run(); }
+        });
+        today.addActionListener(event -> applyFilters.run());
         filter.addItem(ALL_COURTS);
         refreshCourts();
         filter.addActionListener(event -> refresh());
@@ -75,7 +104,8 @@ final class ArchivePanel extends JPanel {
         heading.add(titles, BorderLayout.WEST);
         JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         filterRow.setOpaque(false);
-        filterRow.add(new JLabel("Filtrar:"));
+        filterRow.add(search);
+        filterRow.add(today);
         filterRow.add(filter);
         openClip.addActionListener(event -> openSelectedClip());
         filterRow.add(openClip);
@@ -86,6 +116,18 @@ final class ArchivePanel extends JPanel {
         table.setShowHorizontalLines(true);
         table.setShowVerticalLines(false);
         table.setFillsViewportHeight(true);
+        table.getColumnModel().getColumn(5).setCellRenderer((grid, value, selected, focus, row, column) -> {
+            JButton play = new JButton("▷  Assistir");
+            play.setToolTipText(String.valueOf(value));
+            return play;
+        });
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                int column = table.columnAtPoint(e.getPoint());
+                if (column >= 0 && table.convertColumnIndexToModel(column) == 5
+                        && table.rowAtPoint(e.getPoint()) >= 0) openSelectedClip();
+            }
+        });
         add(new JScrollPane(table), BorderLayout.CENTER);
         refresh();
     }
@@ -101,6 +143,11 @@ final class ArchivePanel extends JPanel {
     JComboBox<String> filter() { return filter; }
 
     JTable table() { return table; }
+    JTextField searchField() { return search; }
+    void onCount(java.util.function.IntConsumer listener) {
+        onCount = listener;
+        listener.accept(rows.getRowCount());
+    }
 
     JButton openClipButton() { return openClip; }
 
@@ -113,16 +160,12 @@ final class ArchivePanel extends JPanel {
             return;
         }
         Path clip = Path.of(rows.clipAt(table.convertRowIndexToModel(row)));
-        if (!Files.exists(clip)) {
+        if (!Files.isRegularFile(clip) || !clip.toString().toLowerCase(java.util.Locale.ROOT).endsWith(".mp4")) {
             errorSink.accept("Não há arquivo de vídeo em " + clip
                     + ": somente destaques de uma câmera de transmissão são gravados no disco.");
             return;
         }
-        try {
-            Desktop.getDesktop().open(clip.toFile());
-        } catch (IOException | UnsupportedOperationException failure) {
-            errorSink.accept("Não foi possível abrir o clipe: " + failure.getMessage());
-        }
+        ClipDialog.open(this, rows.highlights.get(table.convertRowIndexToModel(row)), rows.timeFormat);
     }
 
     /**
@@ -151,6 +194,7 @@ final class ArchivePanel extends JPanel {
             return;
         }
         rows.show(listing.getHighlights());
+        if (filter.getSelectedIndex() <= 0) onCount.accept(rows.getRowCount());
         listing.getWarning().ifPresent(warning -> errorSink.accept("Acervo danificado: " + warning));
     }
 
@@ -161,7 +205,17 @@ final class ArchivePanel extends JPanel {
     }
 
     private static final class HighlightTableModel extends AbstractTableModel {
-        private static final String[] COLUMNS = {"Data e hora", "Quadra", "Câmera", "Duração", "Clipe"};
+        private static final String[] COLUMNS = {"Data e hora", "Quadra", "Câmera", "Duração", "Categoria", "Clipe"};
+        private final java.util.Map<String,String> categories = new java.util.HashMap<>();
+
+        @Override public boolean isCellEditable(int row, int column) { return column == 4; }
+
+        @Override public void setValueAt(Object value, int row, int column) {
+            if (column == 4 && value instanceof String category) {
+                categories.put(highlights.get(row).getId(), category);
+                fireTableCellUpdated(row, column);
+            }
+        }
 
         private final DateTimeFormatter timeFormat;
         private List<HighlightView> highlights = List.of();
@@ -196,7 +250,8 @@ final class ArchivePanel extends JPanel {
                 case 1: return highlight.getCourtNumber();
                 case 2: return highlight.getCameraId();
                 case 3: return highlight.getDurationSeconds() + " s";
-                case 4: return highlight.getClipPath();
+                case 4: return categories.getOrDefault(highlight.getId(), "Lance");
+                case 5: return highlight.getClipPath();
                 default: throw new IndexOutOfBoundsException("no column " + column);
             }
         }
