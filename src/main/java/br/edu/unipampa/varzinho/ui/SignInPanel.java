@@ -52,7 +52,7 @@ final class SignInPanel extends JPanel {
             passwordField.setText("");
             errorSink.accept(PortugueseText.message(refused.getMessage()));
         } catch (RepositoryException unreadable) {
-            errorSink.accept("Não foi possível ler os operadores: " + unreadable.getMessage());
+            errorSink.accept("Não foi possível ler os operadores. Verifique o armazenamento.");
         } finally {
             Arrays.fill(typed, '\0');
         }

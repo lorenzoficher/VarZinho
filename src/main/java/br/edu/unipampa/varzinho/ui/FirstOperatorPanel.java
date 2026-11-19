@@ -54,7 +54,7 @@ final class FirstOperatorPanel extends JPanel {
             passwordField.setText("");
             errorSink.accept(PortugueseText.message(refused.getMessage()));
         } catch (RepositoryException unwritable) {
-            errorSink.accept("Não foi possível salvar o operador: " + unwritable.getMessage());
+            errorSink.accept("Não foi possível salvar o operador. Verifique o armazenamento.");
         } finally {
             Arrays.fill(typed, '\0');
         }
