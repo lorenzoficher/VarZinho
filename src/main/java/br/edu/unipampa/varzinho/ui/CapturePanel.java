@@ -48,9 +48,7 @@ final class CapturePanel extends JPanel {
         this.timeFormat = ArchivePanel.timeFormatIn(zone);
         this.errorSink = errorSink;
         this.onSaved = onSaved;
-        setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 0, 4, 0));
         VarZinhoTheme.styleProminentAction(save);
-        save.setPreferredSize(new java.awt.Dimension(0, 58));
         save.addActionListener(event -> saveHighlight());
         courtPanel.onCourtChange(this::showCourt);
         add(save, BorderLayout.CENTER);
