@@ -5,14 +5,17 @@ import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 
 import javax.swing.DefaultListModel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.JLabel;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.Dimension;
+import java.awt.Component;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -41,8 +44,22 @@ final class CameraListPanel extends JPanel {
         this.selectedCourt = selectedCourt;
         this.errorSink = errorSink;
         VarZinhoTheme.styleCard(this);
+        setPreferredSize(new Dimension(760, 210));
         cameraList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        cameraList.setFixedCellHeight(34);
+        cameraList.setFixedCellHeight(46);
+        cameraList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                    boolean selected, boolean focused) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(
+                        list, value, index, selected, focused);
+                label.setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 12, 8, 12));
+                return label;
+            }
+        });
+        JLabel title = new JLabel("Câmeras instaladas");
+        VarZinhoTheme.styleTitle(title);
+        add(title, BorderLayout.NORTH);
         add(new JScrollPane(cameraList), BorderLayout.CENTER);
         JPanel buttons = new JPanel(new GridLayout(0, 1, 8, 8));
         buttons.setOpaque(false);
