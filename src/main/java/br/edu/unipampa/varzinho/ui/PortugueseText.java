@@ -38,6 +38,7 @@ final class PortugueseText {
             new MessagePattern("camera (.+) is not recording", "A câmera $1 não está gravando."),
             new MessagePattern("camera (.+) cannot be aimed", "A câmera $1 não pode ser apontada."),
             new MessagePattern("the camera is not installed on court (-?[0-9]+)", "A câmera não está instalada na quadra $1."),
+            new MessagePattern("username (\\S+) is already taken", "O usuário $1 já está em uso."),
             new MessagePattern("court (-?[0-9]+) is not registered", "A quadra $1 não está cadastrada."),
             new MessagePattern("Court ([0-9]+) has no active camera[.]", "Não há câmera ativa na quadra $1."),
             new MessagePattern("a window of ([0-9]+)s was asked of the ([0-9]+)s recorded", "A captura requer $1 s, mas apenas $2 s foram gravados.")

@@ -14,13 +14,14 @@ import java.util.function.Consumer;
 
 /** Navigation and session identity kept at the left of the operator window. */
 final class SidebarPanel extends JPanel {
-    enum Page { COURTS, ARCHIVE }
+    enum Page { COURTS, ARCHIVE, OPERATORS }
 
     private final JToggleButton courts = new JToggleButton("Quadras", VarZinhoIcons.courts());
     private final JToggleButton archive = new JToggleButton("Acervo", VarZinhoIcons.archive());
+    private final JToggleButton operators = new JToggleButton("Operadores", VarZinhoIcons.operators());
 
     SidebarPanel(String gymName, OperatorView operator, Consumer<Page> onPageChange) {
-        super(new MigLayout("insets 18, fillx, wrap 1", "[grow,fill]", "[][]24[][]push[][][]"));
+        super(new MigLayout("insets 18, fillx, wrap 1", "[grow,fill]", "[][]24[][][]push[][][]"));
         if (gymName == null || gymName.isBlank()) throw new IllegalArgumentException("a sidebar needs the gym name");
         if (operator == null) throw new IllegalArgumentException("a sidebar needs the signed-in operator");
         if (onPageChange == null) throw new IllegalArgumentException("a sidebar needs a page destination");
@@ -36,13 +37,17 @@ final class SidebarPanel extends JPanel {
         ButtonGroup pages = new ButtonGroup();
         pages.add(courts);
         pages.add(archive);
+        pages.add(operators);
         courts.setSelected(true);
         styleNavigation(courts);
         styleNavigation(archive);
+        styleNavigation(operators);
         courts.addActionListener(event -> onPageChange.accept(Page.COURTS));
         archive.addActionListener(event -> onPageChange.accept(Page.ARCHIVE));
+        operators.addActionListener(event -> onPageChange.accept(Page.OPERATORS));
         add(courts);
         add(archive);
+        add(operators);
 
         add(buildThemeButton());
         add(sidebarLabel(operator.getName()));
@@ -51,6 +56,7 @@ final class SidebarPanel extends JPanel {
 
     JToggleButton courtsButton() { return courts; }
     JToggleButton archiveButton() { return archive; }
+    JToggleButton operatorsButton() { return operators; }
 
     static JButton buildThemeButton() {
         JButton button = new JButton("Alternar tema", VarZinhoIcons.theme());
