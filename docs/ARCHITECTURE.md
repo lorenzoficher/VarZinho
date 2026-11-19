@@ -256,6 +256,14 @@ Both success and failure restore the controls and feeds. There is no registry
 of deferred clip writes; a caller outside the panel gets the same completed
 capture as the window.
 
+Every window action that feeds or changes the gym or its cameras must respect
+`CaptureActivity`, including actions added by future screens. A worker borrows
+the model exclusively until capture finishes; callers outside the window must
+provide equivalent exclusion. The current sign-in runs before the window opens.
+Expected capture refusals are shown to the operator. Unexpected worker failures
+also log their original exception and stack trace, and always show a nonempty
+message before the controls and feeds resume.
+
 They are deliberately thin. Every rule lives in the domain and the interface
 only calls it. If logic starts accumulating in a window class, it belongs in a
 domain class instead — a screen that decides whether a court can be captured
