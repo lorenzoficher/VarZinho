@@ -12,13 +12,26 @@ final class PortugueseText {
                 .replace(" · INACTIVE", " · PARADA")
                 .replace(" · MAINTENANCE", " · MANUTENÇÃO")
                 .replace(" · pan ", " · panorâmica ")
-                .replace(" tilt ", " inclinação ")
-                .replace(" zoom ", " zoom ");
+                .replace(" tilt ", " inclinação ");
     }
 
     static String message(String message) {
-        if (message == null) return null;
-        return message
+        if (message == null || message.isBlank()) return "Não foi possível concluir a operação.";
+        if (message.matches("line [0-9]+ of the archive cannot be read: .*")) {
+            return "Não foi possível ler a linha " + message.split(" ", 3)[1] + " do acervo.";
+        }
+        if (message.matches("(pan|tilt|zoom) runs from -?[0-9]+ to -?[0-9]+, not -?[0-9]+")) {
+            String axis = message.startsWith("pan") ? "A panorâmica" :
+                    message.startsWith("tilt") ? "A inclinação" : "O zoom";
+            return message.replaceFirst("^[a-z]+ runs from ", axis + " deve estar entre ")
+                    .replace(" to ", " e ").replace(", not ", ". Valor informado: ") + ".";
+        }
+        String translated = message
+                .replace("ffmpeg is not installed", "O FFmpeg não está instalado.")
+                .replace(" is under maintenance and cannot record", " está em manutenção e não pode gravar")
+                .replace(" is under maintenance and is not recording", " está em manutenção e já está parada")
+                .replace(" is already installed on court ", " já está instalada na quadra ")
+                .replace(" is already on court ", " já está na quadra ")
                 .replace("nothing has been recorded yet", "nenhuma imagem foi gravada ainda")
                 .replace("there is no active camera on court ", "não há câmera ativa na quadra ")
                 .replace(" is not recording", " não está gravando")
@@ -38,5 +51,7 @@ final class PortugueseText {
                 .replace("cannot be aimed", "não pode ser apontada")
                 .replace("the camera is not installed on court ", "a câmera não está instalada na quadra ")
                 .replace("there is no camera to move", "não há câmera para mover");
+        if (translated.equals(message)) return "Não foi possível concluir a operação.";
+        return translated.replaceFirst("^camera ", "a câmera ");
     }
 }

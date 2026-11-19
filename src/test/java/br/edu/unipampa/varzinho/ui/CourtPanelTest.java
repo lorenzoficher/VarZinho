@@ -85,7 +85,7 @@ class CourtPanelTest {
         panel.startButton().doClick();
 
         assertEquals(CameraStatus.MAINTENANCE, camera.getStatus());
-        assertEquals(List.of("camera " + camera.getId() + " is under maintenance and cannot record"), errors);
+        assertEquals(List.of("a câmera " + camera.getId() + " está em manutenção e não pode gravar"), errors);
     }
 
     @Test
@@ -142,7 +142,7 @@ class CourtPanelTest {
 
         panel.installButton().doClick();
 
-        assertEquals(List.of("camera fixed-1 is already installed on court 1"), errors);
+        assertEquals(List.of("a câmera fixed-1 já está instalada na quadra 1"), errors);
         assertEquals(1, gym.findCourt(2).getCameras().size());
     }
 
@@ -262,7 +262,7 @@ class CourtPanelTest {
 
         panel.moveButton().doClick();
 
-        assertEquals(List.of("pan runs from 0 to 359, not 400"), errors);
+        assertEquals(List.of("A panorâmica deve estar entre 0 e 359. Valor informado: 400."), errors);
         assertEquals(0, ptz.getPan());
     }
 
@@ -277,7 +277,7 @@ class CourtPanelTest {
 
         panel.moveButton().doClick();
 
-        assertEquals(List.of("camera " + fixed.getId() + " não pode ser apontada"), errors);
+        assertEquals(List.of("a câmera " + fixed.getId() + " não pode ser apontada"), errors);
         assertSame(fixed, gym.findCourt(1).getCameras().get(0));
         assertEquals(statusBefore, fixed.getStatus());
         assertEquals(angleBefore, fixed.getAngle());
@@ -342,7 +342,7 @@ class CourtPanelTest {
 
         panel.moveToCourtButton().doClick();
 
-        assertEquals(List.of("camera fixed-1 is already on court 1"), errors);
+        assertEquals(List.of("a câmera fixed-1 já está na quadra 1"), errors);
     }
 
     @Test
@@ -365,7 +365,7 @@ class CourtPanelTest {
 
         panel.addCourtButton().doClick();
 
-        assertEquals(List.of("Não foi possível salvar a academia: disk unplugged"), errors);
+        assertEquals(List.of("Não foi possível salvar a academia. Verifique o armazenamento."), errors);
         assertEquals(3, panel.selectedCourtNumber());
         assertEquals(3, gym.getCourts().size());
     }
@@ -385,7 +385,7 @@ class CourtPanelTest {
         csvPanel.addCourtButton().doClick();
 
         assertEquals(2, errors.size());
-        assertTrue(errors.get(0).startsWith("Não foi possível salvar a academia: "), errors.get(0));
+        assertTrue(errors.get(0).startsWith("Não foi possível salvar a academia."), errors.get(0));
         assertTrue(gym.findCourt(2).getCameras().stream().anyMatch(camera -> camera.getId().equals("fixed-9")));
         assertEquals(3, csvPanel.selectedCourtNumber());
         assertEquals(3, gym.getCourts().size());
