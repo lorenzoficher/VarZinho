@@ -3,38 +3,40 @@ package br.edu.unipampa.varzinho.ui;
 import br.edu.unipampa.varzinho.application.CameraView;
 import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
-import net.miginfocom.swing.MigLayout;
 
+import javax.swing.DefaultListModel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
-import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.ListSelectionModel;
+import javax.swing.JLabel;
 import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.GridLayout;
 import java.awt.Dimension;
-import java.util.ArrayList;
+import java.awt.Component;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 
-/** Shows each camera as an operational row with actions backed by gym management. */
+/** Shows one court's cameras and changes the selected camera's state. */
 final class CameraListPanel extends JPanel {
     private final ManageGym management;
     private final IntSupplier selectedCourt;
     private final Consumer<String> errorSink;
-    private final JPanel rows = new JPanel(new MigLayout("insets 0, fillx, wrap 1", "[grow,fill]", "[]"));
+    private final DefaultListModel<String> cameraLines = new DefaultListModel<>();
+    private final JList<String> cameraList = new JList<>(cameraLines);
     private final JButton start = new JButton("Iniciar");
     private final JButton stop = new JButton("Parar");
     private final JButton maintenance = new JButton("Enviar para manutenção");
     private final JButton remove = new JButton("Remover câmera");
-    private final List<Runnable> selectionListeners = new ArrayList<>();
     private List<CameraView> shownCameras = List.of();
-    private List<String> cameraLines = List.of();
-    private int selectedIndex = -1;
 
     CameraListPanel(ManageGym management, IntSupplier selectedCourt, Consumer<String> errorSink) {
-        super(new BorderLayout(0, 14));
+        super(new BorderLayout(14, 0));
         if (management == null) throw new IllegalArgumentException("a camera list needs the gym's management");
         if (selectedCourt == null) throw new IllegalArgumentException("a camera list needs the selected court");
         if (errorSink == null) throw new IllegalArgumentException("a camera list needs somewhere to report errors");
@@ -42,24 +44,35 @@ final class CameraListPanel extends JPanel {
         this.selectedCourt = selectedCourt;
         this.errorSink = errorSink;
         VarZinhoTheme.styleCard(this);
-        setPreferredSize(new Dimension(760, 330));
-
-        JPanel heading = new JPanel(new MigLayout("insets 0, fillx", "[grow][]", "[][]"));
-        heading.setOpaque(false);
-        JLabel eyebrow = new JLabel("DISPOSITIVOS");
-        VarZinhoTheme.styleEyebrow(eyebrow);
-        JLabel title = new JLabel("Câmeras da quadra selecionada");
+        setPreferredSize(new Dimension(760, 210));
+        cameraList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        cameraList.setFixedCellHeight(46);
+        cameraList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                    boolean selected, boolean focused) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(
+                        list, value, index, selected, focused);
+                label.setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 12, 8, 12));
+                return label;
+            }
+        });
+        JLabel title = new JLabel("Câmeras instaladas");
         VarZinhoTheme.styleTitle(title);
-        heading.add(eyebrow, "cell 0 0");
-        heading.add(title, "cell 0 1");
-        add(heading, BorderLayout.NORTH);
-
-        rows.setOpaque(false);
-        JScrollPane scroll = new JScrollPane(rows);
-        scroll.setBorder(javax.swing.BorderFactory.createEmptyBorder());
-        scroll.getVerticalScrollBar().setUnitIncrement(14);
-        add(scroll, BorderLayout.CENTER);
-
+        add(title, BorderLayout.NORTH);
+        add(new JScrollPane(cameraList), BorderLayout.CENTER);
+        JPanel buttons = new JPanel(new GridLayout(0, 1, 8, 8));
+        buttons.setOpaque(false);
+        start.setIcon(VarZinhoIcons.record());
+        stop.setIcon(VarZinhoIcons.stop());
+        maintenance.setIcon(VarZinhoIcons.maintenance());
+        Dimension actionSize = new Dimension(190, 40);
+        start.setPreferredSize(actionSize);
+        stop.setPreferredSize(actionSize);
+        maintenance.setPreferredSize(actionSize);
+        remove.setPreferredSize(actionSize);
+        buttons.add(start); buttons.add(stop); buttons.add(maintenance); buttons.add(remove);
+        add(buttons, BorderLayout.EAST);
         start.addActionListener(event -> changeSelected(management::startRecording));
         stop.addActionListener(event -> changeSelected(management::stopRecording));
         maintenance.addActionListener(event -> changeSelected(management::sendToMaintenance));
@@ -69,102 +82,34 @@ final class CameraListPanel extends JPanel {
 
     void refresh() {
         shownCameras = management.court(selectedCourt.getAsInt()).getCameras();
-        cameraLines = shownCameras.stream()
-                .map(camera -> PortugueseText.cameraDescription(camera.getDescription()))
-                .toList();
-        if (selectedIndex >= shownCameras.size()) selectedIndex = -1;
-        rebuildRows();
+        cameraLines.clear();
+        shownCameras.forEach(camera -> cameraLines.addElement(
+                PortugueseText.cameraDescription(camera.getDescription())));
     }
 
     void refreshKeepingSelection() {
-        int kept = selectedIndex;
+        int selected = cameraList.getSelectedIndex();
         refresh();
-        if (kept >= 0 && kept < shownCameras.size()) selectedIndex = kept;
-        rebuildRows();
+        if (selected < shownCameras.size()) cameraList.setSelectedIndex(selected);
     }
 
     Optional<CameraView> selectedCamera() {
-        return selectedIndex < 0 || selectedIndex >= shownCameras.size()
-                ? Optional.empty() : Optional.of(shownCameras.get(selectedIndex));
+        int index = cameraList.getSelectedIndex();
+        return index < 0 || index >= shownCameras.size() ? Optional.empty() : Optional.of(shownCameras.get(index));
     }
 
     void onSelectionChange(Runnable listener) {
-        selectionListeners.add(listener);
+        cameraList.addListSelectionListener(event -> listener.run());
     }
 
-    void selectCamera(int index) {
-        selectedIndex = index >= 0 && index < shownCameras.size() ? index : -1;
-        rebuildRows();
-        selectionListeners.forEach(Runnable::run);
-    }
+    void selectCamera(int index) { cameraList.setSelectedIndex(index); }
 
-    List<String> cameraLines() { return List.copyOf(cameraLines); }
+    List<String> cameraLines() { return Collections.list(cameraLines.elements()); }
+
     JButton startButton() { return start; }
     JButton stopButton() { return stop; }
     JButton maintenanceButton() { return maintenance; }
     JButton removeCameraButton() { return remove; }
-
-    private void rebuildRows() {
-        rows.removeAll();
-        for (int index = 0; index < shownCameras.size(); index++) {
-            rows.add(cameraRow(index, shownCameras.get(index), cameraLines.get(index)), "growx, h 72!");
-        }
-        rows.revalidate();
-        rows.repaint();
-    }
-
-    private JPanel cameraRow(int index, CameraView camera, String description) {
-        JPanel row = new JPanel(new MigLayout("insets 10 12, fillx", "[52!][grow][]", "[][]"));
-        row.putClientProperty("FlatLaf.style", selectedIndex == index
-                ? "background: fade($VarZinho.accent,14%); arc: 12"
-                : "background: $VarZinho.cardBackground; arc: 12");
-        JLabel icon = new JLabel(VarZinhoIcons.cameras(statusColor(description)));
-        JLabel id = new JLabel(camera.getId());
-        id.setFont(id.getFont().deriveFont(java.awt.Font.BOLD));
-        JLabel details = new JLabel(description);
-        details.setForeground(VarZinhoTheme.STOPPED);
-        JPanel actions = actionsFor(index, description);
-        row.add(icon, "cell 0 0, span 1 2, align center");
-        row.add(id, "cell 1 0");
-        row.add(details, "cell 1 1");
-        row.add(actions, "cell 2 0, span 1 2");
-        row.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseClicked(java.awt.event.MouseEvent event) { selectCamera(index); }
-        });
-        return row;
-    }
-
-    private JPanel actionsFor(int index, String description) {
-        JPanel actions = new JPanel(new MigLayout("insets 0", "[][][][]", "[]"));
-        actions.setOpaque(false);
-        JButton record = rowAction(description.contains("ATIVA") ? "Parar" : "Iniciar",
-                description.contains("ATIVA") ? VarZinhoIcons.stop() : VarZinhoIcons.record(),
-                index, description.contains("ATIVA") ? stop : start);
-        actions.add(record, "h 36!");
-        actions.add(rowAction("Mover", VarZinhoIcons.aim(), index, null), "h 36!");
-        actions.add(rowAction("Manutenção", VarZinhoIcons.maintenance(), index, maintenance), "h 36!");
-        actions.add(rowAction("Remover", VarZinhoIcons.archive(), index, remove), "h 36!");
-        return actions;
-    }
-
-    private JButton rowAction(String text, javax.swing.Icon icon, int index, JButton action) {
-        JButton button = new JButton(text, icon);
-        button.addActionListener(event -> {
-            selectCamera(index);
-            if (action == null) {
-                errorSink.accept("Use o painel de posicionamento abaixo para mover a câmera selecionada.");
-            } else {
-                action.doClick();
-            }
-        });
-        return button;
-    }
-
-    private static Color statusColor(String description) {
-        if (description.contains("ATIVA")) return VarZinhoTheme.EMERALD;
-        if (description.contains("MANUTENÇÃO")) return VarZinhoTheme.MAINTENANCE;
-        return VarZinhoTheme.STOPPED;
-    }
 
     private void changeSelected(CameraChange change) {
         Optional<CameraView> camera = selectedCamera();
