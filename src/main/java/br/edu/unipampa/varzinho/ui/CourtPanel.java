@@ -20,7 +20,6 @@ final class CourtPanel extends JPanel {
     private final CameraInstallPanel cameraInstallation;
     private final CameraPositionPanel cameraPosition;
     private final JPanel cameraForms;
-    private final CourtOverviewPanel courtOverview;
 
     CourtPanel(ManageGym management, int bufferSeconds, Consumer<String> errorSink) {
         super(new BorderLayout(12, 12));
@@ -30,16 +29,12 @@ final class CourtPanel extends JPanel {
                 bufferSeconds, errorSink, cameraList::refresh);
         cameraPosition = new CameraPositionPanel(management, courtSelection::selectedCourtNumber,
                 cameraList::selectedCamera, errorSink, cameraList::refreshKeepingSelection);
-        courtOverview = new CourtOverviewPanel(management, this::selectCourt);
 
         courtSelection.onCourtChange(() -> {
             cameraList.refresh();
             cameraPosition.updateAimAvailability();
         });
-        courtSelection.onCourtAdded(() -> {
-            cameraPosition.addCourt(courtSelection.selectedCourtNumber());
-            courtOverview.refresh();
-        });
+        courtSelection.onCourtAdded(() -> cameraPosition.addCourt(courtSelection.selectedCourtNumber()));
         cameraList.onSelectionChange(cameraPosition::updateAimAvailability);
 
         cameraForms = new JPanel(new net.miginfocom.swing.MigLayout(
@@ -56,7 +51,6 @@ final class CourtPanel extends JPanel {
         remove(courtSelection);
         JPanel page = new JPanel(new BorderLayout());
         page.add(courtSelection, BorderLayout.NORTH);
-        page.add(courtOverview, BorderLayout.CENTER);
         return page;
     }
 
@@ -73,7 +67,6 @@ final class CourtPanel extends JPanel {
     void selectCourt(int number) { courtSelection.selectCourt(number); }
     void onCourtChange(Runnable listener) { courtSelection.onCourtChange(listener); }
     void onCourtAdded(Runnable listener) { courtSelection.onCourtAdded(listener); }
-    void refreshCourtOverview() { courtOverview.refresh(); }
     void selectCamera(int index) { cameraList.selectCamera(index); }
     List<String> cameraLines() { return cameraList.cameraLines(); }
     JButton startButton() { return cameraList.startButton(); }
