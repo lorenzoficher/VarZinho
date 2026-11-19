@@ -56,12 +56,14 @@ final class ArchivePanel extends JPanel {
         this.courts = courts;
         this.archive = archive;
         this.errorSink = errorSink;
+        VarZinhoTheme.styleCard(this);
         this.rows = new HighlightTableModel(timeFormatIn(zone));
         this.table = new JTable(rows);
         filter.addItem(ALL_COURTS);
         refreshCourts();
         filter.addActionListener(event -> refresh());
         JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        filterRow.setOpaque(false);
         filterRow.add(new JLabel("Acervo:"));
         filterRow.add(filter);
         openClip.addActionListener(event -> openSelectedClip());
