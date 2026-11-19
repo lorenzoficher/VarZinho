@@ -21,6 +21,18 @@ class SidebarPanelTest {
         assertTrue(sidebar.archiveButton().isSelected());
     }
 
+    @Test
+    void offersEveryFunctionalPageFromTheDashboard() throws Exception {
+        SidebarPanel sidebar = new SidebarPanel("Arena VarZinho", operator(), page -> { });
+
+        assertTrue(sidebar.dashboardButton().isSelected());
+        assertEquals("Quadras", sidebar.courtsButton().getText());
+        assertEquals("Câmeras", sidebar.camerasButton().getText());
+        assertEquals("Melhores momentos", sidebar.highlightsButton().getText());
+        assertEquals("Arquivos", sidebar.archiveButton().getText());
+        assertEquals("Configurações", sidebar.settingsButton().getText());
+    }
+
     private static OperatorView operator() throws Exception {
         Constructor<OperatorView> constructor = OperatorView.class.getDeclaredConstructor(String.class, String.class);
         constructor.setAccessible(true);
