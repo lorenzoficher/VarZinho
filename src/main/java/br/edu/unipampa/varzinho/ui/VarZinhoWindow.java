@@ -5,6 +5,7 @@ import br.edu.unipampa.varzinho.application.CaptureHighlight;
 import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.ManageGym;
+import br.edu.unipampa.varzinho.application.OperatorView;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.BorderFactory;
@@ -15,6 +16,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Desktop;
 import java.io.IOException;
 import java.net.URI;
@@ -37,7 +39,7 @@ public final class VarZinhoWindow extends JFrame {
     private final ArchivePanel archivePanel;
     private final CapturePanel capturePanel;
     private final JPanel header = new JPanel(new MigLayout("insets 0, fillx", "[grow][]", "[]"));
-    private final JButton theme = buildThemeButton();
+    private final MessageBar messages = new MessageBar();
     private final JLabel bufferStatus = new JLabel();
     private boolean phoneDropReported;
 
@@ -46,9 +48,9 @@ public final class VarZinhoWindow extends JFrame {
      * @param bufferSeconds how long each camera's buffer is, for the status line and for
      *     the cameras installed from the window
      */
-    public VarZinhoWindow(String gymName, ManageGym management, CaptureHighlight captureHighlight,
+    public VarZinhoWindow(String gymName, OperatorView operator, ManageGym management, CaptureHighlight captureHighlight,
                           BrowseArchive archive, Feed feed, int bufferSeconds) {
-        super("VarZinho - Highlight Capture");
+        super("VarZinho Arena");
         if (gymName == null || gymName.isBlank()) throw new IllegalArgumentException("a window needs the gym's name");
         if (management == null) throw new IllegalArgumentException("a window needs the gym's management");
         if (captureHighlight == null) throw new IllegalArgumentException("a window needs a way to capture");
@@ -58,25 +60,36 @@ public final class VarZinhoWindow extends JFrame {
         this.management = management;
         this.bufferSeconds = bufferSeconds;
         clocks.add(new Timer(feed.periodMillis(), event -> advance(feed)));
-        this.courtPanel = new CourtPanel(management, bufferSeconds, this::showError);
-        this.archivePanel = new ArchivePanel(management::courts, archive, ZoneId.systemDefault(), this::showError);
+        if (operator == null) throw new IllegalArgumentException("a window needs the signed-in operator");
+        this.courtPanel = new CourtPanel(management, bufferSeconds, messages::show);
+        this.archivePanel = new ArchivePanel(management::courts, archive, ZoneId.systemDefault(), messages::show);
         this.capturePanel = new CapturePanel(courtPanel, captureHighlight, ZoneId.systemDefault(),
-                this::showError, highlight -> archivePanel.refresh());
+                messages::show, highlight -> archivePanel.refresh());
         courtPanel.onCourtAdded(archivePanel::refreshCourts);
-        setTitle("VarZinho - " + gymName);
+        setTitle("VarZinho Arena — " + gymName);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout(8, 8));
+        setLayout(new BorderLayout());
+        CardLayout pageLayout = new CardLayout();
+        JPanel pages = new JPanel(pageLayout);
         JPanel top = new JPanel(new BorderLayout(8, 8));
         header.add(buildTitle(gymName), "cell 0 0");
-        header.add(theme, "cell 1 0");
         top.add(header, BorderLayout.NORTH);
         top.add(courtPanel, BorderLayout.CENTER);
         top.add(capturePanel, BorderLayout.SOUTH);
-        add(top, BorderLayout.NORTH);
-        add(archivePanel, BorderLayout.CENTER);
+        JPanel courtsPage = new JPanel(new BorderLayout(8, 8));
+        courtsPage.add(top, BorderLayout.CENTER);
+        courtsPage.add(bufferStatus, BorderLayout.SOUTH);
+        pages.add(courtsPage, SidebarPanel.Page.COURTS.name());
+        pages.add(archivePanel, SidebarPanel.Page.ARCHIVE.name());
+        SidebarPanel sidebar = new SidebarPanel(gymName, operator,
+                page -> pageLayout.show(pages, page.name()));
+        add(sidebar, BorderLayout.WEST);
+        JPanel content = new JPanel(new BorderLayout(8, 8));
+        content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        content.add(pages, BorderLayout.CENTER);
+        content.add(messages, BorderLayout.SOUTH);
+        add(content, BorderLayout.CENTER);
         showBufferStatus();
-        add(bufferStatus, BorderLayout.SOUTH);
-        getRootPane().setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         pack();
         setLocationRelativeTo(null);
         clocks.forEach(Timer::start);
@@ -90,7 +103,8 @@ public final class VarZinhoWindow extends JFrame {
 
     static JButton buildThemeButton() {
         JButton button = new JButton(VarZinhoIcons.theme());
-        button.setToolTipText("Switch light/dark theme");
+        button.setText("Alternar tema");
+        button.setToolTipText("Alternar entre os temas claro e escuro");
         button.addActionListener(event -> VarZinhoTheme.toggle());
         return button;
     }
@@ -114,7 +128,7 @@ public final class VarZinhoWindow extends JFrame {
     // Watching the phone in the browser is the whole preview: showing video inside
     // Swing would need a decoding library, which this project does not take on.
     private void offerLiveView(String streamUrl) {
-        JButton liveView = new JButton("Open live view");
+        JButton liveView = new JButton("Abrir transmissão ao vivo");
         liveView.setIcon(VarZinhoIcons.openClip());
         liveView.addActionListener(event -> openLiveView(streamUrl));
         header.add(liveView, "cell 0 0");
@@ -125,7 +139,7 @@ public final class VarZinhoWindow extends JFrame {
         try {
             Desktop.getDesktop().browse(URI.create(streamUrl));
         } catch (IOException | IllegalArgumentException | UnsupportedOperationException failure) {
-            showError("The live view could not be opened: " + failure.getMessage());
+            messages.show("Não foi possível abrir a transmissão ao vivo: " + failure.getMessage());
         }
     }
 
@@ -139,8 +153,8 @@ public final class VarZinhoWindow extends JFrame {
         }
         phoneDropReported = true;
         showBufferStatus();
-        showError("The phone stopped streaming, so its court can no longer capture. "
-                + "Restart VarZinho to reconnect.");
+        messages.show("O celular parou de transmitir e a quadra não pode mais capturar. "
+                + "Reinicie o VarZinho para reconectar.");
     }
 
     private void advance(Feed feed) {
@@ -148,18 +162,13 @@ public final class VarZinhoWindow extends JFrame {
             feed.tick(Instant.now());
             showBufferStatus();
         } catch (IOException failure) {
-            bufferStatus.setText("The phone's footage could not be read: " + failure.getMessage());
+            messages.show("Não foi possível ler as imagens do celular: " + failure.getMessage());
         }
     }
 
     private void showBufferStatus() {
         CourtView court = management.court(courtPanel.selectedCourtNumber());
-        bufferStatus.setText("Court " + court.getNumber() + " buffer: "
-                + court.getSecondsRecorded() + " of " + bufferSeconds + " seconds.");
-    }
-
-    private void showError(String message) {
-        JOptionPane.showMessageDialog(this, message, "Operation could not be completed",
-                JOptionPane.ERROR_MESSAGE);
+        bufferStatus.setText("Buffer da quadra " + court.getNumber() + ": "
+                + court.getSecondsRecorded() + " de " + bufferSeconds + " segundos.");
     }
 }
