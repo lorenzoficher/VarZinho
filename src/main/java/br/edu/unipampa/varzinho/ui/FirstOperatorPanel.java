@@ -3,13 +3,13 @@ package br.edu.unipampa.varzinho.ui;
 import br.edu.unipampa.varzinho.application.OperatorAccess;
 import br.edu.unipampa.varzinho.application.SignedInOperator;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
-import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
+import java.awt.GridLayout;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
@@ -27,24 +27,17 @@ final class FirstOperatorPanel extends JPanel {
     private final JButton create = new JButton("Criar operador");
 
     FirstOperatorPanel(OperatorAccess access, Consumer<String> errorSink, Consumer<SignedInOperator> onSignedIn) {
-        super(new MigLayout("insets 28, fillx, wrap 1", "[360,grow,fill]", "[][]18[][]12[][]12[][]24[]"));
+        super(new GridLayout(4, 2, 6, 6));
         if (access == null) throw new IllegalArgumentException("creating an operator needs operator access");
         if (errorSink == null) throw new IllegalArgumentException("creating an operator needs an error destination");
         if (onSignedIn == null) throw new IllegalArgumentException("creating an operator needs somewhere to go next");
         this.access = access;
         this.errorSink = errorSink;
         this.onSignedIn = onSignedIn;
-        JLabel brand = new JLabel("VARZINHO ARENA");
-        VarZinhoTheme.styleEyebrow(brand);
-        JLabel title = new JLabel("Crie o primeiro operador");
-        VarZinhoTheme.styleTitle(title);
-        add(brand);
-        add(title);
-        add(new JLabel("Nome")); add(nameField, "h 38!");
-        add(new JLabel("Usuário")); add(usernameField, "h 38!");
-        add(new JLabel("Senha")); add(passwordField, "h 38!");
-        VarZinhoTheme.styleProminentAction(create);
-        add(create, "h 42!");
+        add(new JLabel("Nome")); add(nameField);
+        add(new JLabel("Usuário")); add(usernameField);
+        add(new JLabel("Senha")); add(passwordField);
+        add(new JLabel()); add(create);
         create.addActionListener(event -> create());
     }
 
