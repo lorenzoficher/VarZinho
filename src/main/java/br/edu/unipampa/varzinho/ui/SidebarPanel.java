@@ -20,7 +20,7 @@ final class SidebarPanel extends JPanel {
     private final JToggleButton archive = new JToggleButton("Acervo", VarZinhoIcons.archive());
 
     SidebarPanel(String gymName, OperatorView operator, Consumer<Page> onPageChange) {
-        super(new MigLayout("insets 24 18, fillx, wrap 1", "[grow,fill]", "[][]32[][]8[][]push[]16[][]"));
+        super(new MigLayout("insets 24 18, fillx, wrap 1", "[grow,fill]", "[][]32[][]push[]16[][]"));
         if (gymName == null || gymName.isBlank()) throw new IllegalArgumentException("a sidebar needs the gym name");
         if (operator == null) throw new IllegalArgumentException("a sidebar needs the signed-in operator");
         if (onPageChange == null) throw new IllegalArgumentException("a sidebar needs a page destination");
@@ -28,8 +28,6 @@ final class SidebarPanel extends JPanel {
         putClientProperty("FlatLaf.style", "background: $VarZinho.sidebarBackground");
 
         JLabel product = new JLabel("VarZinho Arena");
-        product.setIcon(VarZinhoIcons.courts());
-        product.setIconTextGap(12);
         product.setForeground(UIManager.getColor("VarZinho.sidebarForeground"));
         VarZinhoTheme.styleTitle(product);
         add(product, "h 28!");
@@ -37,11 +35,6 @@ final class SidebarPanel extends JPanel {
         arena.setForeground(VarZinhoTheme.ACCENT);
         arena.setFont(arena.getFont().deriveFont(Font.BOLD, 11f));
         add(arena);
-
-        JLabel menu = sidebarLabel("MENU PRINCIPAL");
-        menu.setForeground(VarZinhoTheme.STOPPED);
-        menu.setFont(menu.getFont().deriveFont(Font.BOLD, 10f));
-        add(menu);
 
         ButtonGroup pages = new ButtonGroup();
         pages.add(courts);
@@ -54,10 +47,6 @@ final class SidebarPanel extends JPanel {
         add(courts, "h 46!");
         add(archive, "h 46!");
 
-        JLabel status = sidebarLabel("●  SISTEMA OPERACIONAL");
-        status.setForeground(VarZinhoTheme.ACCENT);
-        status.setFont(status.getFont().deriveFont(Font.BOLD, 10f));
-        add(status);
         javax.swing.JButton theme = VarZinhoWindow.buildThemeButton();
         theme.putClientProperty("FlatLaf.style", "background: $VarZinho.sidebarBackground; "
                 + "foreground: $VarZinho.sidebarForeground; borderWidth: 1; arc: 12");
