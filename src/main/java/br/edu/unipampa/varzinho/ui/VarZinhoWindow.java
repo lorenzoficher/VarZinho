@@ -14,8 +14,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.ScrollPaneConstants;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
@@ -69,7 +67,7 @@ public final class VarZinhoWindow extends JFrame {
         this.capturePanel = new CapturePanel(courtPanel, captureHighlight, ZoneId.systemDefault(),
                 messages::show, highlight -> archivePanel.refresh());
         courtPanel.onCourtAdded(archivePanel::refreshCourts);
-        setTitle("VarZinho Arena");
+        setTitle("VarZinho Arena — " + gymName);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         CardLayout pageLayout = new CardLayout();
@@ -78,7 +76,7 @@ public final class VarZinhoWindow extends JFrame {
         JLabel eyebrow = new JLabel("CENTRAL DE OPERAÇÕES");
         VarZinhoTheme.styleEyebrow(eyebrow);
         header.add(eyebrow);
-        header.add(buildTitle("Visão geral da arena"));
+        header.add(buildTitle("Gerenciamento de quadras — " + gymName));
         top.add(header, BorderLayout.NORTH);
         top.add(courtPanel, BorderLayout.CENTER);
         top.add(capturePanel, BorderLayout.SOUTH);
@@ -92,16 +90,11 @@ public final class VarZinhoWindow extends JFrame {
         add(sidebar, BorderLayout.WEST);
         JPanel content = new JPanel(new BorderLayout(8, 8));
         content.setBorder(BorderFactory.createEmptyBorder(24, 28, 20, 28));
-        JScrollPane pageScroll = new JScrollPane(pages,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        pageScroll.setBorder(BorderFactory.createEmptyBorder());
-        pageScroll.getVerticalScrollBar().setUnitIncrement(16);
-        content.add(pageScroll, BorderLayout.CENTER);
+        content.add(pages, BorderLayout.CENTER);
         content.add(messages, BorderLayout.SOUTH);
         add(content, BorderLayout.CENTER);
-        setMinimumSize(new Dimension(1180, 780));
-        setPreferredSize(new Dimension(1320, 880));
+        setMinimumSize(new Dimension(1120, 720));
+        setPreferredSize(new Dimension(1220, 780));
         showBufferStatus();
         pack();
         setLocationRelativeTo(null);
