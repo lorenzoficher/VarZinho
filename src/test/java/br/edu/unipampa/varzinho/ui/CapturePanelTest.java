@@ -64,7 +64,7 @@ class CapturePanelTest {
 
         assertEquals(1, repository.findAll().size());
         assertEquals(1, repository.findByCourt(2).size());
-        assertTrue(errors.isEmpty());
+        assertTrue(errors.get(0).startsWith("Salvo: quadra 2 · câmera"));
     }
 
     @Test
@@ -74,20 +74,20 @@ class CapturePanelTest {
         panel.saveButton().doClick();
 
         Highlight highlight = repository.findAll().get(0);
-        String localTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        String localTime = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
                 .withZone(BRASILIA).format(highlight.getCapturedAt());
-        assertEquals("Saved: court 1 · camera fixed-1 · " + localTime + " · 30s", panel.confirmation());
+        assertEquals("Salvo: quadra 1 · câmera fixed-1 · " + localTime + " · 30 s", panel.confirmation());
         assertEquals(1, saved.size());
         assertEquals(highlight.getClip().getFilePath(), saved.get(0).getClipPath());
     }
 
     @Test
     void buttonLabelFollowsTheSelectedCourt() {
-        assertEquals("Save highlight - court 1", panel.saveButton().getText());
+        assertEquals("Salvar melhor momento — quadra 1", panel.saveButton().getText());
 
         courtPanel.selectCourt(2);
 
-        assertEquals("Save highlight - court 2", panel.saveButton().getText());
+        assertEquals("Salvar melhor momento — quadra 2", panel.saveButton().getText());
     }
 
     @Test
@@ -102,7 +102,7 @@ class CapturePanelTest {
         assertEquals(1, errors.size());
         assertTrue(repository.findAll().isEmpty());
         assertTrue(saved.isEmpty());
-        assertEquals("", panel.confirmation());
+        assertEquals(errors.get(0), panel.confirmation());
     }
 
     @Test
@@ -114,8 +114,8 @@ class CapturePanelTest {
 
         panel.saveButton().doClick();
 
-        assertEquals(1, errors.size());
-        assertEquals("", panel.confirmation());
+        assertEquals(2, errors.size());
+        assertEquals(errors.get(1), panel.confirmation());
     }
 
     @Test
@@ -133,11 +133,11 @@ class CapturePanelTest {
                 (window, target) -> { throw new ClipAssemblyException("ffmpeg is not installed"); });
 
         phonePanel.saveButton().doClick();
-        awaitSwingThread(() -> !errors.isEmpty());
+        awaitSwingThread(() -> errors.contains("ffmpeg is not installed"));
 
-        assertEquals(List.of("ffmpeg is not installed"), errors);
+        assertEquals("ffmpeg is not installed", errors.get(errors.size() - 1));
         assertTrue(repository.findAll().isEmpty());
-        assertEquals("", phonePanel.confirmation());
+        assertEquals("ffmpeg is not installed", phonePanel.confirmation());
     }
 
     @Test
@@ -149,7 +149,7 @@ class CapturePanelTest {
 
         assertTrue(repository.findAll().isEmpty());
         assertTrue(saved.isEmpty());
-        assertEquals("Saving: court 3 · camera phone-1…", phonePanel.confirmation());
+        assertEquals("Salvando: quadra 3 · câmera phone-1…", phonePanel.confirmation());
         release.countDown();
     }
 
@@ -163,8 +163,8 @@ class CapturePanelTest {
         awaitSwingThread(() -> !saved.isEmpty());
 
         assertEquals(1, repository.findByCourt(3).size());
-        assertTrue(phonePanel.confirmation().startsWith("Saved: court 3 · camera phone-1 · "));
-        assertTrue(errors.isEmpty());
+        assertTrue(phonePanel.confirmation().startsWith("Salvo: quadra 3 · câmera phone-1 · "));
+        assertTrue(errors.get(errors.size() - 1).startsWith("Salvo: quadra 3 · câmera phone-1 · "));
     }
 
     @Test
@@ -184,7 +184,7 @@ class CapturePanelTest {
         assertEquals(2, new HashSet<>(targets).size());
         assertEquals(2, repository.findByCourt(3).size());
         assertEquals(new HashSet<>(targets), savedPaths());
-        assertTrue(errors.isEmpty());
+        assertTrue(errors.get(errors.size() - 1).startsWith("Salvo: quadra 3 · câmera phone-1 · "));
     }
 
     @Test

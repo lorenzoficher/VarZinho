@@ -52,7 +52,6 @@ final class CapturePanel extends JPanel {
         save.addActionListener(event -> saveHighlight());
         courtPanel.onCourtChange(this::showCourt);
         add(save, BorderLayout.CENTER);
-        add(confirmation, BorderLayout.SOUTH);
         showCourt();
     }
 
@@ -69,7 +68,7 @@ final class CapturePanel extends JPanel {
         try {
             capture = captureHighlight.capture(courtPanel.selectedCourtNumber());
         } catch (NoActiveCameraException | EmptyBufferException | ClipAssemblyException failure) {
-            refuse(failure.getMessage());
+            refuse(PortugueseText.message(failure.getMessage()));
             return;
         }
         if (!capture.hasClipToWrite()) {
@@ -77,7 +76,7 @@ final class CapturePanel extends JPanel {
             return;
         }
         HighlightView shown = capture.view();
-        confirmation.setText("Saving: court " + shown.getCourtNumber() + " · camera " + shown.getCameraId() + "…");
+        showMessage("Salvando: quadra " + shown.getCourtNumber() + " · câmera " + shown.getCameraId() + "…");
         new ClipWrite(capture).execute();
     }
 
@@ -86,19 +85,23 @@ final class CapturePanel extends JPanel {
         try {
             archived = capture.archive();
         } catch (RepositoryException failure) {
-            refuse("Archive error: " + failure.getMessage());
+            refuse("Erro no acervo: " + failure.getMessage());
             return;
         }
-        confirmation.setText("Saved: court " + archived.getCourtNumber()
-                + " · camera " + archived.getCameraId()
+        showMessage("Salvo: quadra " + archived.getCourtNumber()
+                + " · câmera " + archived.getCameraId()
                 + " · " + timeFormat.format(archived.getCapturedAt())
-                + " · " + archived.getDurationSeconds() + "s");
+                + " · " + archived.getDurationSeconds() + " s");
         onSaved.accept(archived);
     }
 
     private void refuse(String reason) {
-        confirmation.setText(" ");
-        errorSink.accept(reason);
+        showMessage(reason);
+    }
+
+    private void showMessage(String message) {
+        confirmation.setText(message);
+        errorSink.accept(message);
     }
 
     /** Writes one capture's file off the Swing thread, and archives it back on it. */
@@ -124,13 +127,13 @@ final class CapturePanel extends JPanel {
                 refuse(failure.getCause().getMessage());
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
-                refuse("The clip was still being written when it was interrupted.");
+                refuse("A gravação do clipe foi interrompida antes de terminar.");
             }
         }
     }
 
     private void showCourt() {
-        save.setText("Save highlight - court " + courtPanel.selectedCourtNumber());
+        save.setText("Salvar melhor momento — quadra " + courtPanel.selectedCourtNumber());
         confirmation.setText(" ");
     }
 }
