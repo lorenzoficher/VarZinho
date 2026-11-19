@@ -27,7 +27,8 @@ final class CameraInstallPanel extends JPanel {
     private final Runnable onInstalled;
     private final JTextField idField = new JTextField(8);
     private final JTextField modelField = new JTextField(8);
-    private final JComboBox<CameraKind> typeSelector = new JComboBox<>(CameraKind.values());
+    private final JComboBox<CameraKind> typeSelector =
+            new JComboBox<>(CameraKind.installable().toArray(CameraKind[]::new));
     private final JComboBox<Resolution> resolutionSelector = new JComboBox<>(Resolution.values());
     private final JSpinner angleSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 359, 1));
     private final JButton install = new JButton("Install camera");
