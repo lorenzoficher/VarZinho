@@ -25,7 +25,7 @@ final class QuickPtzPanel extends JPanel {
     private final JSpinner zoom = new JSpinner(new SpinnerNumberModel(1, 1, 10, 1));
 
     QuickPtzPanel(ManageGym management, IntSupplier selectedCourt, Consumer<String> messages) {
-        super(new MigLayout("insets 20, fillx, wrap 3", "[grow,fill][grow,fill][grow,fill]", "[][]16[][]12[]"));
+        super(new MigLayout("insets 6, fillx", "[][][]12[grow,fill]", "[][]12[][][]"));
         if (management == null) throw new IllegalArgumentException("quick PTZ needs gym management");
         if (selectedCourt == null) throw new IllegalArgumentException("quick PTZ needs a selected court");
         if (messages == null) throw new IllegalArgumentException("quick PTZ needs a message destination");
@@ -38,17 +38,23 @@ final class QuickPtzPanel extends JPanel {
         VarZinhoTheme.styleEyebrow(eyebrow);
         JLabel title = new JLabel("Movimento PTZ");
         VarZinhoTheme.styleTitle(title);
-        add(eyebrow, "span 2");
-        add(cameras, "wrap");
-        add(title, "span 3, wrap");
-        add(step("←", pan, -5), "h 38!");
-        add(step("↑", tilt, 5), "h 38!");
-        add(step("→", pan, 5), "h 38!, wrap");
-        add(new JLabel("Pan")); add(new JLabel("Tilt")); add(new JLabel("Zoom"), "wrap");
-        add(pan); add(tilt); add(zoom, "wrap");
-        JButton apply = new JButton("Aplicar posição", VarZinhoIcons.aim());
+        add(eyebrow, "cell 0 0, span 3");
+        add(cameras, "cell 3 0");
+        add(title, "cell 0 1, span 4");
+        add(step("↑", tilt, 5), "cell 1 2");
+        add(step("←", pan, -5), "cell 0 3");
+        JButton center = new JButton("●");
+        center.setToolTipText("Centralizar câmera");
+        center.addActionListener(e -> { pan.setValue(0); tilt.setValue(0); apply(); });
+        add(center, "cell 1 3");
+        add(step("→", pan, 5), "cell 2 3");
+        add(step("↓", tilt, -5), "cell 1 4");
+        add(new JLabel("Zoom"), "cell 3 2, center");
+        add(zoom, "cell 3 3, growx");
+        JButton apply = new JButton("Salvar posição");
         apply.addActionListener(event -> apply());
-        add(apply, "span 3, growx, h 40!");
+        add(apply, "cell 3 4");
+        cameras.addActionListener(e -> syncAim());
         refresh();
     }
 
@@ -65,6 +71,19 @@ final class QuickPtzPanel extends JPanel {
         pan.setEnabled(available);
         tilt.setEnabled(available);
         zoom.setEnabled(available);
+        for (java.awt.Component component : getComponents()) {
+            if (component instanceof JButton button) button.setEnabled(available);
+        }
+        syncAim();
+    }
+
+    private void syncAim() {
+        management.court(selectedCourt.getAsInt()).getCameras().stream()
+                .filter(camera -> camera.getId().equals(cameras.getSelectedItem())).findFirst().ifPresent(camera -> {
+                    pan.setValue(camera.getPan());
+                    tilt.setValue(camera.getTilt());
+                    zoom.setValue(camera.getZoom());
+                });
     }
 
     private JButton step(String text, JSpinner value, int amount) {

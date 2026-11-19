@@ -22,13 +22,19 @@ final class DashboardPanel extends JPanel {
     private final JComboBox<Integer> courtSelector = new JComboBox<>();
     private final JLabel courtName = new JLabel();
     private final JLabel courtDetails = new JLabel();
+    private final JLabel status = new JLabel();
     private final JLabel recording = new JLabel();
     private final JPanel courtCards = new JPanel(new GridLayout(1, 0, 12, 0));
     private boolean refreshing;
+    private final java.util.Map<Integer, String> sports = new java.util.HashMap<>();
+    private final java.util.Map<String, javax.swing.JToggleButton> sportButtons = new java.util.LinkedHashMap<>();
+    private final javax.swing.ButtonGroup modalities = new javax.swing.ButtonGroup();
+    private final JPanel devicesHost = new JPanel(new BorderLayout());
+    private final JPanel archiveHost = new JPanel(new BorderLayout());
 
     DashboardPanel(ManageGym management, CourtPanel courtPanel, CapturePanel capturePanel,
                    Consumer<SidebarPanel.Page> navigate, Consumer<String> messages) {
-        super(new MigLayout("insets 0, fillx, wrap 2", "[grow,fill][390!,fill]", "[]16[220!]28[][]"));
+        super(new MigLayout("insets 0, fillx, wrap 2", "[grow 2,fill]12[300:340:390,fill]", "[]12[240:pref]18[][]"));
         if (management == null) throw new IllegalArgumentException("a dashboard needs gym management");
         if (courtPanel == null) throw new IllegalArgumentException("a dashboard needs the court selection");
         if (capturePanel == null) throw new IllegalArgumentException("a dashboard needs highlight capture");
@@ -38,11 +44,24 @@ final class DashboardPanel extends JPanel {
         this.courtPanel = courtPanel;
         this.quickPtz = new QuickPtzPanel(management, courtPanel::selectedCourtNumber, messages);
 
-        JPanel selector = new JPanel(new MigLayout("insets 0, fillx", "[grow][][220!]", "[]"));
-        selector.setOpaque(false);
-        selector.add(new JLabel("Quadra selecionada"), "skip 1");
-        selector.add(courtSelector, "h 42!");
-        add(selector, "span 2, growx");
+        JPanel strip = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 0));
+        strip.setOpaque(false);
+        strip.add(new JLabel("Modalidade"));
+        for (String sport : List.of("Futebol", "Vôlei", "Basquete", "Beach Tennis")) {
+            javax.swing.JToggleButton button = new javax.swing.JToggleButton(sport);
+            button.setIcon(sportIcon(sport, VarZinhoTheme.EMERALD));
+            button.setSelectedIcon(sportIcon(sport, VarZinhoTheme.ACCENT));
+            button.putClientProperty("FlatLaf.style", "arc: 14; margin: 7,12,7,12; selectedBackground: $VarZinho.sidebarBackground; selectedForeground: $VarZinho.sidebarForeground");
+            sportButtons.put(sport, button);
+            modalities.add(button);
+            strip.add(button);
+            button.setToolTipText("Definir a modalidade desta quadra nesta sessão");
+            button.addActionListener(e -> {
+                sports.put(courtPanel.selectedCourtNumber(), sport);
+                refresh();
+            });
+        }
+        add(strip, "span 2, growx");
 
         add(hero(capturePanel.additionalSaveButton()), "grow");
         add(quickPtz, "grow");
@@ -62,9 +81,23 @@ final class DashboardPanel extends JPanel {
         add(courtsHeader, "span 2, growx, wrap");
         courtCards.setOpaque(false);
         add(courtCards, "span 2, growx, h 88!");
+        add(devicesHost, "span 2, growx, gaptop 16");
+        add(archiveHost, "span 2, growx, gaptop 16");
 
         courtSelector.addActionListener(event -> selectCourt());
         refresh();
+    }
+
+    JComboBox<Integer> selector() { return courtSelector; }
+
+    void attach(CameraListPanel devices, ArchivePanel history) {
+        devicesHost.add(devices);
+        archiveHost.add(history);
+        revalidate();
+    }
+
+    void tick(CourtView selected) {
+        recording.setText("●  " + selected.getSecondsRecorded() + " segundos no buffer");
     }
 
     void refresh() {
@@ -77,19 +110,23 @@ final class DashboardPanel extends JPanel {
 
         CourtView selected = management.court(courtPanel.selectedCourtNumber());
         courtName.setText("Quadra " + selected.getNumber());
-        courtDetails.setText(selected.getCameras().size() + " câmeras instaladas");
-        recording.setText("●  " + selected.getSecondsRecorded() + " segundos no buffer");
+        String sport = sports.get(selected.getNumber());
+        modalities.clearSelection();
+        if (sport != null) sportButtons.get(sport).setSelected(true);
+        long live = selected.getCameras().stream().filter(camera -> camera.isRecording()).count();
+        status.setText(live == 0 ? "●  GRAVAÇÃO PARADA" : "●  CAPTURA CONTÍNUA");
+        courtDetails.setText((sport == null ? "" : sport + " · ") + live
+                + (live == 1 ? " câmera transmitindo" : " câmeras transmitindo"));
+        tick(selected);
         quickPtz.refresh();
         rebuildCourtCards(courts);
     }
 
     private JPanel hero(JButton save) {
-        JPanel hero = new JPanel(new MigLayout("insets 28, fill", "[grow][430!]", "push[][]12[]push"));
+        JPanel hero = new PitchPanel(new MigLayout("insets 20, fill", "[grow,fill]8[pref,fill]", "push[][]12[]push"));
         hero.setBackground(VarZinhoTheme.SIDEBAR);
-        hero.putClientProperty("FlatLaf.style", "arc: 20; background: $VarZinho.sidebarBackground");
-        JLabel status = new JLabel("●  CAPTURA CONTÍNUA");
-        status.setForeground(VarZinhoTheme.ACCENT);
         VarZinhoTheme.styleEyebrow(status);
+        status.setForeground(VarZinhoTheme.ACCENT);
         courtName.setForeground(Color.WHITE);
         courtDetails.setForeground(VarZinhoTheme.SIDEBAR_MUTED);
         recording.setForeground(VarZinhoTheme.ACCENT);
@@ -97,21 +134,28 @@ final class DashboardPanel extends JPanel {
         hero.add(status, "cell 0 0");
         hero.add(courtName, "cell 0 1");
         hero.add(courtDetails, "cell 0 2");
-        hero.add(recording, "cell 0 3");
-        save.setText("Salvar melhor momento");
-        hero.add(save, "cell 1 1, span 1 2, grow, h 82!");
+        hero.add(recording, "cell 0 3, gaptop 8");
+        save.setText("Salvar Melhor Momento");
+        save.setIcon(VarZinhoIcons.arena("replay", 40, VarZinhoTheme.EMERALD));
+        save.setIconTextGap(12);
+        hero.add(save, "cell 1 1, span 1 2, grow, h 74!");
         return hero;
     }
 
     private void rebuildCourtCards(List<CourtView> courts) {
         courtCards.removeAll();
         for (CourtView court : courts) {
+            String sport = sports.get(court.getNumber());
+            int count = court.getCameras().size();
             JButton card = new JButton("<html><b>Quadra " + court.getNumber() + "</b><br>"
-                    + court.getCameras().size() + " câmeras · " + court.getSecondsRecorded()
-                    + " s no buffer</html>", VarZinhoIcons.court(VarZinhoTheme.EMERALD));
+                    + (sport == null ? "Quadra esportiva" : sport) + " · "
+                    + count + (count == 1 ? " câmera" : " câmeras") + "</html>",
+                    sport == null ? VarZinhoIcons.court(VarZinhoTheme.EMERALD)
+                            : sportIcon(sport, VarZinhoTheme.EMERALD));
             card.setHorizontalAlignment(JButton.LEFT);
             card.setIconTextGap(14);
-            card.putClientProperty("FlatLaf.style", "background: $VarZinho.cardBackground; arc: 16; borderWidth: 1");
+            card.putClientProperty("FlatLaf.style", "background: $VarZinho.cardBackground; arc: 16; borderWidth: 1"
+                    + (court.getNumber() == courtPanel.selectedCourtNumber() ? "; borderColor: $VarZinho.emerald" : ""));
             card.addActionListener(event -> {
                 courtPanel.selectCourt(court.getNumber());
                 refresh();
@@ -126,5 +170,16 @@ final class DashboardPanel extends JPanel {
         if (refreshing || courtSelector.getSelectedItem() == null) return;
         courtPanel.selectCourt((Integer) courtSelector.getSelectedItem());
         refresh();
+    }
+
+    private static javax.swing.Icon sportIcon(String sport, Color color) {
+        String icon = switch (sport) {
+            case "Futebol" -> "football";
+            case "Vôlei" -> "volleyball";
+            case "Basquete" -> "basketball";
+            case "Beach Tennis" -> "racket";
+            default -> throw new IllegalArgumentException("unknown sport " + sport);
+        };
+        return VarZinhoIcons.arena(icon, 19, color);
     }
 }
