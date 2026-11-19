@@ -7,7 +7,6 @@ import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.GymSession;
 import br.edu.unipampa.varzinho.application.OperatorAccess;
-import br.edu.unipampa.varzinho.application.PendingClipWrites;
 import br.edu.unipampa.varzinho.application.SignedInOperator;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
@@ -61,38 +60,34 @@ public final class Launcher {
             HighlightRepository repository = storage.highlights();
             GymSession session = GymSession.start(storage.gym(), SampleGym.build(),
                     message -> warn(message, "Saved gym not loaded"));
-            PendingClipWrites pendingWrites = new PendingClipWrites();
             Optional<PhoneConnection> phone = PhoneConnection.open(System.getenv(STREAM_URL_VARIABLE),
-                    SEGMENT_FOLDER, BUFFER_SECONDS, pendingWrites, message -> warn(message, "Phone not connected"));
+                    SEGMENT_FOLDER, BUFFER_SECONDS, message -> warn(message, "Phone not connected"));
             if (phone.isEmpty()) {
-                window(session, repository, pendingWrites, new LiveFeed(session.gym())).setVisible(true);
+                window(session, repository, new LiveFeed(session.gym())).setVisible(true);
             } else {
-                openWithPhone(session, repository, pendingWrites, phone.get());
+                openWithPhone(session, repository, phone.get());
             }
         });
     }
 
     private static void openWithPhone(GymSession session, HighlightRepository repository,
-                                      PendingClipWrites pendingWrites, PhoneConnection phone) {
+                                      PhoneConnection phone) {
         Gym gym = session.gym();
         ConnectStreamCamera connection = new ConnectStreamCamera(gym, phone.camera());
         CourtView court = connection.connect();
         // Two feeds, so the simulated courts keep their clock whatever the phone does.
-        VarZinhoWindow window = window(session, repository, pendingWrites, new LiveFeed(gym, court.getNumber()));
-        Runnable dropped = () -> {
-            connection.phoneDropped();
-            window.phoneDropped();
-        };
+        VarZinhoWindow window = window(session, repository, new LiveFeed(gym, court.getNumber()));
+        Runnable dropped = () -> window.phoneDropped(connection::phoneDropped);
         window.followPhone(phone.feed(dropped), court.getNumber(), phone.streamUrl());
         phone.onDrop(() -> SwingUtilities.invokeLater(dropped));
         window.setVisible(true);
     }
 
     private static VarZinhoWindow window(GymSession session, HighlightRepository repository,
-                                         PendingClipWrites pendingWrites, Feed feed) {
+                                         Feed feed) {
         Gym gym = session.gym();
         return new VarZinhoWindow(gym.getName(), session.manageGym(),
-                new CaptureHighlight(gym, repository, pendingWrites), new BrowseArchive(repository),
+                new CaptureHighlight(gym, repository), new BrowseArchive(repository),
                 feed, BUFFER_SECONDS);
     }
 

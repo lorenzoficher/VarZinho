@@ -33,6 +33,7 @@ public final class VarZinhoWindow extends JFrame {
     private final ManageGym management;
     private final int bufferSeconds;
     private final List<Timer> clocks = new ArrayList<>();
+    private final CaptureActivity captureActivity = new CaptureActivity();
     private final CourtPanel courtPanel;
     private final ArchivePanel archivePanel;
     private final CapturePanel capturePanel;
@@ -61,7 +62,7 @@ public final class VarZinhoWindow extends JFrame {
         this.courtPanel = new CourtPanel(management, bufferSeconds, this::showError);
         this.archivePanel = new ArchivePanel(management::courts, archive, ZoneId.systemDefault(), this::showError);
         this.capturePanel = new CapturePanel(courtPanel, captureHighlight, ZoneId.systemDefault(),
-                this::showError, highlight -> archivePanel.refresh());
+                this::showError, highlight -> archivePanel.refresh(), captureActivity);
         courtPanel.onCourtAdded(archivePanel::refreshCourts);
         setTitle("VarZinho - " + gymName);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -133,17 +134,22 @@ public final class VarZinhoWindow extends JFrame {
      * Tells the operator, once, that the phone's court can no longer capture. FFmpeg
      * exiting and the phone going silent are two signs of the same drop.
      */
-    public void phoneDropped() {
-        if (phoneDropReported) {
-            return;
-        }
-        phoneDropReported = true;
-        showBufferStatus();
-        showError("The phone stopped streaming, so its court can no longer capture. "
-                + "Restart VarZinho to reconnect.");
+    public void phoneDropped(Runnable disconnect) {
+        captureActivity.whenIdle(() -> {
+            if (phoneDropReported) return;
+            disconnect.run();
+            phoneDropReported = true;
+            showBufferStatus();
+            showError("The phone stopped streaming, so its court can no longer capture. "
+                    + "Restart VarZinho to reconnect.");
+        });
     }
 
     private void advance(Feed feed) {
+        captureActivity.ifIdle(() -> tick(feed));
+    }
+
+    private void tick(Feed feed) {
         try {
             feed.tick(Instant.now());
             showBufferStatus();

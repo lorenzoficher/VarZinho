@@ -17,18 +17,18 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * The Save highlight button: the on-screen stand-in for the physical button the
- * athlete presses on the court.
- *
- * <p>It is the only capture action in the window. Recording is continuous, so a press
- * just asks {@link CaptureHighlight} to freeze the selected court's buffer; nothing is
- * saved when the court refuses. The panel decides only which thread runs each step.
+ * The Save highlight button. The whole capture runs on a worker, while the Swing
+ * thread pauses feeds and camera changes until the model is returned to it.
  */
 final class CapturePanel extends JPanel {
+    private static final Logger LOGGER = Logger.getLogger(CapturePanel.class.getName());
     private final CourtPanel courtPanel;
     private final CaptureHighlight captureHighlight;
+    private final CaptureActivity activity;
     private final Consumer<String> errorSink;
     private final Consumer<HighlightView> onSaved;
     private final DateTimeFormatter timeFormat;
@@ -37,14 +37,21 @@ final class CapturePanel extends JPanel {
 
     CapturePanel(CourtPanel courtPanel, CaptureHighlight captureHighlight, ZoneId zone,
                  Consumer<String> errorSink, Consumer<HighlightView> onSaved) {
+        this(courtPanel, captureHighlight, zone, errorSink, onSaved, new CaptureActivity());
+    }
+
+    CapturePanel(CourtPanel courtPanel, CaptureHighlight captureHighlight, ZoneId zone,
+                 Consumer<String> errorSink, Consumer<HighlightView> onSaved, CaptureActivity activity) {
         super(new BorderLayout(4, 4));
         if (courtPanel == null) throw new IllegalArgumentException("a capture panel needs a court panel");
         if (captureHighlight == null) throw new IllegalArgumentException("a capture panel needs a way to capture");
         if (zone == null) throw new IllegalArgumentException("a capture panel needs a time zone to show times in");
         if (errorSink == null) throw new IllegalArgumentException("a capture panel needs somewhere to report errors");
         if (onSaved == null) throw new IllegalArgumentException("a capture panel needs someone to tell about saves");
+        if (activity == null) throw new IllegalArgumentException("a capture panel needs a capture activity");
         this.courtPanel = courtPanel;
         this.captureHighlight = captureHighlight;
+        this.activity = activity;
         this.timeFormat = ArchivePanel.timeFormatIn(zone);
         this.errorSink = errorSink;
         this.onSaved = onSaved;
@@ -62,23 +69,15 @@ final class CapturePanel extends JPanel {
         return confirmation.getText().trim();
     }
 
-    // A phone's file is written on a worker so the window and the feeds keep going; the
-    // capture refuses to be archived before that file exists.
     private void saveHighlight() {
-        PendingCapture capture;
-        try {
-            capture = captureHighlight.capture(courtPanel.selectedCourtNumber());
-        } catch (NoActiveCameraException | EmptyBufferException | ClipAssemblyException failure) {
-            refuse(failure.getMessage());
-            return;
-        }
-        if (!capture.hasClipToWrite()) {
-            archive(capture);
-            return;
-        }
-        HighlightView shown = capture.view();
-        confirmation.setText("Saving: court " + shown.getCourtNumber() + " · camera " + shown.getCameraId() + "…");
-        new ClipWrite(capture).execute();
+        // An already queued action must not start a second worker.
+        if (activity.isRunning()) return;
+        int courtNumber = courtPanel.selectedCourtNumber();
+        activity.begin();
+        courtPanel.pauseChanges();
+        save.setEnabled(false);
+        confirmation.setText("Saving: court " + courtNumber + "…");
+        new Capture(courtNumber).execute();
     }
 
     private void archive(PendingCapture capture) {
@@ -101,36 +100,48 @@ final class CapturePanel extends JPanel {
         errorSink.accept(reason);
     }
 
-    /** Writes one capture's file off the Swing thread, and archives it back on it. */
-    private final class ClipWrite extends SwingWorker<Void, Void> {
-        private final PendingCapture capture;
+    private void captureFailed(Throwable cause) {
+        if (cause instanceof NoActiveCameraException || cause instanceof EmptyBufferException
+                || cause instanceof ClipAssemblyException) {
+            String reason = cause.getMessage();
+            refuse(reason == null || reason.isBlank() ? "The capture could not be completed." : reason);
+        } else {
+            LOGGER.log(Level.SEVERE, "capture failed unexpectedly", cause);
+            refuse("The capture failed unexpectedly: " + cause.getClass().getSimpleName());
+        }
+    }
 
-        ClipWrite(PendingCapture capture) {
-            this.capture = capture;
+    private final class Capture extends SwingWorker<PendingCapture, Void> {
+        private final int courtNumber;
+
+        Capture(int courtNumber) {
+            this.courtNumber = courtNumber;
         }
 
         @Override
-        protected Void doInBackground() {
-            capture.writeClip();
-            return null;
+        protected PendingCapture doInBackground() {
+            return captureHighlight.capture(courtNumber);
         }
 
         @Override
         protected void done() {
             try {
-                get();
-                archive(capture);
+                archive(get());
             } catch (ExecutionException failure) {
-                refuse(failure.getCause().getMessage());
+                captureFailed(failure.getCause());
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
-                refuse("The clip was still being written when it was interrupted.");
+                refuse("The capture was interrupted before it could be archived.");
+            } finally {
+                courtPanel.resumeChanges();
+                save.setEnabled(true);
+                activity.finish();
             }
         }
     }
 
     private void showCourt() {
         save.setText("Save highlight - court " + courtPanel.selectedCourtNumber());
-        confirmation.setText(" ");
+        if (!activity.isRunning()) confirmation.setText(" ");
     }
 }
