@@ -12,7 +12,6 @@ import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
-import java.awt.Dimension;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -33,27 +32,19 @@ final class CameraListPanel extends JPanel {
     private List<CameraView> shownCameras = List.of();
 
     CameraListPanel(ManageGym management, IntSupplier selectedCourt, Consumer<String> errorSink) {
-        super(new BorderLayout(14, 0));
+        super(new BorderLayout(8, 0));
         if (management == null) throw new IllegalArgumentException("a camera list needs the gym's management");
         if (selectedCourt == null) throw new IllegalArgumentException("a camera list needs the selected court");
         if (errorSink == null) throw new IllegalArgumentException("a camera list needs somewhere to report errors");
         this.management = management;
         this.selectedCourt = selectedCourt;
         this.errorSink = errorSink;
-        VarZinhoTheme.styleCard(this);
         cameraList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        cameraList.setFixedCellHeight(34);
         add(new JScrollPane(cameraList), BorderLayout.CENTER);
-        JPanel buttons = new JPanel(new GridLayout(0, 1, 8, 8));
-        buttons.setOpaque(false);
+        JPanel buttons = new JPanel(new GridLayout(0, 1, 4, 4));
         start.setIcon(VarZinhoIcons.record());
         stop.setIcon(VarZinhoIcons.stop());
         maintenance.setIcon(VarZinhoIcons.maintenance());
-        Dimension actionSize = new Dimension(190, 40);
-        start.setPreferredSize(actionSize);
-        stop.setPreferredSize(actionSize);
-        maintenance.setPreferredSize(actionSize);
-        remove.setPreferredSize(actionSize);
         buttons.add(start); buttons.add(stop); buttons.add(maintenance); buttons.add(remove);
         add(buttons, BorderLayout.EAST);
         start.addActionListener(event -> changeSelected(management::startRecording));
