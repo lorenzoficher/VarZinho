@@ -11,10 +11,7 @@ final class MessageBar extends JPanel {
 
     MessageBar() {
         super(new BorderLayout());
-        putClientProperty("FlatLaf.style", "background: $VarZinho.cardBackground; arc: 14");
-        setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
-        text.setIcon(VarZinhoIcons.record());
-        text.setIconTextGap(10);
+        setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         add(text, BorderLayout.CENTER);
     }
 
