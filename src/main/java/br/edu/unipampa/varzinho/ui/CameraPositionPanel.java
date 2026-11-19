@@ -47,6 +47,7 @@ final class CameraPositionPanel extends JPanel {
         this.selectedCamera = selectedCamera;
         this.errorSink = errorSink;
         this.onChanged = onChanged;
+        aim.setIcon(VarZinhoIcons.aim());
         for (CourtView court : management.courts()) moveTargetSelector.addItem(court.getNumber());
         add(buildMoveRow());
         add(buildAimRow());

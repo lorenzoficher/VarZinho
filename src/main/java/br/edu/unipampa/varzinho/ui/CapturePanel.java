@@ -13,7 +13,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 import java.awt.BorderLayout;
-import java.awt.Font;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutionException;
@@ -49,7 +48,7 @@ final class CapturePanel extends JPanel {
         this.timeFormat = ArchivePanel.timeFormatIn(zone);
         this.errorSink = errorSink;
         this.onSaved = onSaved;
-        save.setFont(save.getFont().deriveFont(Font.BOLD, 20f));
+        VarZinhoTheme.styleProminentAction(save);
         save.addActionListener(event -> saveHighlight());
         courtPanel.onCourtChange(this::showCourt);
         add(save, BorderLayout.CENTER);

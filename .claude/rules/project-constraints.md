@@ -19,10 +19,10 @@
 
 ## Dependencies
 
-- **The dependencies are JUnit 5, the PostgreSQL JDBC driver and Testcontainers
-  (test scope), and that is a decision, not an accident.** The last two were agreed
-  in #145. Adding a third-party library requires an issue and the team's agreement
-  first.
+- **The dependencies are JUnit 5; the PostgreSQL JDBC driver and Testcontainers
+  (test scope), agreed in #145; and FlatLaf, FlatLaf Extras and MigLayout Swing,
+  agreed in #158. That is a decision, not an accident.** Adding a third-party
+  library requires an issue and the team's agreement first.
 - **The dependency arrow points inward.** `domain/` never imports from `application/`
   or `infrastructure/`. Persistence knows the domain; the domain knows nothing about
   persistence.

@@ -45,6 +45,7 @@ resolução e tamanho.
 - Java 17 (LTS)
 - Maven
 - JUnit 5
+- FlatLaf, FlatLaf Extras e MigLayout Swing — interface gráfica, aprovados na [#158](https://github.com/lorenzoficher/VarZinho/issues/158)
 - FFmpeg — opcional, só para a captura com o celular
 - PostgreSQL, via Docker — opcional, só para o banco de dados
 

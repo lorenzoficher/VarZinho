@@ -15,6 +15,7 @@ import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import br.edu.unipampa.varzinho.infrastructure.stream.PhoneConnection;
 import br.edu.unipampa.varzinho.ui.SignInDialog;
+import br.edu.unipampa.varzinho.ui.VarZinhoTheme;
 import br.edu.unipampa.varzinho.ui.VarZinhoWindow;
 
 import javax.swing.JOptionPane;
@@ -46,6 +47,7 @@ public final class Launcher {
      */
     public static void launch() {
         SwingUtilities.invokeLater(() -> {
+            VarZinhoTheme.install();
             Storage storage;
             try {
                 storage = Storage.fromEnvironment(System::getenv, DATA_FOLDER);

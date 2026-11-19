@@ -121,9 +121,10 @@ AWT. Application ports and infrastructure adapters know the domain; the domain
 does not know them.
 
 Adding a third-party library requires agreement from the team — open an issue
-first. Right now the dependencies are JUnit 5 and, agreed in #145, the
-PostgreSQL JDBC driver and Testcontainers (test scope only). No
-object-relational mapper: a mapper wants entities that can be built empty.
+first. Right now the dependencies are JUnit 5; the PostgreSQL JDBC driver and
+Testcontainers (test scope only), agreed in #145; and FlatLaf, FlatLaf Extras
+and MigLayout Swing, agreed in #158. No object-relational mapper: a mapper wants
+entities that can be built empty.
 
 FFmpeg is a **runtime** dependency, not a library: an external program on the
 `PATH`, needed only when `VARZINHO_STREAM_URL` is set. The build and every test
