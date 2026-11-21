@@ -12,6 +12,7 @@ import java.util.OptionalInt;
 public final class CameraView {
 
     private final String id;
+    private final String model;
     private final String description;
     private final boolean aimable;
     private final CameraKind kind;
@@ -25,6 +26,7 @@ public final class CameraView {
         this.id = camera.getId();
         this.description = camera.describe();
         this.aimable = camera instanceof Aimable;
+        this.model = camera.getModel();
         this.kind = CameraKind.from(camera);
         this.resolution = camera.getResolution();
         this.status = camera.getStatus();
@@ -45,6 +47,12 @@ public final class CameraView {
 
     public String getId() {
         return id;
+    }
+
+    public String getModel() { return model; }
+    public boolean isRecording() { return status.canRecord(); }
+    public boolean isUnderMaintenance() {
+        return status == CameraStatus.MAINTENANCE;
     }
 
     public String getDescription() {

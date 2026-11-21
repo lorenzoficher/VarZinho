@@ -45,4 +45,8 @@ public final class CourtView {
     public int getSecondsRecorded() {
         return secondsRecorded;
     }
+
+    public int getCaptureSeconds() {
+        return Court.DEFAULT_CAPTURE_SECONDS;
+    }
 }
