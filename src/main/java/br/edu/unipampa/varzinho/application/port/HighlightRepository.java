@@ -26,6 +26,10 @@ public interface HighlightRepository {
      */
     void save(Highlight highlight) throws RepositoryException;
 
+    void rename(String id, String title) throws RepositoryException;
+
+    void delete(String id) throws RepositoryException;
+
     /** An unknown id, or {@code null}, gives an empty result — never an exception. */
     Optional<Highlight> findById(String id) throws RepositoryException;
 
