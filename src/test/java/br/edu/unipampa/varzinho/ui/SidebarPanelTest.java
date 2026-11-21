@@ -38,6 +38,18 @@ class SidebarPanelTest {
         assertFalse(VarZinhoTheme.isDark());
     }
 
+    @Test
+    void offersEveryFunctionalPageFromTheDashboard() throws Exception {
+        SidebarPanel sidebar = new SidebarPanel("Arena VarZinho", operator(), page -> { });
+
+        assertTrue(sidebar.dashboardButton().isSelected());
+        assertEquals("Quadras", sidebar.courtsButton().getText());
+        assertEquals("Câmeras", sidebar.camerasButton().getText());
+        assertEquals("Melhores momentos", sidebar.highlightsButton().getText());
+        assertEquals("Arquivos", sidebar.archiveButton().getText());
+        assertEquals("Configurações", sidebar.settingsButton().getText());
+    }
+
     private static OperatorView operator() throws Exception {
         return new OperatorAccess(new InMemoryOperatorStore())
                 .createFirst("Rafaela Alves", "rafaela", "Strong1!").getOperator();
