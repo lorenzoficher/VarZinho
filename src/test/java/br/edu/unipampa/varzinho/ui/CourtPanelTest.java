@@ -43,6 +43,23 @@ class CourtPanelTest {
     private final CourtPanel panel = new CourtPanel(new ManageGym(gym, gymRepository), 30, errors::add);
 
     @Test
+    void captureShieldsInputWithoutDisablingAndRepaintingTheWindow() {
+        var root = new javax.swing.JRootPane();
+        root.setContentPane(panel);
+        var original = root.getGlassPane();
+        panel.pauseChanges();
+        try {
+            assertTrue(root.getGlassPane().isVisible());
+            assertTrue(panel.installButton().isEnabled());
+            assertTrue(panel.isEnabled());
+        } finally {
+            panel.resumeChanges();
+        }
+        assertEquals(original, root.getGlassPane());
+        assertFalse(root.getGlassPane().isVisible());
+    }
+
+    @Test
     void manualInstallationOffersOnlyKindsThatNeedNoStreamConnection() {
         assertEquals(2, panel.typeSelector().getItemCount());
         assertEquals(CameraKind.FIXED, panel.typeSelector().getItemAt(0));
@@ -97,7 +114,7 @@ class CourtPanelTest {
 
     @Test
     void theCameraTableLeavesF2ToTheSaveShortcut() {
-        JTable table = descendantOfType(panel, JTable.class);
+        JTable table = descendantOfType(panel.courtPage(), JTable.class);
 
         Object binding = table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
                 .get(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0));
@@ -140,6 +157,35 @@ class CourtPanelTest {
 
         assertEquals(CameraStatus.MAINTENANCE, camera.getStatus());
         assertEquals(List.of("A câmera " + camera.getId() + " está em manutenção e não pode gravar."), errors);
+    }
+
+    @Test
+    void courtsPageRegistersTwoCamerasInSequenceAndPreservesThemOnDisk(@TempDir Path directory)
+            throws RepositoryException {
+        Path store = directory.resolve("gym.csv");
+        CourtPanel courts = new CourtPanel(new ManageGym(gym, new CsvGymRepository(store)), 30, errors::add);
+        var page = courts.courtPage();
+        courts.cameraPage();
+        assertTrue(javax.swing.SwingUtilities.isDescendingFrom(courts.installButton(), page));
+        courts.courtNumberField().setText("3");
+        courts.addCourtButton().doClick(0);
+        courts.idField().setText("gol-norte");
+        courts.modelField().setText("Modelo A");
+        courts.installButton().doClick(0);
+        assertEquals("", courts.idField().getText());
+        assertEquals("Modelo A", courts.modelField().getText());
+        courts.idField().setText("gol-norte");
+        courts.installButton().doClick(0);
+        assertEquals("gol-norte", courts.idField().getText());
+        assertEquals(1, errors.size());
+        courts.idField().setText("gol-sul");
+        courts.typeSelector().setSelectedItem(CameraKind.PTZ);
+        courts.installButton().doClick(0);
+        var saved = new CsvGymRepository(store).load().orElseThrow();
+        assertEquals(List.of("gol-norte", "gol-sul"),
+                saved.findCourt(3).getCameras().stream().map(Camera::getId).toList());
+        assertEquals(3, courts.selectedCourtNumber());
+        assertEquals(2, saved.findCourt(1).getCameras().size());
     }
 
     @Test
