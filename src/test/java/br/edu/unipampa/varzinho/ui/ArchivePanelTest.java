@@ -48,6 +48,77 @@ class ArchivePanelTest {
     private Path archiveDir;
 
     @Test
+    void aFilteredRecordingIsDeletedFromDiskAndTheArchiveOnlyAfterConfirmation() throws Exception {
+        Path file = archiveDir.resolve("archive.csv");
+        Path movie = Files.writeString(archiveDir.resolve("second.mp4"), "temporary video fixture");
+        var repository = new CsvHighlightRepository(file);
+        repository.save(highlight("first", EARLY, 1));
+        repository.save(new Highlight("second", LATE, 2, "camera-2",
+                new VideoClip(movie.toString(), 30, Resolution.HD, 2.5)));
+        var editor = new br.edu.unipampa.varzinho.infrastructure.persistence.StoredRecordingEditor(repository, archiveDir);
+        editor.rename("second", "Lance Fernando Costa");
+        var reopened = new CsvHighlightRepository(file);
+        var panel = new ArchivePanel(courts(), new BrowseArchive(reopened), BRASILIA, errors::add);
+        panel.enableEditing(editor);
+        panel.searchField().setText("Fernando");
+        assertEquals(1, panel.table().getRowCount());
+        panel.table().setRowSelectionInterval(0, 0);
+        panel.deleteSelection(editor, item -> false);
+        assertTrue(Files.exists(movie));
+        assertTrue(reopened.findById("second").isPresent());
+        panel.deleteSelection(editor, item -> item.getTitle().equals("Lance Fernando Costa"));
+        assertTrue(Files.notExists(movie));
+        assertTrue(reopened.findById("second").isEmpty());
+        assertTrue(reopened.findById("first").isPresent());
+        assertEquals(0, panel.table().getRowCount());
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    void refreshingTheArchiveKeepsTheSelectedHighlightWhenANewerOneArrives() {
+        var repository = new InMemoryHighlightRepository();
+        repository.save(highlight("first", EARLY, 1));
+        var panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        panel.table().setRowSelectionInterval(0, 0);
+        repository.save(highlight("next", LATE, 2));
+        panel.captureSaved();
+        assertEquals(1, panel.table().getSelectedRow());
+        assertEquals("camera-first", panel.table().getValueAt(panel.table().getSelectedRow(), 2));
+        assertFalse(panel.openClipButton().isEnabled());
+        panel.filter().setSelectedItem("Quadra 2");
+        assertEquals(-1, panel.table().getSelectedRow());
+    }
+
+    @Test
+    void searchingDisplayedCategoriesAndDatesCanSelectTheFirstVisibleResult() {
+        var repository = new InMemoryHighlightRepository();
+        repository.save(highlight("first", EARLY, 1));
+        repository.save(highlight("next", LATE, 2));
+        var panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        JTable table = panel.table();
+        table.setValueAt("Defesa", 1, 4);
+        panel.searchField().setText("DEFESA");
+        assertEquals(1, table.getRowCount());
+        panel.searchField().postActionEvent();
+        assertEquals(0, table.getSelectedRow());
+        assertEquals("camera-first", table.getValueAt(table.getSelectedRow(), 2));
+        table.setValueAt("Gol", 0, 4);
+        assertEquals(0, table.getRowCount());
+        panel.searchField().postActionEvent();
+        assertEquals(-1, table.getSelectedRow());
+        panel.searchField().setText("29/09/2026 18:30");
+        assertEquals("camera-next", table.getValueAt(0, 2));
+        panel.searchField().postActionEvent();
+        var open = table.getActionForKeyStroke(javax.swing.KeyStroke.getKeyStroke("ctrl ENTER"));
+        open.actionPerformed(new java.awt.event.ActionEvent(table, java.awt.event.ActionEvent.ACTION_PERFORMED, ""));
+        assertTrue(errors.get(0).contains("next.mp4"));
+        var clear = panel.searchField().getActionForKeyStroke(javax.swing.KeyStroke.getKeyStroke("ESCAPE"));
+        clear.actionPerformed(new java.awt.event.ActionEvent(panel.searchField(), java.awt.event.ActionEvent.ACTION_PERFORMED, ""));
+        assertEquals("", panel.searchField().getText());
+        assertEquals(2, table.getRowCount());
+    }
+
+    @Test
     void allCourtsShowsEveryHighlightNewestFirst() throws RepositoryException {
         InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
         repository.save(highlight("h-1", EARLY, 1));
@@ -89,6 +160,19 @@ class ArchivePanelTest {
     }
 
     @Test
+    void searchingNarrowsRowsAndClearingRestoresThem() {
+        InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
+        repository.save(highlight("first", EARLY, 1));
+        repository.save(highlight("second", LATE, 2));
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        panel.searchField().setText("SECOND");
+        assertEquals(1, panel.table().getRowCount());
+        assertEquals("camera-second", panel.table().getValueAt(0, 2));
+        panel.searchField().setText("");
+        assertEquals(2, panel.table().getRowCount());
+    }
+
+    @Test
     void filterOffersAllCourtsFollowedByEachCourt() {
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(new InMemoryHighlightRepository()), BRASILIA, errors::add);
 
@@ -104,12 +188,15 @@ class ArchivePanelTest {
 
         JTable table = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add).table();
 
-        assertEquals(List.of("Data e hora", "Quadra", "Câmera", "Duração", "Clipe"), columnNames(table));
+        assertEquals(List.of("Data e hora", "Quadra", "Câmera", "Duração", "Categoria", "Clipe", "Nome"), columnNames(table));
         assertEquals("29/09/2026 18:30:15", table.getValueAt(0, 0));
         assertEquals(1, table.getValueAt(0, 1));
         assertEquals("camera-h-1", table.getValueAt(0, 2));
         assertEquals("30 s", table.getValueAt(0, 3));
-        assertEquals("clips/h-1.mp4", table.getValueAt(0, 4));
+        assertEquals("Lance", table.getValueAt(0, 4));
+        table.setValueAt("Gol", 0, 4);
+        assertEquals("Gol", table.getValueAt(0, 4));
+        assertEquals("clips/h-1.mp4", table.getValueAt(0, 5));
     }
 
     @Test
@@ -256,8 +343,11 @@ class ArchivePanelTest {
     void aClipWithNoFileDisablesTheButtonAndSaysWhy() throws RepositoryException {
         InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
         repository.save(highlight("h-never-written", EARLY, 1));
-        ArchivePanel panel = panelAt(repository);
-
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        JTable grid = panel.table();
+        var cell = (javax.swing.JButton) grid.prepareRenderer(grid.getCellRenderer(0, 5), 0, 5);
+        assertEquals("Sem MP4", cell.getText());
+        assertFalse(cell.isEnabled());
         panel.table().setRowSelectionInterval(0, 0);
 
         assertFalse(panel.openClipButton().isEnabled());
@@ -333,6 +423,9 @@ class ArchivePanelTest {
     private static final class FailingRepository implements HighlightRepository {
         private final InMemoryHighlightRepository stored = new InMemoryHighlightRepository();
         private boolean failing;
+
+        @Override public void rename(String id, String title) throws RepositoryException { stored.rename(id, title); }
+        @Override public void delete(String id) { stored.delete(id); }
 
         @Override
         public void save(Highlight highlight) throws RepositoryException {
