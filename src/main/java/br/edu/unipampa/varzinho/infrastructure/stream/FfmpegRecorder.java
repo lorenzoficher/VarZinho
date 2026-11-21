@@ -72,9 +72,10 @@ public final class FfmpegRecorder {
             throw new IllegalStateException("the recorder is already running");
         }
         stopRequested = false;
+        Path executable = FfmpegExecutable.find().orElseThrow(() -> new java.io.FileNotFoundException("ffmpeg"));
         clearBufferFolder();
         // FFmpeg's output goes to a file: an unread pipe fills up and freezes it.
-        process = new ProcessBuilder(command())
+        process = new ProcessBuilder(command(executable.toString()))
                 .redirectErrorStream(true)
                 .redirectOutput(bufferFolder.resolve("recorder.log").toFile())
                 .start();
@@ -128,9 +129,32 @@ public final class FfmpegRecorder {
         return bufferFolder.resolve("segments.csv");
     }
 
+    boolean isRunning() { return process != null && process.isAlive(); }
+
+    RuntimeException startupFailure() {
+        var failure = new IllegalStateException("recorder exited before footage");
+        // Report the configured host only. FFmpeg diagnostics can contain credentials.
+        try (Stream<String> log = Files.lines(bufferFolder.resolve("recorder.log"), StandardCharsets.ISO_8859_1)) {
+            if (log.anyMatch(line -> line.startsWith("[tcp @") && line.contains("Connection to tcp://")
+                    && line.contains(" failed:"))) {
+                URI address = URI.create(streamUrl.strip());
+                String endpoint = address.getHost();
+                if (address.getPort() >= 0) endpoint += ":" + address.getPort();
+                return new java.io.UncheckedIOException(new java.net.ConnectException(endpoint));
+            }
+        } catch (IOException | java.io.UncheckedIOException unreadable) {
+            failure.addSuppressed(unreadable);
+        }
+        return failure;
+    }
+
     List<String> command() {
+        return command(FfmpegExecutable.command());
+    }
+
+    private List<String> command(String executable) {
         // No -nostdin here, unlike the assembler: stdin is how stop() asks for a clean exit.
-        return List.of("ffmpeg", "-hide_banner", "-loglevel", "warning",
+        return List.of(executable, "-hide_banner", "-loglevel", "warning",
                 "-rw_timeout", String.valueOf(READ_TIMEOUT_MICROSECONDS),
                 "-i", streamUrl,
                 "-an", "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
