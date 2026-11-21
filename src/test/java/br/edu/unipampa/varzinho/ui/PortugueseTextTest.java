@@ -22,6 +22,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PortugueseTextTest {
     @Test
+    void distinguishesAMissingRecorderFromAStreamWithoutFootage() {
+        var missing = new java.io.UncheckedIOException(new java.io.FileNotFoundException("ffmpeg"));
+        assertTrue(PortugueseText.phoneConnectionFailure(missing).contains("FFmpeg não encontrado"));
+        assertTrue(PortugueseText.phoneConnectionFailure(new IllegalStateException("no completed video segment"))
+                .contains("primeiro trecho"));
+        assertTrue(PortugueseText.phoneConnectionFailure(new IllegalStateException("recorder exited before footage"))
+                .contains("buffer/recorder.log"));
+    }
+    @Test
     void reportsClipAssemblyFailuresUsingTheProductionMessageFormats() {
         assertEquals("O FFmpeg não conseguiu gravar o clipe.", PortugueseText.message(
                 "ffmpeg could not write clips/camera-1.mp4: Invalid data\nConversion failed"));
