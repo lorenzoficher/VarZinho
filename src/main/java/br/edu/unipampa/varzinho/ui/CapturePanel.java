@@ -20,6 +20,8 @@ import java.awt.event.KeyEvent;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutionException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,6 +40,7 @@ final class CapturePanel extends JPanel {
     private final Consumer<HighlightView> onSaved;
     private final DateTimeFormatter timeFormat;
     private final JButton save = new JButton();
+    private final List<JButton> saveActions = new ArrayList<>();
     private final JLabel confirmation = new JLabel(" ");
 
     CapturePanel(CourtPanel courtPanel, CaptureHighlight captureHighlight, ZoneId zone,
@@ -60,9 +63,12 @@ final class CapturePanel extends JPanel {
         this.timeFormat = ArchivePanel.timeFormatIn(zone);
         this.errorSink = errorSink;
         this.onSaved = onSaved;
+        setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 0, 4, 0));
         VarZinhoTheme.styleProminentAction(save);
+        save.setPreferredSize(new java.awt.Dimension(0, 58));
         save.addActionListener(event -> saveHighlight());
-        bindShortcut();
+        bindShortcut(this);
+        saveActions.add(save);
         courtPanel.onCourtChange(this::showCourt);
         add(save, BorderLayout.CENTER);
         add(confirmation, BorderLayout.SOUTH);
@@ -73,14 +79,24 @@ final class CapturePanel extends JPanel {
 
     // F2 works wherever the focus is in the window, and goes through the button so a
     // disabled button (a capture already running) refuses the key too.
-    private void bindShortcut() {
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0), SAVE_SHORTCUT);
-        getActionMap().put(SAVE_SHORTCUT, new AbstractAction() {
+    void bindShortcut(javax.swing.JComponent target) {
+        target.getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0), SAVE_SHORTCUT);
+        target.getActionMap().put(SAVE_SHORTCUT, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
                 save.doClick();
             }
         });
+    }
+
+    JButton additionalSaveButton() {
+        JButton action = new JButton();
+        VarZinhoTheme.styleProminentAction(action);
+        action.setIcon(VarZinhoIcons.record());
+        action.addActionListener(event -> saveHighlight());
+        action.setText("Salvar Melhor Momento");
+        saveActions.add(action);
+        return action;
     }
 
     String confirmation() {
@@ -93,7 +109,7 @@ final class CapturePanel extends JPanel {
         int courtNumber = courtPanel.selectedCourtNumber();
         activity.begin();
         courtPanel.pauseChanges();
-        save.setEnabled(false);
+        saveActions.forEach(button -> button.setEnabled(false));
         confirmation.setText("Salvando: quadra " + courtNumber + "…");
         new Capture(courtNumber).execute();
     }
@@ -156,7 +172,7 @@ final class CapturePanel extends JPanel {
                 refuse("A captura foi interrompida antes de ser salva.");
             } finally {
                 courtPanel.resumeChanges();
-                save.setEnabled(true);
+                saveActions.forEach(button -> button.setEnabled(true));
                 activity.finish();
             }
         }
@@ -166,4 +182,5 @@ final class CapturePanel extends JPanel {
         save.setText("Salvar lance (F2) — quadra " + courtPanel.selectedCourtNumber());
         if (!activity.isRunning()) confirmation.setText(" ");
     }
+
 }
