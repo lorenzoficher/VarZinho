@@ -13,6 +13,7 @@ import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import br.edu.unipampa.varzinho.infrastructure.stream.PhoneConnection;
+import br.edu.unipampa.varzinho.infrastructure.spectator.SpectatorServer;
 import br.edu.unipampa.varzinho.ui.SignInDialog;
 import br.edu.unipampa.varzinho.ui.VarZinhoTheme;
 import br.edu.unipampa.varzinho.ui.VarZinhoWindow;
@@ -20,6 +21,9 @@ import br.edu.unipampa.varzinho.ui.VarZinhoWindow;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import java.nio.file.Path;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -72,35 +76,85 @@ public final class Launcher {
                         LOGGER.warning(message);
                         warnings.add("A academia salva não pôde ser carregada.");
                     });
-            String streamUrl = System.getenv(STREAM_URL_VARIABLE);
-            Optional<PhoneConnection> phone = PhoneConnection.open(streamUrl, SEGMENT_FOLDER, BUFFER_SECONDS,
-                    message -> {
-                        // An invalid address may contain the phone's credentials.
-                        LOGGER.warning(message.replace(streamUrl, "[configured stream]"));
-                        warnings.add("Celular não conectado. Confira o endereço da transmissão e a instalação do FFmpeg.");
-                    });
-            VarZinhoWindow window;
-            if (phone.isEmpty()) {
-                window = window(session, signedIn.get(), repository, new LiveFeed(session.gym()));
-            } else {
-                window = windowWithPhone(session, signedIn.get(), repository, phone.get());
+            String streamUrl = null;
+            try {
+                streamUrl = phoneAddress(System.getenv(STREAM_URL_VARIABLE), DATA_FOLDER.resolve("stream-url.txt"));
+            } catch (IOException unreadable) {
+                warnings.add("Não foi possível ler data/stream-url.txt. Conecte o celular pelo dashboard.");
             }
+            LiveFeed simulation = new LiveFeed(session.gym());
+            VarZinhoWindow window = window(session, signedIn.get(), repository, simulation);
+            String demo = System.getenv("VARZINHO_DEMO");
+            boolean publicDemo = "public".equalsIgnoreCase(demo);
+            SpectatorServer spectators = startSpectatorService(warnings, publicDemo || "local".equalsIgnoreCase(demo));
+            window.offerPhoneConnection(streamUrl, address -> {
+                PhoneConnection phone;
+                try { phone = PhoneConnection.start(address, SEGMENT_FOLDER, BUFFER_SECONDS); }
+                catch (java.io.IOException failure) { throw new java.io.UncheckedIOException(failure); }
+                phone.awaitFootage();
+                if (publicDemo && spectators != null) {
+                    try { spectators.shareDemo(); }
+                    catch (IOException failure) {
+                        return () -> {
+                            attachPhone(window, session.gym(), simulation, phone, spectators);
+                            window.showStartupWarnings(List.of("O teste funciona neste computador. O túnel público não conectou. Confira o cloudflared e a conexão com a internet."));
+                        };
+                    }
+                }
+                return () -> attachPhone(window, session.gym(), simulation, phone, spectators);
+            });
             window.showStartupWarnings(warnings);
+            window.enableRecordingEditing(new br.edu.unipampa.varzinho.infrastructure.persistence.StoredRecordingEditor(
+                    repository, Path.of("clips")));
             window.setVisible(true);
         });
     }
 
-    private static VarZinhoWindow windowWithPhone(GymSession session, SignedInOperator signedIn, HighlightRepository repository,
-                                      PhoneConnection phone) {
-        Gym gym = session.gym();
+    static String phoneAddress(String override, Path file) throws IOException {
+        if (override != null && !override.isBlank()) return override.strip();
+        try { return Files.readString(file).strip(); }
+        catch (NoSuchFileException absent) { return null; }
+    }
+
+    private static void attachPhone(VarZinhoWindow window, Gym gym, LiveFeed simulation, PhoneConnection phone,
+                                    SpectatorServer spectators) {
+        if (gym.getCourts().stream().anyMatch(court -> court.hasCamera(phone.camera().getId()))) {
+            phone.disconnect();
+            throw new IllegalStateException("O identificador phone-1 já está cadastrado. Confira a câmera duplicada e tente novamente.");
+        }
         ConnectStreamCamera connection = new ConnectStreamCamera(gym, phone.camera());
         CourtView court = connection.connect();
         // Two feeds, so the simulated courts keep their clock whatever the phone does.
-        VarZinhoWindow window = window(session, signedIn, repository, new LiveFeed(gym, court.getNumber()));
+        simulation.excludeCourt(court.getNumber());
         Runnable dropped = () -> window.phoneDropped(connection::phoneDropped);
-        window.followPhone(phone.feed(dropped), court.getNumber(), phone.streamUrl());
+        String viewerAddress = phone.streamUrl();
+        String publicView = null;
+        if (spectators != null) {
+            try {
+                viewerAddress = spectators.broadcast(phone.streamUrl(), court.getNumber(), DATA_FOLDER.resolve("spectator/live"));
+                if (viewerAddress.startsWith("https://")) publicView = viewerAddress;
+            }
+            catch (java.io.IOException failure) {
+                window.showStartupWarnings(List.of("A câmera está conectada, mas a transmissão para espectadores não iniciou."));
+            }
+        }
+        window.followPhone(phone.feed(dropped), court.getNumber(), viewerAddress, publicView);
         phone.onDrop(() -> SwingUtilities.invokeLater(dropped));
-        return window;
+    }
+
+    private static SpectatorServer startSpectatorService(List<String> warnings, boolean demo) {
+        String address = demo ? null : System.getenv("VARZINHO_PUBLIC_URL");
+        try {
+            var spectators = SpectatorServer.open(address, System.getenv("VARZINHO_PIX_TOKEN"), DATA_FOLDER.resolve("spectator"), demo);
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try { spectators.close(); }
+                catch (java.io.IOException failure) { LOGGER.warning("Could not clean up the spectator broadcast"); }
+            }));
+            return spectators;
+        } catch (java.io.IOException | IllegalArgumentException failure) {
+            warnings.add("Área do espectador indisponível. Confira o endereço HTTPS, o Pix e a porta local 8787.");
+            return null;
+        }
     }
 
     private static VarZinhoWindow window(GymSession session, SignedInOperator signedIn, HighlightRepository repository,
