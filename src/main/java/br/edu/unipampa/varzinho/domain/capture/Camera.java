@@ -67,6 +67,11 @@ public abstract class Camera {
         status = CameraStatus.MAINTENANCE;
     }
 
+    public void releaseFromMaintenance() {
+        if (status != CameraStatus.MAINTENANCE) throw new IllegalStateException("camera is not under maintenance");
+        status = CameraStatus.INACTIVE;
+    }
+
     /**
      * Takes the camera off duty. What it already holds stays in the buffer, unreadable,
      * until it is switched on again and starts afresh.

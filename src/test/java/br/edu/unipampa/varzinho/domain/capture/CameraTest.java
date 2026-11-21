@@ -53,6 +53,17 @@ class CameraTest {
     }
 
     @Test
+    void releasingMaintenanceRequiresAnExplicitRestart() {
+        Camera camera = recordingCamera(30);
+        camera.sendToMaintenance();
+        camera.releaseFromMaintenance();
+        assertEquals(CameraStatus.INACTIVE, camera.getStatus());
+        camera.startRecording();
+        assertEquals(CameraStatus.ACTIVE, camera.getStatus());
+        assertThrows(IllegalStateException.class, camera::releaseFromMaintenance);
+    }
+
+    @Test
     void staysUnderMaintenanceWhenRecordingIsStopped() {
         Camera camera = camera(30);
         camera.sendToMaintenance();
