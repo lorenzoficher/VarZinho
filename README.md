@@ -108,7 +108,8 @@ mvn compile exec:java "-Dexec.mainClass=br.edu.unipampa.varzinho.ConsoleDemo"
 Precisa do FFmpeg e de um celular na mesma rede Wi-Fi do computador.
 
 1. Instale o FFmpeg (`winget install Gyan.FFmpeg`) e **abra um terminal novo**.
-   Confira com `ffmpeg -version`.
+   Confira com `ffmpeg -version`. No Windows, o VarZinho também procura o executável
+   na instalação do WinGet caso o terminal ou o VS Code ainda esteja com o PATH antigo.
 2. No celular, instale um app que transmita a câmera por HTTP — *IP Webcam*
    (Android) ou *DroidCam* (Android/iOS) — e inicie o servidor. Anote o
    endereço, por exemplo `http://192.168.0.42:8080/video`.
@@ -123,12 +124,90 @@ mvn exec:java
 ```
 
 O celular aparece como a câmera `phone-1`, numa quadra só dele. Depois de 30
-segundos gravando, **Save highlight** grava o `.mp4` em `clips/`, e **Open clip**,
-no acervo, abre o vídeo. **Open live view** mostra a imagem do celular no
+segundos gravando, **Salvar Melhor Momento** grava o `.mp4` em `clips/`, e **Assistir ao vídeo**,
+no acervo, abre os detalhes. **Abrir transmissão ao vivo** mostra a imagem do celular no
 navegador. Se o celular sair da rede, a janela avisa e a quadra dele deixa de
 capturar; para reconectar, reinicie o programa.
 
-Sem a variável, o programa funciona como na versão 1.0, com as câmeras simuladas.
+Para usar o mesmo celular nas próximas inicializações, coloque o endereço completo do vídeo em
+`data/stream-url.txt` (uma linha). Esse arquivo fica só na sua máquina. Se estiver definida,
+a variável `VARZINHO_STREAM_URL` tem prioridade.
+
+Também é possível conectar durante a sessão. No dashboard, clique em **Abrir transmissão ao vivo**,
+logo abaixo de **Salvar Melhor Momento**, e cole o endereço completo do IP Webcam. Quando o
+FFmpeg receber o primeiro trecho, o VarZinho selecionará a quadra do celular automaticamente.
+Confira **phone-1 · grava vídeo MP4** e aguarde o buffer. Uma câmera cadastrada manualmente como
+**Fixa** ou **PTZ** é simulada, mesmo que receba um nome como `phone01`. No histórico,
+**Sem MP4** identifica os registros cujo arquivo de vídeo não está disponível.
+
+### Transmissão para espectadores e compra de um lance (#188)
+
+O operador continua usando a janela Java. O espectador abre um link HTTPS no navegador,
+assiste à quadra do celular e pode comprar os 30 segundos que acabou de ver por **R$ 5,00**.
+O relógio usado é o do vídeo. A arena mantém cerca de 2 minutos e meio de segmentos para
+reservar um lance mesmo com atraso de reprodução. Se o trecho já expirou, o Pix não é gerado.
+
+**Teste com espectadores no 4G ou em outro Wi-Fi.** Instale o utilitário de túnel no
+Windows uma vez com `winget install --id Cloudflare.cloudflared --exact`.
+Feche a janela anterior do VarZinho. Na pasta do projeto, rode:
+
+```powershell
+$env:VARZINHO_DEMO = "public"
+mvn compile exec:java
+```
+
+Conecte a câmera e clique em **Copiar link público**. Com o aplicativo e o celular
+ligados, qualquer pessoa com esse link pode ver a quadra. O túnel temporário usa
+somente a página dos espectadores e fecha com o VarZinho.
+Se aparecer um aviso de falha do túnel, a demonstração continua disponível no computador.
+Para um teste restrito ao notebook, use `$env:VARZINHO_DEMO = "local"`.
+
+Depois de 30 segundos de partida, o espectador pode clicar em **Simular compra**
+e **Confirmar compra de teste** para assistir ao MP4 do lance. A demonstração dispensa
+CPF, e-mail e Pix. Os clipes de teste ficam em `data/spectator/demo-orders/`.
+Para voltar ao modo normal, feche o aplicativo, execute
+`Remove-Item Env:VARZINHO_DEMO` no mesmo PowerShell e reinicie.
+
+**Uso com Pix real e endereço estável**
+
+1. Configure a captura local com o celular e o FFmpeg conforme a seção anterior.
+2. Disponibilize um endereço HTTPS exclusivo para a arena. Configure o proxy reverso ou
+   túnel HTTPS desse endereço para encaminhar as requisições para `http://127.0.0.1:8787`
+   no computador da arena. Compartilhe apenas o endereço público. Exponha somente o serviço
+   do espectador; a câmera, a janela do operador e o banco ficam na rede privada.
+3. Configure o Pix na conta recebedora do Mercado Pago. Use o token de teste e os dados de
+   teste do provedor durante a homologação. No PowerShell em que o aplicativo vai rodar,
+   configure as variáveis (substitua o domínio de exemplo):
+
+   ```powershell
+   $env:VARZINHO_PUBLIC_URL = "https://arena.exemplo.com.br"
+   $credencialPix = Read-Host "Access Token do Mercado Pago" -AsSecureString
+   $env:VARZINHO_PIX_TOKEN = [System.Net.NetworkCredential]::new("", $credencialPix).Password
+   mvn compile exec:java
+   ```
+
+4. Na quadra do celular, use **Abrir transmissão ao vivo** para abrir a página e
+   **Copiar link público** para compartilhá-la. Abra o link em outro celular usando dados móveis.
+   Use um navegador com suporte a vídeo H.264 por MediaSource. Quando houver 30 segundos
+   de partida, clique em **Comprar este lance**, informe o e-mail e o CPF do pagador e gere o Pix.
+   Em homologação, preencha os dados fictícios indicados pelo provedor.
+5. Guarde o endereço privado do pedido. O servidor consulta o pagamento com a credencial
+   da arena e confere o pedido, o valor e a moeda antes de liberar a reprodução e o download.
+   Cada pessoa com esse endereço privado pode acessar o pedido. Mantenha o aplicativo e o
+   proxy ligados enquanto houver espectadores ou compradores acessando os vídeos.
+
+Os pedidos e MP4s ficam em `data/spectator/orders/`. Preserve essa pasta entre execuções
+e inclua-a no backup da arena. Reservas sem início de pagamento expiram após uma hora na
+próxima reserva. Há espaço para até 200 pedidos pendentes simultâneos. Os lances já liberados
+não consomem essa cota. Ao atingir a capacidade, novas reservas são recusadas antes da cobrança.
+Sem `VARZINHO_PUBLIC_URL`, o botão da janela abre a página dos espectadores apenas neste computador e a cópia
+do link público fica desabilitada. O endereço HTTPS também pode ser usado sem credencial
+Pix para testar a transmissão em outra rede. Nesse caso a compra fica indisponível.
+
+Para validar localmente sem movimentar dinheiro, rode
+`mvn test -Dtest=SpectatorTest,PublicMatchTest` (no PowerShell, coloque o argumento
+`-Dtest=SpectatorTest,PublicMatchTest` entre aspas). O teste com vídeo precisa de
+`ffmpeg` e `ffprobe` no PATH, gera uma partida sintética e usa um provedor Pix simulado.
 
 ### Banco de dados PostgreSQL
 
@@ -171,35 +250,16 @@ já estão gravando. Depois disso, ela abre sobre o ginásio salvo em
 execução anterior. Um relógio de um segundo alimenta os buffers enquanto a
 janela está aberta.
 
-Nela o usuário:
+O **Dashboard** abre após o login. Escolha a quadra no cabeçalho ou em **Suas quadras**. O painel mostra as câmeras dessa quadra e quantos segundos já chegaram ao buffer. A modalidade escolhida nos botões vale para a quadra durante a sessão.
 
-- **escolhe a quadra** numa lista e vê as câmeras instaladas, cada uma com o seu
-  estado atual;
-- **cria quadras** digitando o número em *New court number*. A quadra nova
-  passa a aparecer na lista e no filtro do acervo;
-- **instala câmeras na quadra escolhida** pela seção *Install camera on this
-  court*: digita o identificador e o modelo, escolhe o tipo (fixa ou PTZ), a
-  resolução e, para a fixa, o ângulo. A câmera nova entra parada, como toda
-  câmera recém-instalada, e passa a gravar ao ser ligada;
-- **seleciona uma câmera e muda seu estado** com *Start*, *Stop* e *Send to
-  maintenance*, ou a **remove** com *Remove camera*. Os lances dela continuam no
-  acervo;
-- **muda a câmera selecionada de quadra** com *Move to court*. Ela chega parada e,
-  ao ser ligada na quadra nova, começa um buffer vazio;
-- **aponta a PTZ selecionada** com *pan*, *tilt* e *zoom*;
-- **aciona *Save highlight***, o equivalente na tela ao botão físico da quadra:
-  o lance é capturado, gravado no arquivo e confirmado abaixo do botão;
-- **consulta o acervo** numa tabela, com todos os lances ou filtrados por quadra,
-  do mais recente para o mais antigo.
-
-Quadras e câmeras são cadastradas pela janela. O nome e o endereço do ginásio vêm
-do ginásio de exemplo, e o cadastro de pessoas aparece apenas no `ConsoleDemo`.
-
-Quando o domínio recusa uma operação — capturar numa quadra sem câmera ativa,
-capturar antes de haver segundos suficientes no buffer, ligar uma câmera em
-manutenção, repetir o número de uma quadra ou o identificador de uma câmera,
-apontar a PTZ além do limite, ler um arquivo danificado — a janela mostra a mensagem num
-`JOptionPane`, sem encerrar o programa.
+- Em **Quadras**, informe o número para cadastrar uma quadra. Ela passa a aparecer no dashboard e nos filtros.
+- Para instalar várias câmeras, selecione a quadra, preencha o formulário e clique em **Cadastrar câmera**. Para a próxima, informe outro ID e ajuste os demais campos se necessário. A página lista as câmeras da quadra. Cada nova câmera começa parada e pode ser iniciada em **Câmeras**.
+- Em **Câmeras**, use **Iniciar**, **Parar** ou **Liberar** na linha da câmera. O menu **Ações** permite movê-la para outra quadra, configurá-la, enviá-la para manutenção ou removê-la. Em **Movimento PTZ**, selecione uma câmera compatível para ajustar panorâmica, inclinação e zoom.
+- Quando o buffer atingir 30 segundos, clique em **Salvar Melhor Momento**. O histórico mostra a quadra, a câmera, a data e a duração do lance confirmado.
+- Selecione uma gravação no histórico e use **Renomear gravação** para dar um nome como “Lance Fernando Costa”. O nome fica salvo no acervo e aparece na busca. **Excluir gravação** pede confirmação e abre com **Cancelar** selecionado. Ao confirmar, o sistema remove o registro e o MP4 original em `clips/`, quando existir. Cópias exportadas ficam com quem as salvou.
+- **Melhores momentos** reúne captura e histórico. Em **Arquivos**, use a busca, a quadra e o filtro **Hoje** para localizar uma gravação. A categoria pode ser editada durante a sessão. Para um MP4 real do celular, **Assistir** abre os detalhes, com opções de reprodução no player do sistema e de cópia do vídeo. As câmeras simuladas geram registros de lances.
+- No histórico, **Ctrl+F** leva à busca. Digite, por exemplo, o ID de uma câmera, uma data ou a categoria **Defesa**. **Enter** seleciona o primeiro resultado. Use as setas para escolher outro lance e **Ctrl+Enter** na tabela para abrir o selecionado. **Esc** no campo de busca limpa o texto.
+- Em **Configurações**, alterne entre os temas claro e escuro ou escolha um nome de exibição para a quadra durante a sessão. A barra de mensagens e o sino do cabeçalho mostram o retorno das operações.
 
 ## Principais classes
 

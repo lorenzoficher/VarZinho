@@ -41,12 +41,17 @@ Stated explicitly so they are not mistaken for omissions:
 | Video decoding or encoding in Java | No video library on the classpath. Since 2.0 a phone's clips are real files, but FFmpeg — an external program — writes them; see `CONTEXT.md` |
 | A polished or complete interface | Section 2.9 of the brief asks for a minimal one; every rule stays in the domain, never on the screen |
 | User accounts, login, authentication | No identity exists in the capture flow |
-| Live streaming, sponsors, multi-angle | Real products do this; out of scope here |
+| Sponsors and multi-angle | The public spectator view in #188 covers a single phone court |
 | Automatic play detection | Listed as future work |
 | Classifying the kind of play | Per-sport by nature; the system must serve any sport |
 | Recording who played or who pressed | No identity exists at the button |
 
 ## Users
+
+The extension agreed in [#188](https://github.com/lorenzoficher/VarZinho/issues/188)
+lets a remote spectator watch the phone court through a public HTTPS link and reserve
+the 30 seconds ending at the displayed playback time. A verified BRL 5.00 Pix
+payment grants access to the reserved clip. The operator's local capture remains independent.
 
 **Athlete** — plays the match and presses the button when something worth
 keeping happens. Afterwards asks the operator for the clip. Needs capture to be
@@ -148,7 +153,7 @@ Deliberately deferred, recorded so the scope boundary is visible:
   PostgreSQL in Docker through plain JDBC, alongside CSV. See
   [the decision in `CONTEXT.md`](../CONTEXT.md#a-real-database-alongside-csv)
 - Automatic play detection
-- Sponsor and live-streaming features
+- Sponsor features
 - Advanced archive search and clip playback beyond the delivered court filter
 
 ## Risks
