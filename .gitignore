@@ -40,3 +40,5 @@ Desktop.ini
 
 # Segment ring the recorder keeps overwriting
 buffer/
+data/spectator/
+data/stream-url.txt
