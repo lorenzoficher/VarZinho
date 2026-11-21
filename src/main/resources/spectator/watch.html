@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VarZinho Arena · Transmissão</title><link rel="stylesheet" href="/arena.css"><script defer src="/watch.js"></script></head>
+<body><header><span class="mark" aria-hidden="true">V</span><strong>VarZinho <small>Arena</small></strong></header>
+<main><section id="live"><h1 id="court">Transmissão da arena</h1>
+<video id="player" controls playsinline muted disableRemotePlayback></video>
+<div class="actions"><p id="liveStatus" role="status">Conectando à quadra…</p><button id="goLive">Voltar ao vivo</button><button id="buy" disabled>Comprar este lance · R$ 5,00</button></div>
+<p>O lance inclui os 30 segundos anteriores ao ponto que você está assistindo.</p></section>
+<section id="order" hidden><h1>Seu melhor momento</h1><p>Guarde o endereço desta página para voltar ao seu pedido.</p>
+<div id="demoPayment" hidden><p>Este pedido é uma demonstração. Nenhum valor será cobrado.</p><button id="confirmDemo">Confirmar compra de teste · R$ 5,00</button></div>
+<form id="checkout" hidden><label for="email">E-mail do pagador</label><input id="email" type="email" autocomplete="email" required>
+<label for="cpf">CPF do pagador</label><input id="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required>
+<button>Gerar Pix · R$ 5,00</button></form>
+<div id="payment" hidden><img id="qr" width="192" height="192" alt="QR Code para pagar por Pix"><label for="code">Pix copia e cola</label><textarea id="code" rows="3" readonly></textarea>
+<button id="copy">Copiar código Pix</button></div>
+<p id="orderStatus" role="status"></p><div id="ready" hidden><video id="clip" controls playsinline preload="none"></video>
+<a id="download" download="melhor-momento.mp4">Baixar melhor momento</a></div>
+<a class="back" href="/">Voltar à transmissão</a></section></main></body></html>
