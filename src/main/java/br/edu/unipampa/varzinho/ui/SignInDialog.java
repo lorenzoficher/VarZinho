@@ -33,18 +33,18 @@ public final class SignInDialog extends JDialog {
             pack();
         }, this::admit);
         if (form instanceof FirstOperatorPanel firstForm) {
-            setTitle("VarZinho — Criar primeiro operador");
+            setTitle("VarZinho Arena");
             getRootPane().setDefaultButton(firstForm.createButton());
         } else {
-            setTitle("VarZinho — Entrar");
+            setTitle("VarZinho Arena");
             getRootPane().setDefaultButton(((SignInPanel) form).signInButton());
         }
-        form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         add(form, BorderLayout.CENTER);
         feedback.setBorder(BorderFactory.createEmptyBorder(0, 10, 8, 10));
         add(feedback, BorderLayout.SOUTH);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         pack();
+        setResizable(false);
         setLocationRelativeTo(null);
     }
 
