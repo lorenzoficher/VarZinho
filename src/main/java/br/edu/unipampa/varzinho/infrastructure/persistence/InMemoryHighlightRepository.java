@@ -1,6 +1,7 @@
 package br.edu.unipampa.varzinho.infrastructure.persistence;
 
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
 
 import br.edu.unipampa.varzinho.application.port.StorableHighlights;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
@@ -24,6 +25,17 @@ public final class InMemoryHighlightRepository implements HighlightRepository {
     public void save(Highlight highlight) {
         StorableHighlights.requireStorable(highlight);
         highlightsById.put(highlight.getId(), highlight);
+    }
+
+    @Override
+    public void rename(String id, String title) throws RepositoryException {
+        Highlight item = findById(id).orElseThrow(() -> new RepositoryException("recording no longer exists"));
+        highlightsById.put(id, item.named(title));
+    }
+
+    @Override
+    public void delete(String id) {
+        highlightsById.remove(id);
     }
 
     @Override

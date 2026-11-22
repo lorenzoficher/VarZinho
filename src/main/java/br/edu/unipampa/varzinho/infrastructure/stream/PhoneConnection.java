@@ -40,18 +40,21 @@ public final class PhoneConnection {
         if (streamUrl == null || streamUrl.isBlank()) {
             return Optional.empty();
         }
-        FfmpegRecorder recorder;
         try {
-            recorder = new FfmpegRecorder(streamUrl, segmentFolder);
-            recorder.start();
+            return Optional.of(start(streamUrl, segmentFolder, bufferSeconds));
         } catch (IOException | IllegalArgumentException cause) {
             onFailure.accept("The phone stream could not start (" + cause.getMessage()
                     + "). Opening with the simulated cameras only.");
             return Optional.empty();
         }
+    }
+
+    public static PhoneConnection start(String streamUrl, Path segmentFolder, int bufferSeconds) throws IOException {
+        FfmpegRecorder recorder = new FfmpegRecorder(streamUrl, segmentFolder);
+        recorder.start();
         SegmentIndex index = new SegmentIndex(FfmpegRecorder.RING_SEGMENTS);
         StreamCamera camera = cameraFor(streamUrl, bufferSeconds, index);
-        return Optional.of(new PhoneConnection(streamUrl, recorder, index, camera));
+        return new PhoneConnection(streamUrl, recorder, index, camera);
     }
 
     static StreamCamera cameraFor(String streamUrl, int bufferSeconds, SegmentIndex index) {
@@ -66,6 +69,29 @@ public final class PhoneConnection {
     public String streamUrl() {
         return streamUrl;
     }
+
+    /** Only a completed segment proves that FFmpeg could read the supplied address. */
+    public void awaitFootage() {
+        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
+        var log = new SegmentLog(recorder.segmentList());
+        try {
+            while (recorder.isRunning() && System.nanoTime() < deadline) {
+                if (!log.readNew().isEmpty()) return;
+                Thread.sleep(150);
+            }
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        } catch (IOException unreadable) {
+            recorder.stop();
+            throw new IllegalStateException("could not read camera fragments", unreadable);
+        }
+        boolean stillReading = recorder.isRunning();
+        recorder.stop();
+        if (stillReading) throw new IllegalStateException("no completed video segment");
+        throw recorder.startupFailure();
+    }
+
+    public void disconnect() { recorder.stop(); }
 
     /**
      * Builds the feed that moves the phone's new segments into its camera. Call it once:

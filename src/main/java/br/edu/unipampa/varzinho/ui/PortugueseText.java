@@ -46,6 +46,25 @@ final class PortugueseText {
 
     private PortugueseText() { }
 
+    static String phoneConnectionFailure(Throwable failure) {
+        if (failure instanceof java.io.UncheckedIOException io) {
+            if (io.getCause() instanceof java.net.ConnectException connection) {
+                return "O gravador não conseguiu conectar a " + connection.getMessage()
+                        + ". Confira o endereço no IP Webcam e teste o vídeo no navegador deste computador.";
+            }
+            return io.getCause() instanceof java.io.FileNotFoundException
+                    ? "FFmpeg não encontrado. Instale-o com winget install Gyan.FFmpeg e tente conectar novamente."
+                    : "O gravador não pôde iniciar. Confira a permissão de execução do FFmpeg e a pasta buffer.";
+        }
+        if (failure instanceof IllegalArgumentException)
+            return "Endereço de câmera inválido. Cole a URL completa da transmissão do celular.";
+        if ("recorder exited before footage".equals(failure.getMessage()))
+            return "O FFmpeg encerrou antes de gravar. Consulte buffer/recorder.log para ver o erro da transmissão.";
+        if ("no completed video segment".equals(failure.getMessage()))
+            return "O FFmpeg iniciou, mas não concluiu o primeiro trecho em 15 segundos. Confira o endereço do vídeo e tente novamente.";
+        return "Não foi possível ler os trechos da câmera. Confira a pasta buffer e tente conectar novamente.";
+    }
+
     static String cameraKind(CameraKind kind) {
         return switch (kind) {
             case FIXED -> "Fixa";
@@ -69,6 +88,7 @@ final class PortugueseText {
     static String message(String message) {
         if (message == null || message.isBlank()) return untranslated(message);
         return switch (message) {
+            case "camera is not under maintenance" -> "A câmera não está em manutenção.";
             case "nothing has been recorded yet" -> "Nenhuma imagem foi gravada ainda.";
             case "court number is already registered" -> "O número da quadra já está cadastrado.";
             case "a court number must be positive" -> "O número da quadra deve ser positivo.";

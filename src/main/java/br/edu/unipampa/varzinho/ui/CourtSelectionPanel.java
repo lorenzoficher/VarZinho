@@ -24,25 +24,35 @@ final class CourtSelectionPanel extends JPanel {
     private final List<Runnable> courtAddedListeners = new ArrayList<>();
 
     CourtSelectionPanel(ManageGym management, Consumer<String> errorSink) {
-        super(new BorderLayout(8, 0));
+        super(new BorderLayout(12, 0));
         if (management == null) throw new IllegalArgumentException("court selection needs the gym's management");
         if (management.courts().isEmpty()) throw new IllegalArgumentException("court selection needs a gym with a court");
         if (errorSink == null) throw new IllegalArgumentException("court selection needs somewhere to report errors");
         this.management = management;
         this.errorSink = errorSink;
+        VarZinhoTheme.styleCard(this);
         for (CourtView court : management.courts()) courtSelector.addItem(court.getNumber());
-        JPanel adder = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        JPanel adder = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        adder.setOpaque(false);
         adder.add(new JLabel("Número da nova quadra"));
         adder.add(courtNumberField);
         adder.add(addCourt);
         add(courtSelector, BorderLayout.CENTER);
         add(adder, BorderLayout.EAST);
+        courtSelector.setPreferredSize(new java.awt.Dimension(240, 38));
+        addCourt.setPreferredSize(new java.awt.Dimension(150, 38));
         addCourt.addActionListener(event -> addCourt());
     }
 
     int selectedCourtNumber() { return (Integer) courtSelector.getSelectedItem(); }
 
-    void selectCourt(int number) { courtSelector.setSelectedItem(number); }
+    void selectCourt(int number) {
+        boolean added = ((javax.swing.DefaultComboBoxModel<Integer>) courtSelector.getModel()).getIndexOf(number) < 0
+                && management.courts().stream().anyMatch(court -> court.getNumber() == number);
+        if (added) insertInOrder(number);
+        courtSelector.setSelectedItem(number);
+        if (added) courtAddedListeners.forEach(Runnable::run);
+    }
 
     void onCourtChange(Runnable listener) { courtSelector.addActionListener(event -> listener.run()); }
 

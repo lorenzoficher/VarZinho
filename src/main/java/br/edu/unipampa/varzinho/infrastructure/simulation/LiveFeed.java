@@ -21,7 +21,7 @@ public final class LiveFeed implements Feed {
     private static final int NO_COURT = 0;
 
     private final Gym gym;
-    private final int leftOutCourtNumber;
+    private int leftOutCourtNumber;
     private int sequence;
 
     public LiveFeed(Gym gym) {
@@ -36,11 +36,14 @@ public final class LiveFeed implements Feed {
      * another feed records. Courts added to the gym later are fed too.
      */
     public LiveFeed(Gym gym, int leftOutCourtNumber) {
-        if (gym == null) throw new IllegalArgumentException("a live feed needs a gym");
+        this(gym);
+        excludeCourt(leftOutCourtNumber);
+    }
+
+    public void excludeCourt(int leftOutCourtNumber) {
         if (leftOutCourtNumber <= NO_COURT) {
             throw new IllegalArgumentException("a live feed cannot leave out court " + leftOutCourtNumber);
         }
-        this.gym = gym;
         this.leftOutCourtNumber = leftOutCourtNumber;
     }
 

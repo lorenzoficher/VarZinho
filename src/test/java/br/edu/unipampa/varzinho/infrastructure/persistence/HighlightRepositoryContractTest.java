@@ -30,6 +30,19 @@ abstract class HighlightRepositoryContractTest {
     protected abstract HighlightRepository createRepository();
 
     @Test
+    void renamesAndDeletesOnlyTheRequestedRecording() throws RepositoryException {
+        var repository = createRepository();
+        repository.save(highlight("first", 1));
+        repository.save(highlight("second", 2));
+        repository.rename("first", "Lance Fernando Costa, gol!");
+        assertEquals("Lance Fernando Costa, gol!", repository.findById("first").orElseThrow().getTitle());
+        assertEquals(List.of("first", "second"), ids(repository.findAll()));
+        repository.delete("first");
+        assertEquals(List.of("second"), ids(repository.findAll()));
+        assertThrows(RepositoryException.class, () -> repository.rename("first", "Outro nome"));
+    }
+
+    @Test
     void findsASavedHighlightById() throws RepositoryException {
         HighlightRepository repository = createRepository();
         repository.save(highlight("h-001", 3));

@@ -14,6 +14,9 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.charset.StandardCharsets;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -33,6 +36,8 @@ public final class CsvHighlightRepository implements HighlightRepository {
     private static final String HEADER =
             "id,capturedAt,courtNumber,cameraId,clipPath,durationSeconds,resolution,sizeMb";
     private static final String SEPARATOR = ",";
+    private static final String NAMED_HEADER = HEADER + ",encodedTitle";
+    private static final Object WRITE_LOCK = new Object();
     private static final int COLUMNS = 8;
 
     private final Path file;
@@ -54,17 +59,26 @@ public final class CsvHighlightRepository implements HighlightRepository {
     @Override
     public void save(Highlight highlight) throws RepositoryException {
         StorableHighlights.requireStorable(highlight);
+        synchronized (WRITE_LOCK) {
+            store(highlight, readLines());
+        }
+    }
+
+    private void store(Highlight highlight, List<String> original) throws RepositoryException {
+        boolean named = !highlight.getTitle().isEmpty() || (!original.isEmpty() && NAMED_HEADER.equals(original.get(0)));
+        boolean migrate = named && !original.isEmpty() && HEADER.equals(original.get(0));
         String record = format(highlight);
+        if (named) record += SEPARATOR + URLEncoder.encode(highlight.getTitle(), StandardCharsets.UTF_8);
         // Working on the raw lines, not on parsed highlights, so a damaged line neither blocks
         // the save nor is destroyed by it.
         List<String> lines = new ArrayList<>();
         boolean replaced = false;
-        for (String existing : readLines().stream().skip(1).collect(Collectors.toList())) {
+        for (String existing : original.subList(Math.min(1, original.size()), original.size())) {
             if (existing.isBlank()) {
                 continue;
             }
             if (!idOf(existing).equals(highlight.getId())) {
-                lines.add(existing);
+                lines.add(migrate ? existing + SEPARATOR : existing);
             } else if (!replaced) {
                 lines.add(record);
                 replaced = true;
@@ -73,7 +87,37 @@ public final class CsvHighlightRepository implements HighlightRepository {
         if (!replaced) {
             lines.add(record);
         }
-        write(lines);
+        write(named ? NAMED_HEADER : HEADER, lines);
+    }
+
+    @Override
+    public void rename(String id, String title) throws RepositoryException {
+        synchronized (WRITE_LOCK) {
+            List<String> lines = readLines();
+            for (int i = 1; i < lines.size(); i++) {
+                if (idOf(lines.get(i)).equals(id)) {
+                    Highlight item;
+                    try {
+                        item = parse(lines.get(i), NAMED_HEADER.equals(lines.get(0)));
+                    } catch (IllegalArgumentException | DateTimeParseException damage) {
+                        throw new RepositoryException("could not read the recording to rename", damage);
+                    }
+                    store(item.named(title), lines);
+                    return;
+                }
+            }
+            throw new RepositoryException("recording no longer exists");
+        }
+    }
+
+    @Override
+    public void delete(String id) throws RepositoryException {
+        synchronized (WRITE_LOCK) {
+            List<String> lines = readLines();
+            if (lines.isEmpty()) return;
+            String header = lines.remove(0);
+            if (lines.removeIf(line -> idOf(line).equals(id))) write(header, lines);
+        }
     }
 
     @Override
@@ -94,7 +138,7 @@ public final class CsvHighlightRepository implements HighlightRepository {
                 continue;
             }
             try {
-                highlights.add(parse(line));
+                highlights.add(parse(line, NAMED_HEADER.equals(lines.get(0))));
             } catch (IllegalArgumentException | DateTimeParseException failure) {
                 if (firstFailure == null) {
                     firstMalformedLine = index + 1;
@@ -134,7 +178,7 @@ public final class CsvHighlightRepository implements HighlightRepository {
             throw new RepositoryException("could not read the archive " + file, cause);
         }
         // Skipping an unchecked first line would silently drop a record when the header is lost.
-        if (!lines.isEmpty() && !HEADER.equals(lines.get(0))) {
+        if (!lines.isEmpty() && !HEADER.equals(lines.get(0)) && !NAMED_HEADER.equals(lines.get(0))) {
             throw new RepositoryException("the archive " + file + " does not start with the header");
         }
         return lines;
@@ -145,9 +189,9 @@ public final class CsvHighlightRepository implements HighlightRepository {
         return separator < 0 ? line : line.substring(0, separator);
     }
 
-    private void write(List<String> records) throws RepositoryException {
+    private void write(String header, List<String> records) throws RepositoryException {
         List<String> lines = new ArrayList<>();
-        lines.add(HEADER);
+        lines.add(header);
         lines.addAll(records);
         try {
             Path directory = file.toAbsolutePath().getParent();
@@ -186,15 +230,18 @@ public final class CsvHighlightRepository implements HighlightRepository {
         return String.join(SEPARATOR, fields);
     }
 
-    private static Highlight parse(String line) {
+    private static Highlight parse(String line, boolean named) {
         String[] fields = line.split(SEPARATOR, -1);
-        if (fields.length != COLUMNS) {
+        int expected = named ? COLUMNS + 1 : COLUMNS;
+        if (fields.length != expected) {
             throw new IllegalArgumentException(
-                    "expected " + COLUMNS + " columns but found " + fields.length);
+                    "expected " + expected + " columns but found " + fields.length);
         }
         VideoClip clip = new VideoClip(fields[4], Integer.parseInt(fields[5]),
                 Resolution.valueOf(fields[6]), Double.parseDouble(fields[7]));
-        return new Highlight(fields[0], Instant.parse(fields[1]), Integer.parseInt(fields[2]),
+        Highlight item = new Highlight(fields[0], Instant.parse(fields[1]), Integer.parseInt(fields[2]),
                 fields[3], clip);
+        return named && !fields[COLUMNS].isEmpty()
+                ? item.named(URLDecoder.decode(fields[COLUMNS], StandardCharsets.UTF_8)) : item;
     }
 }

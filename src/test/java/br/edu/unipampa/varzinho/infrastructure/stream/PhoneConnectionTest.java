@@ -33,6 +33,61 @@ class PhoneConnectionTest {
     private final List<String> reasons = new ArrayList<>();
 
     @Test
+    void reportsAnUnreachablePhoneBeforeAnyClipCanBeRecorded() throws Exception {
+        assumeTrue(FfmpegExecutable.find().isPresent(), "FFmpeg unavailable");
+        int port;
+        try (var unused = new java.net.ServerSocket(0, 1, java.net.InetAddress.getByName("127.0.0.1"))) {
+            port = unused.getLocalPort();
+        }
+        var phone = PhoneConnection.start("http://127.0.0.1:" + port + "/video", segments, BUFFER_SECONDS);
+        try {
+            var failure = assertThrows(java.io.UncheckedIOException.class, phone::awaitFootage);
+            assertTrue(failure.getCause() instanceof java.net.ConnectException);
+            assertEquals("127.0.0.1:" + port, failure.getCause().getMessage());
+        } finally {
+            phone.disconnect();
+        }
+    }
+
+    @Test
+    void connectingAnHttpCameraWaitsForPlayableFootageAndFeedsTheRealCourt() throws Exception {
+        assumeTrue(FfmpegExecutable.find().isPresent(), "FFmpeg unavailable");
+        var jpeg = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(128, 96,
+                java.awt.image.BufferedImage.TYPE_INT_RGB), "jpg", jpeg);
+        byte[] frame = jpeg.toByteArray();
+        byte[] header = ("--frame\r\nContent-Type: image/jpeg\r\nContent-Length: " + frame.length + "\r\n\r\n")
+                .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        var webcam = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        webcam.createContext("/video", exchange -> {
+            try (exchange) {
+                exchange.getResponseHeaders().set("Content-Type", "multipart/x-mixed-replace; boundary=frame");
+                exchange.sendResponseHeaders(200, 0);
+                for (int i = 0; i < 500; i++) {
+                    var out = exchange.getResponseBody();
+                    out.write(header);
+                    out.write(frame);
+                    out.write(new byte[]{13, 10});
+                    out.flush();
+                    try { Thread.sleep(30); }
+                    catch (InterruptedException stop) { Thread.currentThread().interrupt(); return; }
+                }
+            }
+        });
+        webcam.start();
+        try {
+            String address = "http://127.0.0.1:" + webcam.getAddress().getPort() + "/video";
+            var phone = PhoneConnection.open(address, segments, BUFFER_SECONDS, reasons::add).orElseThrow();
+            try {
+                phone.awaitFootage();
+                phone.camera().startRecording();
+                phone.feed(() -> { throw new AssertionError("camera unexpectedly disconnected"); }).tick(Instant.now());
+                assertTrue(phone.camera().getSecondsRecorded() > 0);
+            } finally { phone.disconnect(); }
+        } finally { webcam.stop(0); }
+    }
+
+    @Test
     void noAddressMeansNoPhoneAndNothingToReport() {
         assertTrue(PhoneConnection.open(null, segments, BUFFER_SECONDS, reasons::add).isEmpty());
         assertTrue(PhoneConnection.open("  ", segments, BUFFER_SECONDS, reasons::add).isEmpty());
@@ -66,7 +121,7 @@ class PhoneConnectionTest {
     void capturesOutsideThePanelLeaveRealFilesWithoutCollectingAnyWrite() throws Exception {
         Process version = null;
         try {
-            version = new ProcessBuilder("ffmpeg", "-version").redirectErrorStream(true)
+            version = new ProcessBuilder(FfmpegExecutable.command(), "-version").redirectErrorStream(true)
                     .redirectOutput(ProcessBuilder.Redirect.DISCARD).start();
             assumeTrue(version.waitFor(10, TimeUnit.SECONDS) && version.exitValue() == 0,
                     "ffmpeg is not available");
@@ -76,7 +131,7 @@ class PhoneConnectionTest {
             if (version != null && version.isAlive()) version.destroyForcibly().waitFor();
         }
         Path segment = segments.resolve("second.ts");
-        Process generate = new ProcessBuilder("ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
+        Process generate = new ProcessBuilder(FfmpegExecutable.command(), "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
                 "-f", "lavfi", "-i", "testsrc=duration=1:size=64x64:rate=10", "-c:v", "libx264",
                 "-pix_fmt", "yuv420p", "-f", "mpegts", segment.toString())
                 .redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.DISCARD).start();

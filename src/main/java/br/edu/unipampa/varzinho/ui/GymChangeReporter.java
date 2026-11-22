@@ -13,17 +13,23 @@ final class GymChangeReporter {
 
     private GymChangeReporter() { }
 
+    enum Result { SAVED, NOT_PERSISTED, REFUSED }
+
     static boolean attempt(Change change, Consumer<String> errorSink) {
+        return apply(change, errorSink) != Result.REFUSED;
+    }
+
+    static Result apply(Change change, Consumer<String> errorSink) {
         try {
             change.apply();
-            return true;
+            return Result.SAVED;
         } catch (RepositoryException failure) {
             LOGGER.log(Level.WARNING, "Could not persist the gym change", failure);
             errorSink.accept("Não foi possível salvar a academia. Verifique o armazenamento.");
-            return true;
+            return Result.NOT_PERSISTED;
         } catch (IllegalStateException | IllegalArgumentException | DomainException refusal) {
             errorSink.accept(PortugueseText.message(refusal.getMessage()));
-            return false;
+            return Result.REFUSED;
         }
     }
 

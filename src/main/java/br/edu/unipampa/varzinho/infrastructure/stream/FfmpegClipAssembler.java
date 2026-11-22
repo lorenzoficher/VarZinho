@@ -35,7 +35,7 @@ public final class FfmpegClipAssembler implements ClipAssembler {
     private final Duration timeout;
 
     public FfmpegClipAssembler(SegmentIndex index) {
-        this(index, "ffmpeg", TIMEOUT);
+        this(index, FfmpegExecutable.command(), TIMEOUT);
     }
 
     // Lets a test stand a script in for FFmpeg, so the failure paths run where it is missing.

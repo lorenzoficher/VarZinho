@@ -4,6 +4,8 @@ import br.edu.unipampa.varzinho.application.port.GymRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.capture.Aimable;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
+import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
+import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 
@@ -60,6 +62,18 @@ public final class ManageGym {
         return changeCamera(courtNumber, cameraId, Camera::startRecording);
     }
 
+    public void installSimulatedPtz(int courtNumber, int pan, int tilt, int zoom) throws RepositoryException {
+        String prefix = "ptz-" + courtNumber;
+        String id = prefix;
+        var installed = gym.getCourts().stream().flatMap(court -> court.getCameras().stream())
+                .map(Camera::getId).collect(Collectors.toSet());
+        for (int suffix = 2; installed.contains(id); suffix++) id = prefix + "-" + suffix;
+        var camera = new PtzCamera(id, "PTZ", Resolution.HD, Court.DEFAULT_CAPTURE_SECONDS);
+        camera.moveTo(pan, tilt, zoom);
+        gym.installCamera(courtNumber, camera);
+        keep();
+    }
+
     public CourtView stopRecording(int courtNumber, String cameraId) throws RepositoryException {
         return changeCamera(courtNumber, cameraId, Camera::stopRecording);
     }
@@ -67,6 +81,10 @@ public final class ManageGym {
     public CourtView sendToMaintenance(int courtNumber, String cameraId)
             throws RepositoryException {
         return changeCamera(courtNumber, cameraId, Camera::sendToMaintenance);
+    }
+
+    public CourtView releaseFromMaintenance(int courtNumber, String cameraId) throws RepositoryException {
+        return changeCamera(courtNumber, cameraId, Camera::releaseFromMaintenance);
     }
 
     public CourtView removeCamera(int courtNumber, String cameraId) throws RepositoryException {

@@ -4,8 +4,8 @@ import br.edu.unipampa.varzinho.application.CameraKind;
 import br.edu.unipampa.varzinho.application.CameraSpec;
 import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.enums.Resolution;
+import net.miginfocom.swing.MigLayout;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -16,8 +16,6 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import java.awt.Component;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 
@@ -35,10 +33,12 @@ final class CameraInstallPanel extends JPanel {
     private final JComboBox<Resolution> resolutionSelector = new JComboBox<>(Resolution.values());
     private final JSpinner angleSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 359, 1));
     private final JButton install = new JButton("Cadastrar câmera");
+    private final JLabel destination = new JLabel();
+    private final JLabel feedback = new JLabel("A câmera será cadastrada como parada.");
 
     CameraInstallPanel(ManageGym management, IntSupplier selectedCourt, int bufferSeconds,
                        Consumer<String> errorSink, Runnable onInstalled) {
-        super(new GridLayout(2, 1));
+        super(new MigLayout("insets 16, fillx, wrap 2", "[180:220,grow,fill]12[180:220,grow,fill]"));
         if (management == null) throw new IllegalArgumentException("camera installation needs gym management");
         if (selectedCourt == null) throw new IllegalArgumentException("camera installation needs a selected court");
         if (bufferSeconds <= 0) throw new IllegalArgumentException("a buffer holds at least one second");
@@ -49,6 +49,7 @@ final class CameraInstallPanel extends JPanel {
         this.bufferSeconds = bufferSeconds;
         this.errorSink = errorSink;
         this.onInstalled = onInstalled;
+        VarZinhoTheme.styleCard(this);
         typeSelector.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value,
@@ -65,15 +66,19 @@ final class CameraInstallPanel extends JPanel {
                 return super.getListCellRendererComponent(list, label, index, selected, focused);
             }
         });
-        setBorder(BorderFactory.createTitledBorder("Adicionar câmera nesta quadra"));
-        JPanel identity = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        identity.add(new JLabel("ID da câmera")); identity.add(idField);
-        identity.add(new JLabel("Modelo")); identity.add(modelField);
-        identity.add(new JLabel("Tipo")); identity.add(typeSelector);
-        JPanel settings = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        settings.add(new JLabel("Resolução")); settings.add(resolutionSelector);
-        settings.add(new JLabel("Ângulo de visão")); settings.add(angleSpinner); settings.add(install);
-        add(identity); add(settings);
+        JLabel title = new JLabel("Adicionar câmera");
+        VarZinhoTheme.styleTitle(title);
+        VarZinhoTheme.styleEyebrow(destination);
+        showDestination();
+        add(destination, "span");
+        add(title, "span, gapbottom 14");
+        add(new JLabel("ID da câmera")); add(new JLabel("Modelo"));
+        add(idField, "h 34!"); add(modelField, "h 34!");
+        add(new JLabel("Tipo")); add(new JLabel("Resolução"));
+        add(typeSelector); add(resolutionSelector);
+        add(new JLabel("Ângulo de visão (graus)"), "span"); add(angleSpinner, "span, growx");
+        add(feedback, "span, gapy 12");
+        add(install, "skip 1, h 38!");
         typeSelector.addActionListener(
                 event -> angleSpinner.setEnabled(typeSelector.getSelectedItem() == CameraKind.FIXED));
         install.addActionListener(event -> install());
@@ -86,12 +91,25 @@ final class CameraInstallPanel extends JPanel {
     JSpinner angleSpinner() { return angleSpinner; }
     JButton installButton() { return install; }
 
+    void showDestination() {
+        destination.setText("QUADRA " + selectedCourt.getAsInt());
+        feedback.setText("A câmera será cadastrada como parada.");
+    }
+
     private void install() {
+        int number = selectedCourt.getAsInt();
         CameraSpec specification = new CameraSpec(idField.getText(), modelField.getText(),
                 (CameraKind) typeSelector.getSelectedItem(), (Resolution) resolutionSelector.getSelectedItem(),
                 bufferSeconds, (Integer) angleSpinner.getValue());
-        GymChangeReporter.attempt(() -> management.installCamera(selectedCourt.getAsInt(), specification),
-                errorSink);
-        onInstalled.run();
+        var result = GymChangeReporter.apply(() -> management.installCamera(number, specification),
+                message -> { feedback.setText(message); errorSink.accept(message); });
+        if (result == GymChangeReporter.Result.SAVED) {
+            feedback.setText(specification.getKind() == CameraKind.PTZ
+                    ? "PTZ cadastrada. Teste o movimento no Dashboard."
+                    : "Câmera cadastrada. Informe outro ID para adicionar mais uma.");
+            idField.setText("");
+            idField.requestFocusInWindow();
+        }
+        if (result != GymChangeReporter.Result.REFUSED) onInstalled.run();
     }
 }

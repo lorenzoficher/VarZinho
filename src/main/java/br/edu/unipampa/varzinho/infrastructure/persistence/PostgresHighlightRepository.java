@@ -45,7 +45,7 @@ public final class PostgresHighlightRepository implements HighlightRepository {
     // A resave updates every column but position, so a replaced highlight keeps its place.
     private static final String UPSERT = "INSERT INTO highlight (id, captured_epoch_second, "
             + "captured_nano, court_number, camera_id, clip_path, clip_duration_seconds, "
-            + "clip_resolution, clip_size_mb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            + "clip_resolution, clip_size_mb, title) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
             + "ON CONFLICT (id) DO UPDATE SET "
             + "captured_epoch_second = EXCLUDED.captured_epoch_second, "
             + "captured_nano = EXCLUDED.captured_nano, "
@@ -54,11 +54,11 @@ public final class PostgresHighlightRepository implements HighlightRepository {
             + "clip_path = EXCLUDED.clip_path, "
             + "clip_duration_seconds = EXCLUDED.clip_duration_seconds, "
             + "clip_resolution = EXCLUDED.clip_resolution, "
-            + "clip_size_mb = EXCLUDED.clip_size_mb";
+            + "clip_size_mb = EXCLUDED.clip_size_mb, title = EXCLUDED.title";
 
     private static final String SELECT = "SELECT id, captured_epoch_second, captured_nano, "
             + "court_number, camera_id, clip_path, clip_duration_seconds, clip_resolution, "
-            + "clip_size_mb FROM highlight";
+            + "clip_size_mb, title FROM highlight";
 
     private final String url;
     private final String user;
@@ -102,9 +102,34 @@ public final class PostgresHighlightRepository implements HighlightRepository {
             statement.setInt(7, clip.getDurationSeconds());
             statement.setString(8, clip.getResolution().name());
             statement.setDouble(9, clip.getSizeMb());
+            statement.setString(10, highlight.getTitle());
             statement.executeUpdate();
         } catch (SQLException cause) {
             throw new RepositoryException("could not save the highlight " + highlight.getId(), cause);
+        }
+    }
+
+    @Override
+    public void rename(String id, String title) throws RepositoryException {
+        String name = Highlight.requireTitle(title);
+        try (Connection connection = connect();
+                PreparedStatement statement = connection.prepareStatement("UPDATE highlight SET title = ? WHERE id = ?")) {
+            statement.setString(1, name);
+            statement.setString(2, id);
+            if (statement.executeUpdate() == 0) throw new RepositoryException("recording no longer exists");
+        } catch (SQLException cause) {
+            throw new RepositoryException("could not rename the recording", cause);
+        }
+    }
+
+    @Override
+    public void delete(String id) throws RepositoryException {
+        try (Connection connection = connect();
+                PreparedStatement statement = connection.prepareStatement("DELETE FROM highlight WHERE id = ?")) {
+            statement.setString(1, id);
+            statement.executeUpdate();
+        } catch (SQLException cause) {
+            throw new RepositoryException("could not delete the recording", cause);
         }
     }
 
@@ -148,6 +173,7 @@ public final class PostgresHighlightRepository implements HighlightRepository {
         try (Connection connection = connect();
                 Statement statement = connection.createStatement()) {
             statement.execute(CREATE_TABLE);
+            statement.execute("ALTER TABLE highlight ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT ''");
         } catch (SQLException cause) {
             throw new RepositoryException("could not prepare the highlight table at " + url, cause);
         }
@@ -175,7 +201,9 @@ public final class PostgresHighlightRepository implements HighlightRepository {
                     Resolution.valueOf(row.getString("clip_resolution")), row.getDouble("clip_size_mb"));
             Instant capturedAt = Instant.ofEpochSecond(
                     row.getLong("captured_epoch_second"), row.getInt("captured_nano"));
-            return new Highlight(id, capturedAt, row.getInt("court_number"), row.getString("camera_id"), clip);
+            Highlight item = new Highlight(id, capturedAt, row.getInt("court_number"), row.getString("camera_id"), clip);
+            String title = row.getString("title");
+            return title.isEmpty() ? item : item.named(title);
         } catch (IllegalArgumentException cause) {
             // A row edited by hand outside the application can break a rule the constructors keep.
             throw new RepositoryException("the stored highlight " + id + " is not a valid highlight", cause);
