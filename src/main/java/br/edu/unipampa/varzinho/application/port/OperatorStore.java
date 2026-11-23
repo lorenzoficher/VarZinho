@@ -15,6 +15,16 @@ public interface OperatorStore {
      */
     void save(Operator operator) throws RepositoryException;
 
+    /**
+     * Puts this operator in place of the stored one with the same username — how a new
+     * password reaches the store, since an {@link Operator} never changes.
+     *
+     * @throws IllegalArgumentException if the operator is missing, no stored operator has
+     *     its username, or a text cannot be represented by every adapter
+     * @throws RepositoryException if the storage cannot be read or written
+     */
+    void replace(Operator operator) throws RepositoryException;
+
     /** An unknown or missing username gives an empty result. */
     Optional<Operator> findByUsername(String username) throws RepositoryException;
 

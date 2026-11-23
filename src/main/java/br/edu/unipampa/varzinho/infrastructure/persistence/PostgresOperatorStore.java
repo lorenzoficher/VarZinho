@@ -23,6 +23,8 @@ public final class PostgresOperatorStore implements OperatorStore {
     // Only a collision on the username is a domain refusal. Other SQL failures still propagate.
     private static final String INSERT = "INSERT INTO operator_account (name, username, password_hash) "
             + "VALUES (?, ?, ?) ON CONFLICT (lower(username)) DO NOTHING";
+    private static final String UPDATE = "UPDATE operator_account SET name = ?, password_hash = ? "
+            + "WHERE lower(username) = ?";
     private static final String SELECT = "SELECT name, username, password_hash FROM operator_account "
             + "WHERE lower(username) = ?";
     private final String url;
@@ -64,6 +66,21 @@ public final class PostgresOperatorStore implements OperatorStore {
             }
         } catch (SQLException cause) {
             throw new RepositoryException("could not save the operator " + operator.getUsername(), cause);
+        }
+    }
+
+    @Override
+    public void replace(Operator operator) throws RepositoryException {
+        StorableOperators.requireStorable(operator);
+        try (Connection connection = connect(); PreparedStatement statement = connection.prepareStatement(UPDATE)) {
+            statement.setString(1, operator.getName());
+            statement.setString(2, operator.getPasswordHash());
+            statement.setString(3, operator.getUsername());
+            if (statement.executeUpdate() == 0) {
+                throw new IllegalArgumentException("no operator has the username " + operator.getUsername());
+            }
+        } catch (SQLException cause) {
+            throw new RepositoryException("could not replace the operator " + operator.getUsername(), cause);
         }
     }
 

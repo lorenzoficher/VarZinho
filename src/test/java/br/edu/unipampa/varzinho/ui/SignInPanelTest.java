@@ -84,9 +84,40 @@ class SignInPanelTest {
         assertTrue(errors.get(0).contains("ler os operadores"), errors.get(0));
     }
 
+    @Test
+    void aCompletedPasswordRecoveryFillsTheUsernameAndAsksForTheNewPassword() {
+        SignInPanel recovering = new SignInPanel(new OperatorAccess(store), errors::add, signedIn::add,
+                parent -> Optional.of("ana"));
+        recovering.passwordField().setText("leftover");
+
+        recovering.forgotPasswordButton().doClick();
+
+        assertEquals("ana", recovering.usernameField().getText());
+        assertEquals(0, recovering.passwordField().getPassword().length);
+        assertEquals(List.of("Senha alterada. Entre com a nova senha."), errors);
+        assertTrue(signedIn.isEmpty());
+    }
+
+    @Test
+    void aPasswordRecoveryClosedHalfwayChangesNothing() {
+        SignInPanel recovering = new SignInPanel(new OperatorAccess(store), errors::add, signedIn::add,
+                parent -> Optional.empty());
+        recovering.usernameField().setText("typed");
+
+        recovering.forgotPasswordButton().doClick();
+
+        assertEquals("typed", recovering.usernameField().getText());
+        assertTrue(errors.isEmpty(), errors.toString());
+    }
+
     private static final class UnreadableStore implements OperatorStore {
         @Override
         public void save(Operator operator) throws RepositoryException {
+            throw new RepositoryException("disk is gone");
+        }
+
+        @Override
+        public void replace(Operator operator) throws RepositoryException {
             throw new RepositoryException("disk is gone");
         }
 

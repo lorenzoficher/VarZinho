@@ -39,6 +39,7 @@ final class PortugueseText {
             new MessagePattern("camera (.+) cannot be aimed", "A câmera $1 não pode ser apontada."),
             new MessagePattern("the camera is not installed on court (-?[0-9]+)", "A câmera não está instalada na quadra $1."),
             new MessagePattern("username (\\S+) is already taken", "O usuário $1 já está em uso."),
+            new MessagePattern("no operator has the username (\\S+)", "Nenhum operador usa o usuário $1."),
             new MessagePattern("court (-?[0-9]+) is not registered", "A quadra $1 não está cadastrada."),
             new MessagePattern("Court ([0-9]+) has no active camera[.]", "Não há câmera ativa na quadra $1."),
             new MessagePattern("a window of ([0-9]+)s was asked of the ([0-9]+)s recorded", "A captura requer $1 s, mas apenas $2 s foram gravados.")
@@ -103,6 +104,7 @@ final class PortugueseText {
             case "a password needs a digit" -> "A senha precisa de um número.";
             case "a password needs a symbol" -> "A senha precisa de um símbolo.";
             case "username or password is incorrect" -> "Usuário ou senha inválidos.";
+            case "the e-mail address is not valid" -> "Informe um e-mail válido.";
             case "the first operator has already been created" -> "O primeiro operador já foi cadastrado.";
             case "there is no camera to move" -> "Não há câmera para mover.";
             default -> translateDetails(message);

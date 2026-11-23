@@ -131,7 +131,7 @@ public final class Launcher {
         String publicView = null;
         if (spectators != null) {
             try {
-                viewerAddress = spectators.broadcast(phone.streamUrl(), court.getNumber(), DATA_FOLDER.resolve("spectator/live"));
+                viewerAddress = spectators.broadcast(phone.liveRelay(), court.getNumber(), DATA_FOLDER.resolve("spectator/live"));
                 if (viewerAddress.startsWith("https://")) publicView = viewerAddress;
             }
             catch (java.io.IOException failure) {

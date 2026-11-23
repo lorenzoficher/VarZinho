@@ -23,6 +23,15 @@ public final class InMemoryOperatorStore implements OperatorStore {
     }
 
     @Override
+    public void replace(Operator operator) {
+        StorableOperators.requireStorable(operator);
+        if (!operatorsByUsername.containsKey(operator.getUsername())) {
+            throw new IllegalArgumentException("no operator has the username " + operator.getUsername());
+        }
+        operatorsByUsername.put(operator.getUsername(), operator);
+    }
+
+    @Override
     public Optional<Operator> findByUsername(String username) {
         if (username == null) return Optional.empty();
         return Optional.ofNullable(operatorsByUsername.get(username.toLowerCase(Locale.ROOT)));

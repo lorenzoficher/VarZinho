@@ -20,10 +20,18 @@ import java.util.stream.Stream;
  *
  * <p>The ring is larger than any buffer reads from it: the spare segments are what
  * keep FFmpeg from overwriting a second while a clip is still copying it.
+ *
+ * <p>This is the only process that reads the phone. Some phone apps (DroidCam) serve
+ * their video to a single client, so anything else that wants the live picture — the
+ * spectator broadcast — reads the {@link #liveRelay() relay} this process publishes on
+ * the loopback instead of asking the phone a second time.
  */
 public final class FfmpegRecorder {
 
     public static final int RING_SEGMENTS = 40;
+
+    private static final String SEGMENT_LIST = "segments.csv";
+    private static final String SEGMENT_PATTERN = "seg-%02d.ts";
 
     /**
      * How long FFmpeg waits on a stream that sends nothing before it gives up and exits.
@@ -36,16 +44,28 @@ public final class FfmpegRecorder {
 
     private static final Set<String> STREAM_PROTOCOLS = Set.of("http", "https", "rtsp");
 
+    private static final String LOOPBACK = "127.0.0.1";
+
+    /** MPEG-TS packets fit seven to a datagram this size, under any Ethernet MTU. */
+    private static final int RELAY_PACKET_BYTES = 1316;
+
+    /** Enough for a few seconds of 1080p, so a busy reader drops nothing on the loopback. */
+    private static final int RELAY_READER_FIFO_PACKETS = 100_000;
+
+    private static final int HIGHEST_PORT = 65_535;
+
     private final String streamUrl;
     private final Path bufferFolder;
+    private final int relayPort;
     private Process process;
     private volatile boolean stopRequested;
 
     /**
+     * @param relayPort the loopback UDP port the recorded video is also published on
      * @throws IllegalArgumentException if the address is not an http, https or rtsp
-     *         address with a host, or the folder is missing
+     *         address with a host, the folder is missing, or the port is not a valid one
      */
-    public FfmpegRecorder(String streamUrl, Path bufferFolder) {
+    public FfmpegRecorder(String streamUrl, Path bufferFolder, int relayPort) {
         if (streamUrl == null || streamUrl.isBlank()) {
             throw new IllegalArgumentException("a recorder needs the address it records from");
         }
@@ -56,8 +76,12 @@ public final class FfmpegRecorder {
         if (bufferFolder == null) {
             throw new IllegalArgumentException("a recorder needs a folder for its segments");
         }
+        if (relayPort < 1 || relayPort > HIGHEST_PORT) {
+            throw new IllegalArgumentException("relay port " + relayPort + " is outside 1-" + HIGHEST_PORT);
+        }
         this.streamUrl = streamUrl;
         this.bufferFolder = bufferFolder;
+        this.relayPort = relayPort;
     }
 
     /**
@@ -75,7 +99,10 @@ public final class FfmpegRecorder {
         Path executable = FfmpegExecutable.find().orElseThrow(() -> new java.io.FileNotFoundException("ffmpeg"));
         clearBufferFolder();
         // FFmpeg's output goes to a file: an unread pipe fills up and freezes it.
+        // It runs inside the buffer folder because the tee outputs name their files
+        // relative to it; see command().
         process = new ProcessBuilder(command(executable.toString()))
+                .directory(bufferFolder.toFile())
                 .redirectErrorStream(true)
                 .redirectOutput(bufferFolder.resolve("recorder.log").toFile())
                 .start();
@@ -126,7 +153,18 @@ public final class FfmpegRecorder {
     }
 
     public Path segmentList() {
-        return bufferFolder.resolve("segments.csv");
+        return bufferFolder.resolve(SEGMENT_LIST);
+    }
+
+    /**
+     * The address another FFmpeg reads to receive the video this recorder encodes, as
+     * it is encoded. Nobody listening costs nothing: the datagrams are simply dropped.
+     * A reader gives up after {@link #READ_TIMEOUT_MICROSECONDS} without a packet, which
+     * is how a dropped phone reaches it too.
+     */
+    public String liveRelay() {
+        return "udp://" + LOOPBACK + ":" + relayPort + "?timeout=" + READ_TIMEOUT_MICROSECONDS
+                + "&fifo_size=" + RELAY_READER_FIFO_PACKETS + "&overrun_nonfatal=1";
     }
 
     boolean isRunning() { return process != null && process.isAlive(); }
@@ -160,11 +198,19 @@ public final class FfmpegRecorder {
                 "-an", "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
                 "-pix_fmt", "yuv420p",
                 "-force_key_frames", "expr:gte(t,n_forced*1)",
-                "-f", "segment", "-segment_time", "1", "-segment_wrap", String.valueOf(RING_SEGMENTS),
-                "-reset_timestamps", "1",
-                "-segment_list", segmentList().toString(), "-segment_list_type", "csv",
-                "-segment_list_size", "0",
-                bufferFolder.resolve("seg-%02d.ts").toString());
+                "-map", "0:v", "-f", "tee", teeOutputs());
+    }
+
+    // One encode, two outputs. The ring's files are named relative to the working
+    // directory because the tee syntax gives ':' and the backslash a meaning of their own,
+    // so a Windows folder path, or any path with them, would need escaping.
+    // onfail=ignore keeps the ring recording whatever happens to the relay.
+    private String teeOutputs() {
+        String ring = "[f=segment:segment_time=1:segment_wrap=" + RING_SEGMENTS + ":reset_timestamps=1"
+                + ":segment_list=" + SEGMENT_LIST + ":segment_list_type=csv:segment_list_size=0]" + SEGMENT_PATTERN;
+        String relay = "[f=mpegts:onfail=ignore]udp://" + LOOPBACK + ":" + relayPort
+                + "?pkt_size=" + RELAY_PACKET_BYTES;
+        return ring + "|" + relay;
     }
 
     // Without a protocol FFmpeg reads the address as a file name, fails at once and

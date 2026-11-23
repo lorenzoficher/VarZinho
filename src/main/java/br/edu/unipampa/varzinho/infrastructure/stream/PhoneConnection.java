@@ -5,6 +5,8 @@ import br.edu.unipampa.varzinho.domain.capture.StreamCamera;
 import br.edu.unipampa.varzinho.enums.Resolution;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -50,7 +52,7 @@ public final class PhoneConnection {
     }
 
     public static PhoneConnection start(String streamUrl, Path segmentFolder, int bufferSeconds) throws IOException {
-        FfmpegRecorder recorder = new FfmpegRecorder(streamUrl, segmentFolder);
+        FfmpegRecorder recorder = new FfmpegRecorder(streamUrl, segmentFolder, freeLoopbackUdpPort());
         recorder.start();
         SegmentIndex index = new SegmentIndex(FfmpegRecorder.RING_SEGMENTS);
         StreamCamera camera = cameraFor(streamUrl, bufferSeconds, index);
@@ -68,6 +70,22 @@ public final class PhoneConnection {
 
     public String streamUrl() {
         return streamUrl;
+    }
+
+    /**
+     * Where to read the phone's live picture without opening another connection to the
+     * phone. See {@link FfmpegRecorder#liveRelay()}.
+     */
+    public String liveRelay() {
+        return recorder.liveRelay();
+    }
+
+    // The port is released before FFmpeg binds it; another program taking it in between
+    // costs only the broadcast, never the recording, since the relay output may fail.
+    private static int freeLoopbackUdpPort() throws IOException {
+        try (DatagramSocket probe = new DatagramSocket(0, InetAddress.getLoopbackAddress())) {
+            return probe.getLocalPort();
+        }
     }
 
     /** Only a completed segment proves that FFmpeg could read the supplied address. */

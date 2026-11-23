@@ -61,10 +61,19 @@ public final class SpectatorServer implements AutoCloseable {
         return origin;
     }
 
-    public synchronized String broadcast(String stream, int courtNumber, Path folder) throws IOException {
+    /**
+     * Starts the spectator broadcast of one court.
+     *
+     * @param source an address FFmpeg reads the live picture from — the recorder's relay,
+     *     never the phone itself, which may serve a single client
+     * @return the address spectators open
+     * @throws IllegalStateException if a match is already streaming
+     * @throws IOException if the broadcast encoder cannot be started
+     */
+    public synchronized String broadcast(String source, int courtNumber, Path folder) throws IOException {
         if (match != null) throw new IllegalStateException("a match is already streaming");
         court = courtNumber;
-        match = new MatchBroadcast(folder, List.of("-rw_timeout", "5000000", "-i", stream));
+        match = new MatchBroadcast(folder, List.of("-i", source));
         return origin;
     }
 
