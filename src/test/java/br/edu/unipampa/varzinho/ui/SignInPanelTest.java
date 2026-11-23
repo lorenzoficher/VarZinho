@@ -91,6 +91,11 @@ class SignInPanelTest {
         }
 
         @Override
+        public void replace(Operator operator) throws RepositoryException {
+            throw new RepositoryException("disk is gone");
+        }
+
+        @Override
         public Optional<Operator> findByUsername(String username) throws RepositoryException {
             throw new RepositoryException("disk is gone");
         }

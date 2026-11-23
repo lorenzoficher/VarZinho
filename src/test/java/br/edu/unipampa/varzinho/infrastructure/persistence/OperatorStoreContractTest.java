@@ -84,6 +84,35 @@ abstract class OperatorStoreContractTest {
         assertFalse(store.hasAny());
     }
 
+    @Test
+    void replacingAnOperatorKeepsOnlyItsNewPassword() throws RepositoryException {
+        OperatorStore store = createStore();
+        store.save(operator("inaurrara"));
+
+        store.replace(new Operator("Inaurrara Flores", "inaurrara", "Renewed2@"));
+
+        Operator found = store.findByUsername("inaurrara").orElseThrow();
+        assertTrue(found.checksPassword("Renewed2@"));
+        assertFalse(found.checksPassword(PASSWORD));
+    }
+
+    @Test
+    void replacingAnUnknownOperatorIsRefusedAndStoresNothing() throws RepositoryException {
+        OperatorStore store = createStore();
+        store.save(operator("inaurrara"));
+
+        IllegalArgumentException refusal = assertThrows(IllegalArgumentException.class,
+                () -> store.replace(operator("nobody")));
+
+        assertTrue(refusal.getMessage().contains("no operator has the username nobody"), refusal.getMessage());
+        assertTrue(store.findByUsername("nobody").isEmpty());
+    }
+
+    @Test
+    void replacingWithAMissingOperatorIsRefused() {
+        assertThrows(IllegalArgumentException.class, () -> createStore().replace(null));
+    }
+
     private static Operator operator(String username) {
         return new Operator("Inaurrara Flores", username, PASSWORD);
     }

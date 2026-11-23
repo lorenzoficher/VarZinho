@@ -43,6 +43,21 @@ public final class CsvOperatorStore implements OperatorStore {
     }
 
     @Override
+    public void replace(Operator operator) throws RepositoryException {
+        StorableOperators.requireStorable(operator);
+        List<Operator> operators = new ArrayList<>(readAll());
+        int position = operators.indexOf(operator);
+        if (position < 0) {
+            throw new IllegalArgumentException("no operator has the username " + operator.getUsername());
+        }
+        operators.set(position, operator);
+        List<String> lines = new ArrayList<>();
+        lines.add(HEADER);
+        operators.forEach(stored -> lines.add(format(stored)));
+        write(lines);
+    }
+
+    @Override
     public Optional<Operator> findByUsername(String username) throws RepositoryException {
         if (username == null) return Optional.empty();
         String normalized = username.toLowerCase(Locale.ROOT);

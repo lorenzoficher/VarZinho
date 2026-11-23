@@ -82,4 +82,67 @@ class OperatorAccessTest {
         assertTrue(refusal.getMessage().contains("already taken"));
         assertEquals("Inaurrara Flores", store.findByUsername("inaurrara").orElseThrow().getName());
     }
+
+    @Test
+    void aForgottenPasswordIsReplacedAndOnlyTheNewOneSignsIn() throws RepositoryException {
+        access.createFirst("Inaurrara Flores", "inaurrara", PASSWORD);
+        access.requestPasswordReset("INAURRARA", "anything@example.com");
+
+        access.resetPassword("INAURRARA", "Renewed2@");
+
+        assertEquals("inaurrara", access.signIn("inaurrara", "Renewed2@").getOperator().getUsername());
+        assertThrows(IllegalArgumentException.class, () -> access.signIn("inaurrara", PASSWORD));
+    }
+
+    @Test
+    void aResetKeepsTheOperatorsName() throws RepositoryException {
+        access.createFirst("Inaurrara Flores", "inaurrara", PASSWORD);
+
+        access.resetPassword("inaurrara", "Renewed2@");
+
+        assertEquals("Inaurrara Flores", access.signIn("inaurrara", "Renewed2@").getOperator().getName());
+    }
+
+    @Test
+    void aResetRequestForAnUnknownUsernameIsRefused() throws RepositoryException {
+        access.createFirst("Inaurrara Flores", "inaurrara", PASSWORD);
+
+        IllegalArgumentException refusal = assertThrows(IllegalArgumentException.class,
+                () -> access.requestPasswordReset("nobody", "anything@example.com"));
+
+        assertEquals("no operator has the username nobody", refusal.getMessage());
+    }
+
+    @Test
+    void aResetRequestNeedsAUsername() throws RepositoryException {
+        access.createFirst("Inaurrara Flores", "inaurrara", PASSWORD);
+
+        assertThrows(IllegalArgumentException.class, () -> access.requestPasswordReset(" ", "anything@example.com"));
+        assertThrows(IllegalArgumentException.class, () -> access.requestPasswordReset(null, "anything@example.com"));
+    }
+
+    @Test
+    void aResetRequestNeedsAWellFormedEmail() throws RepositoryException {
+        access.createFirst("Inaurrara Flores", "inaurrara", PASSWORD);
+
+        for (String email : new String[]{null, "", "no-at-sign", "two@@example.com", "spaces in@example.com", "x@nodot"}) {
+            IllegalArgumentException refusal = assertThrows(IllegalArgumentException.class,
+                    () -> access.requestPasswordReset("inaurrara", email), String.valueOf(email));
+            assertEquals("the e-mail address is not valid", refusal.getMessage());
+        }
+    }
+
+    @Test
+    void aWeakNewPasswordIsRefusedAndTheOldOneStillSignsIn() throws RepositoryException {
+        access.createFirst("Inaurrara Flores", "inaurrara", PASSWORD);
+
+        assertThrows(IllegalArgumentException.class, () -> access.resetPassword("inaurrara", "weak"));
+
+        assertEquals("inaurrara", access.signIn("inaurrara", PASSWORD).getOperator().getUsername());
+    }
+
+    @Test
+    void resettingAnUnknownUsernameIsRefused() {
+        assertThrows(IllegalArgumentException.class, () -> access.resetPassword("nobody", "Renewed2@"));
+    }
 }
