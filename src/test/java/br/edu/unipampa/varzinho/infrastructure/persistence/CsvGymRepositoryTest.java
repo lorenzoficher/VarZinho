@@ -18,7 +18,6 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -85,7 +84,7 @@ class CsvGymRepositoryTest extends GymRepositoryContractTest {
         assertThrows(IllegalArgumentException.class, () -> repository.save(gym));
 
         assertEquals(before, Files.readAllLines(directory.resolve("gym.csv")));
-        assertNull(repository.load().orElseThrow().findCourt(1));
+        assertTrue(repository.load().orElseThrow().findCourt(1).isEmpty());
     }
 
     @Test
@@ -113,7 +112,7 @@ class CsvGymRepositoryTest extends GymRepositoryContractTest {
 
         repository.save(gym);
 
-        List<Camera> stored = repository.load().orElseThrow().findCourt(1).getCameras();
+        List<Camera> stored = repository.load().orElseThrow().findCourt(1).orElseThrow().getCameras();
         assertEquals(List.of("fixed-1"), stored.stream().map(Camera::getId).toList());
     }
 

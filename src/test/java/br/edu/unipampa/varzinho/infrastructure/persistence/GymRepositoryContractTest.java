@@ -54,7 +54,7 @@ abstract class GymRepositoryContractTest {
         assertEquals("Arena Norte", loaded.getName());
         assertEquals("Rua das Flores 12", loaded.getAddress());
         assertEquals(List.of(1, 4), loaded.getCourts().stream().map(Court::getNumber).sorted().toList());
-        List<Camera> courtOne = loaded.findCourt(1).getCameras();
+        List<Camera> courtOne = loaded.findCourt(1).orElseThrow().getCameras();
         FixedCamera loadedFixed = assertInstanceOf(FixedCamera.class, courtOne.get(0));
         assertEquals("fixed-1", loadedFixed.getId());
         assertEquals("Bullet", loadedFixed.getModel());
@@ -66,7 +66,7 @@ abstract class GymRepositoryContractTest {
         assertEquals(20, loadedPtz.getBufferSeconds());
         assertEquals(List.of(120, -15, 4), List.of(loadedPtz.getPan(), loadedPtz.getTilt(), loadedPtz.getZoom()));
         assertEquals(CameraStatus.INACTIVE, loadedPtz.getStatus());
-        assertEquals(CameraStatus.MAINTENANCE, loaded.findCourt(4).getCameras().get(0).getStatus());
+        assertEquals(CameraStatus.MAINTENANCE, loaded.findCourt(4).orElseThrow().getCameras().get(0).getStatus());
     }
 
     @Test

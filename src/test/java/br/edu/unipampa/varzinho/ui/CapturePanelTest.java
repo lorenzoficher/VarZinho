@@ -118,7 +118,7 @@ class CapturePanelTest {
         onSwing(() -> {
             fillBuffers(gym);
             courtPanel.selectCourt(2);
-            gym.findCourt(2).getCameras().get(0).stopRecording();
+            gym.findCourt(2).orElseThrow().getCameras().get(0).stopRecording();
         });
 
         onSwing(() -> pressF2(panel));
@@ -133,7 +133,7 @@ class CapturePanelTest {
         onSwing(() -> {
             fillBuffers(gym);
             courtPanel.selectCourt(2);
-            gym.findCourt(2).getCameras().get(0).stopRecording();
+            gym.findCourt(2).orElseThrow().getCameras().get(0).stopRecording();
         });
 
         press(panel);
@@ -153,7 +153,7 @@ class CapturePanelTest {
         });
         press(panel);
         awaitFinished(panel);
-        onSwing(() -> gym.findCourt(2).getCameras().get(0).stopRecording());
+        onSwing(() -> gym.findCourt(2).orElseThrow().getCameras().get(0).stopRecording());
 
         press(panel);
         awaitFinished(panel);

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SampleGymTest {
     @Test
     void courtOneHoldsBothKindsOfCamera() {
-        List<Camera> cameras = SampleGym.build().findCourt(1).getCameras();
+        List<Camera> cameras = SampleGym.build().findCourt(1).orElseThrow().getCameras();
 
         assertEquals(2, cameras.size());
         assertTrue(cameras.stream().anyMatch(FixedCamera.class::isInstance));
@@ -25,7 +25,7 @@ class SampleGymTest {
 
     @Test
     void courtTwoHoldsOneFixedCamera() {
-        List<Camera> cameras = SampleGym.build().findCourt(2).getCameras();
+        List<Camera> cameras = SampleGym.build().findCourt(2).orElseThrow().getCameras();
 
         assertEquals(1, cameras.size());
         assertTrue(cameras.get(0) instanceof FixedCamera);
@@ -40,7 +40,7 @@ class SampleGymTest {
                 assertEquals(CameraStatus.ACTIVE, camera.getStatus(), camera.getId());
             }
         }
-        assertTrue(gym.findCourt(1).hasActiveCamera());
-        assertTrue(gym.findCourt(2).hasActiveCamera());
+        assertTrue(gym.findCourt(1).orElseThrow().hasActiveCamera());
+        assertTrue(gym.findCourt(2).orElseThrow().hasActiveCamera());
     }
 }

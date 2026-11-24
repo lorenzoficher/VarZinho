@@ -76,7 +76,7 @@ class CourtSummaryPanelTest {
 
     @Test
     void aCameraStoppedOutsideThePanelShowsOnceTheCamerasAreRefreshed() {
-        gym.findCourt(1).getCameras().get(0).stopRecording();
+        gym.findCourt(1).orElseThrow().getCameras().get(0).stopRecording();
 
         courts.refreshCameras();
 

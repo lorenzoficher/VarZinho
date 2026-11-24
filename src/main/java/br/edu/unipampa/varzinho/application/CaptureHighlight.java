@@ -45,8 +45,8 @@ public final class CaptureHighlight {
      *         recorded nothing yet
      */
     public PendingCapture capture(int courtNumber) {
-        Court court = gym.findCourt(courtNumber);
-        if (court == null) throw new IllegalArgumentException("court " + courtNumber + " is not registered");
+        Court court = gym.findCourt(courtNumber).orElseThrow(
+                () -> new IllegalArgumentException("court " + courtNumber + " is not registered"));
         Highlight highlight = court.triggerCapture();
         return new PendingCapture(highlight, repository);
     }
