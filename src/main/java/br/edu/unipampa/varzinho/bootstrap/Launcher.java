@@ -11,6 +11,7 @@ import br.edu.unipampa.varzinho.application.SignedInOperator;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
+import br.edu.unipampa.varzinho.infrastructure.persistence.StoredRecordingEditor;
 import br.edu.unipampa.varzinho.infrastructure.simulation.LiveFeed;
 import br.edu.unipampa.varzinho.infrastructure.stream.PhoneConnection;
 import br.edu.unipampa.varzinho.infrastructure.spectator.SpectatorServer;
@@ -76,7 +77,7 @@ public final class Launcher {
                         LOGGER.warning(message);
                         warnings.add("A academia salva não pôde ser carregada.");
                     });
-            String streamUrl = null;
+            Optional<String> streamUrl = Optional.empty();
             try {
                 streamUrl = phoneAddress(System.getenv(STREAM_URL_VARIABLE), DATA_FOLDER.resolve("stream-url.txt"));
             } catch (IOException unreadable) {
@@ -87,7 +88,7 @@ public final class Launcher {
             String demo = System.getenv("VARZINHO_DEMO");
             boolean publicDemo = "public".equalsIgnoreCase(demo);
             SpectatorServer spectators = startSpectatorService(warnings, publicDemo || "local".equalsIgnoreCase(demo));
-            window.offerPhoneConnection(streamUrl, address -> {
+            window.offerPhoneConnection(streamUrl.orElse(""), address -> {
                 PhoneConnection phone;
                 try { phone = PhoneConnection.start(address, SEGMENT_FOLDER, BUFFER_SECONDS); }
                 catch (java.io.IOException failure) { throw new java.io.UncheckedIOException(failure); }
@@ -104,16 +105,16 @@ public final class Launcher {
                 return () -> attachPhone(window, session.gym(), simulation, phone, spectators);
             });
             window.showStartupWarnings(warnings);
-            window.enableRecordingEditing(new br.edu.unipampa.varzinho.infrastructure.persistence.StoredRecordingEditor(
+            window.enableRecordingEditing(new StoredRecordingEditor(
                     repository, Path.of("clips")));
             window.setVisible(true);
         });
     }
 
-    static String phoneAddress(String override, Path file) throws IOException {
-        if (override != null && !override.isBlank()) return override.strip();
-        try { return Files.readString(file).strip(); }
-        catch (NoSuchFileException absent) { return null; }
+    static Optional<String> phoneAddress(String override, Path file) throws IOException {
+        if (override != null && !override.isBlank()) return Optional.of(override.strip());
+        try { return Optional.of(Files.readString(file).strip()).filter(address -> !address.isEmpty()); }
+        catch (NoSuchFileException absent) { return Optional.empty(); }
     }
 
     private static void attachPhone(VarZinhoWindow window, Gym gym, LiveFeed simulation, PhoneConnection phone,
