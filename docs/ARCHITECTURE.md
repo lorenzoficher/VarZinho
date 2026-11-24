@@ -322,10 +322,18 @@ remain outside `CameraKind.installable()`: a manual `CameraSpec` cannot build
 a phone camera without its stream connection and assembler.
 
 `Main` calls `bootstrap/Launcher`, which hands control to Swing. `GymSession` loads
-the saved gym or creates the sample gym on the first run. The court panel
-creates courts, installs and moves cameras, changes camera status and points a
-PTZ camera. The capture panel saves a highlight from the selected court, and
-the archive panel lists persisted highlights with an optional court filter.
+the saved gym or creates the sample gym on the first run. The window is a
+workspace (`ArenaWorkspace`): a sidebar (`SidebarPanel`) switches between the
+dashboard, courts, cameras, highlights, archive, operators and settings pages.
+The court panel creates courts, installs and moves cameras, changes camera
+status and points a PTZ camera. The capture panel saves a highlight from the
+selected court, from its button or from F2 wherever the focus is. The archive
+panel (`ArchivePanel`) lists persisted highlights filtered by court and by
+local day — all days, today, yesterday or a chosen date — through
+`BrowseArchive`, narrows them by a text search, and opens a clip that has a
+`.mp4` in `ClipDialog`, which hands the file to the system's video player or
+copies it elsewhere. Java still decodes no frame: playing a clip is the
+operating system's job.
 The operators page (`OperatorsPanel`) lets the signed-in operator register
 another account through `SignedInOperator`, and the sign-in offers a simulated
 password recovery (`PasswordRecoveryDialog`) through `OperatorAccess`.
@@ -352,9 +360,16 @@ only calls it. If logic starts accumulating in a window class, it belongs in a
 domain class instead — a screen that decides whether a court can be captured
 has taken a rule away from `Court`.
 
-The brief asks for a minimal interface, and minimal is the target. The panels
-expose the real operations required for the demonstration and report domain or
-repository failures through dialogs.
+The brief asks for a minimal interface; the window now goes beyond it, and
+that changes how it looks, not what it decides. `VarZinhoTheme` holds the
+colours and switches every open window between FlatLaf's light and dark
+themes; `VarZinhoIcons` draws the bundled Tabler SVG icons; MigLayout places
+the panels. Domain and repository failures are reported in the message bar
+(`MessageBar`) at the bottom of the window, not in dialogs; `JOptionPane` is
+kept for confirmations, for typing a value and for the phone connection guide. Every text the operator reads
+is Portuguese, while the model and the logs stay in English: `PortugueseText`
+translates a use case's English message at the boundary, and logs and replaces
+any message it does not know rather than showing English to the operator.
 
 That the domain stays independent of the screen is the part worth defending. A
 `Court` that compiles without `javax.swing` on the classpath is the proof, and
