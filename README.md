@@ -449,6 +449,28 @@ cada conceito foi usado e por que faz sentido no domínio.
 | [docs/TESTING.md](docs/TESTING.md) | Como escrevemos testes (TDD) |
 | [docs/specs/](docs/specs/) | Especificações por agregado |
 
+## Documentação JavaDoc
+
+O JavaDoc do código é gerado como HTML navegável pelo Maven:
+
+```bash
+mvn clean javadoc:javadoc
+```
+
+O resultado fica em `target/site/apidocs/index.html` — abra esse arquivo no
+navegador para ver todos os pacotes, classes e métodos públicos e protegidos. A
+pasta `target/` não é versionada: para a entrega, gere o HTML e copie
+`target/site/apidocs/` junto com o código.
+
+O `clean` importa: sem ele, o plugin só confere se a pasta `src/main/java` mudou,
+não cada arquivo, e responde "everything is up to date" mesmo depois de um
+comentário editado — o HTML antigo continua lá. Num clone novo,
+`mvn javadoc:javadoc` sozinho basta.
+
+O comando pode exibir avisos sobre `@param`, `@return` ou comentários ausentes;
+eles não interrompem a geração e vão diminuindo à medida que cada camada é
+documentada. Só um erro de JavaDoc faz o build falhar.
+
 ## Idioma
 
 **Todo o código e a documentação técnica são escritos em inglês.** Este README
