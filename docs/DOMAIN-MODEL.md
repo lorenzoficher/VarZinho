@@ -16,7 +16,7 @@ classDiagram
         +installCamera(int, Camera)
         +moveCamera(Camera, int)
         +removeCourt(int)
-        +findCourt(int) Court
+        +findCourt(int) Optional~Court~
         +getCourts() List~Court~
     }
 
