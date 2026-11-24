@@ -16,6 +16,7 @@ public interface GymRepository {
     /**
      * Stores the gym as it is now, replacing whatever was stored before.
      *
+     * @param gym the gym to keep
      * @throws IllegalArgumentException if a name, address, id or model holds a value the
      *     storage cannot represent; nothing is written
      * @throws RepositoryException if the storage cannot be written
@@ -23,6 +24,8 @@ public interface GymRepository {
     void save(Gym gym) throws RepositoryException;
 
     /**
+     * Reads back the gym stored last.
+     *
      * @return the stored gym, or empty when nothing has been stored yet
      * @throws RepositoryException if what is stored cannot be read back as a gym
      */

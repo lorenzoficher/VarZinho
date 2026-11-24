@@ -19,7 +19,7 @@ public final class PendingCapture {
         this.repository = repository;
     }
 
-    /** What the archive table will show once this capture is archived. */
+    /** {@return what the archive table will show once this capture is archived} */
     public HighlightView view() {
         return HighlightView.from(highlight);
     }

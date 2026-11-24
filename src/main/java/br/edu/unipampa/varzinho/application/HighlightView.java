@@ -34,25 +34,33 @@ public final class HighlightView {
                 highlight.getClip().getFilePath(), highlight.getTitle());
     }
 
+    /** {@return the instant the button was pressed} */
     public Instant getCapturedAt() {
         return capturedAt;
     }
 
+    /** {@return the highlight's identifier} */
     public String getId() { return id; }
+
+    /** {@return the name someone gave the highlight, or an empty string if nobody has} */
     public String getTitle() { return title; }
 
+    /** {@return the number of the court the capture came from} */
     public int getCourtNumber() {
         return courtNumber;
     }
 
+    /** {@return the identifier of the camera whose recording became the clip} */
     public String getCameraId() {
         return cameraId;
     }
 
+    /** {@return how many seconds the clip lasts} */
     public int getDurationSeconds() {
         return durationSeconds;
     }
 
+    /** {@return where the clip is, as stored with the highlight} */
     public String getClipPath() {
         return clipPath;
     }

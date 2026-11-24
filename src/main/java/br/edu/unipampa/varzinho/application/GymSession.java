@@ -25,8 +25,14 @@ public final class GymSession {
     }
 
     /**
+     * Opens the session on the saved gym, or on the fallback when nothing usable was saved.
+     * A saved gym that cannot be read is reported, never thrown.
+     *
+     * @param repository where the gym is read from and kept
      * @param fallback the gym to run on when nothing usable was saved
      * @param errorSink told when the saved gym could not be read
+     * @return the session
+     * @throws IllegalArgumentException if any argument is missing
      */
     public static GymSession start(GymRepository repository, Gym fallback, Consumer<String> errorSink) {
         if (repository == null) throw new IllegalArgumentException("a session needs somewhere to keep the gym");
@@ -45,6 +51,7 @@ public final class GymSession {
         return new GymSession(gym, repository);
     }
 
+    /** {@return the gym this run works on, the same object for the whole session} */
     public Gym gym() {
         return gym;
     }
@@ -52,6 +59,8 @@ public final class GymSession {
     /**
      * Changes to this session's gym, each kept where the session keeps it: nowhere, when
      * the saved gym could not be read.
+     *
+     * @return the use case that changes this session's gym
      */
     public ManageGym manageGym() {
         return new ManageGym(gym, repository);

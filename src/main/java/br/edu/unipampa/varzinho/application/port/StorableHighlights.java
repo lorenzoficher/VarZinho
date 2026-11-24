@@ -13,6 +13,9 @@ public final class StorableHighlights {
     }
 
     /**
+     * Refuses a highlight that some storage could not represent.
+     *
+     * @param highlight the highlight about to be stored
      * @throws IllegalArgumentException if the highlight is {@code null}, or its id, camera id
      *     or clip path holds a comma or a line break
      */

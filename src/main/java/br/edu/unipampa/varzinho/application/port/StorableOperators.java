@@ -6,6 +6,14 @@ import br.edu.unipampa.varzinho.domain.people.Operator;
 public final class StorableOperators {
     private StorableOperators() { }
 
+    /**
+     * Refuses an operator that some store could not represent, so every adapter accepts
+     * the same accounts.
+     *
+     * @param operator the account about to be stored
+     * @throws IllegalArgumentException if the operator is {@code null}, or its name, username
+     *     or password hash holds a comma or a line break
+     */
     public static void requireStorable(Operator operator) {
         if (operator == null) {
             throw new IllegalArgumentException("there is no operator to save");

@@ -19,15 +19,17 @@ public final class ArchiveSummary {
         return new ArchiveSummary(newestFirst);
     }
 
+    /** {@return how many highlights could be read for the requested day} */
     public int getCount() {
         return count;
     }
 
-    /** @return the latest capture instant on the requested day, or empty when there are none */
+    /** {@return the latest capture instant on the requested day, or empty when there are none} */
     public Optional<Instant> getLastCapturedAt() {
         return lastCapturedAt;
     }
 
+    /** {@return the warning about unreadable highlights, or empty when every one was read} */
     public Optional<String> getWarning() {
         return warning;
     }

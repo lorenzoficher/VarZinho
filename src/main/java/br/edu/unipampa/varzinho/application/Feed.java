@@ -9,12 +9,13 @@ import java.time.Instant;
  */
 public interface Feed {
 
-    /** How often the window should call {@link #tick}. */
+    /** {@return how often, in milliseconds, the window should call {@link #tick}} */
     int periodMillis();
 
     /**
      * Hands the courts whatever seconds of footage became available since the last call.
      *
+     * @param now the moment of this call
      * @throws IOException if the footage could not be read this time; the next call tries again
      */
     void tick(Instant now) throws IOException;
