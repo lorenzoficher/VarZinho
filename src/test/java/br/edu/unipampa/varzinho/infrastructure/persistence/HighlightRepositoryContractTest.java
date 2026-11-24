@@ -42,6 +42,17 @@ abstract class HighlightRepositoryContractTest {
         assertThrows(RepositoryException.class, () -> repository.rename("first", "Outro nome"));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"", "   ", "Gol\nde placa", "Gol\rde placa"})
+    void refusesToRenameWithABlankOrMultiLineNameAndKeepsTheStoredOne(String badName) throws RepositoryException {
+        var repository = createRepository();
+        repository.save(highlight("first", 1));
+        repository.rename("first", "Gol de placa");
+
+        assertThrows(IllegalArgumentException.class, () -> repository.rename("first", badName));
+        assertEquals("Gol de placa", repository.findById("first").orElseThrow().getTitle());
+    }
+
     @Test
     void findsASavedHighlightById() throws RepositoryException {
         HighlightRepository repository = createRepository();

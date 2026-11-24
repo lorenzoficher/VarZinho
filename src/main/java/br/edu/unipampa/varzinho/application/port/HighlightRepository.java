@@ -1,6 +1,7 @@
 package br.edu.unipampa.varzinho.application.port;
 
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
+import br.edu.unipampa.varzinho.domain.highlight.HighlightTitle;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +32,7 @@ public interface HighlightRepository {
      * Gives a stored highlight a new name, keeping its position and everything else it holds.
      *
      * @param id the stored highlight to rename
-     * @param title the new name, checked by {@link Highlight#requireTitle(String)}
+     * @param title the new name, checked by {@link HighlightTitle}
      * @throws IllegalArgumentException if the name is blank or spans more than one line
      * @throws RepositoryException if no stored highlight has this id, or the storage cannot
      *     be read or written
