@@ -19,10 +19,14 @@
 
 ## Dependencies
 
-- **The dependencies are JUnit 5; the PostgreSQL JDBC driver and Testcontainers
-  (test scope), agreed in #145; and FlatLaf, FlatLaf Extras and MigLayout Swing,
-  agreed in #158. That is a decision, not an accident.** Adding a third-party
-  library requires an issue and the team's agreement first.
+- **The dependencies are FlatLaf, FlatLaf Extras and MigLayout Swing (compile),
+  agreed in #158; the PostgreSQL JDBC driver (runtime) and Testcontainers (test),
+  agreed in #145; and JUnit 5 (test). That is a decision, not an accident.** The
+  list and its scopes match `pom.xml` and the table in `AGENTS.md`. Adding a
+  third-party library requires an issue and the team's agreement first.
+- **The window's icons are bundled files, not a dependency.** They come from the
+  MIT-licensed Tabler Icons set, live in `src/main/resources/icons/tabler/` with
+  their `LICENSE`, and are drawn by FlatLaf Extras through `VarZinhoIcons`.
 - **The dependency arrow points inward.** `domain/` never imports from `application/`
   or `infrastructure/`. Persistence knows the domain; the domain knows nothing about
   persistence. The layers are `domain/` (entities), `application/` (use cases, with
@@ -73,8 +77,10 @@ metadata only. The reversal and its reasoning are in `CONTEXT.md`.
 
 **A graphical interface was on this list until 2026-09-18.** Section 2.9 of
 [`docs/ASSIGNMENT-BRIEF.md`](../../docs/ASSIGNMENT-BRIEF.md) requires one, so it is
-now required here too: minimal, in Swing, confined to `ui/`, owning no rule. The
-reversal and its reasoning are in `CONTEXT.md`.
+now required here too: in Swing, confined to `ui/`, owning no rule. It started
+minimal, as the brief's word allowed; since the second assignment it is a sidebar
+workspace with light and dark themes, and it still owns no rule. Both reversals
+and their reasoning are in `CONTEXT.md`.
 
 **A real database was on this list until 2026-11-11.** It came in for the
 second assignment, and the code now has it: PostgreSQL in Docker, reached through plain JDBC,
@@ -85,7 +91,9 @@ The reversal and its reasoning are in `CONTEXT.md`.
 
 All code, comments, commit messages, branch names, issues and technical
 documentation are in English, identifiers included (`Highlight`, never `Lance`).
-`README.md` is the only exception.
+There are two exceptions, both in Portuguese: `README.md`, and the text the window
+shows the operator. Identifiers and log messages in `ui/` stay in English; see
+`AGENTS.md`.
 
 **This overrides the ARK's generic `code-conventions.md`**, which asks for
 documentation in Portuguese and `snake_case` identifiers. In this repository
@@ -99,7 +107,7 @@ documentation in Portuguese and `snake_case` identifiers. In this repository
 | Deadline | 2026-09-30 |
 | Team | 5 people, one aggregate each |
 | Brief | [`docs/ASSIGNMENT-BRIEF.md`](../../docs/ASSIGNMENT-BRIEF.md) — free theme, 18-item checklist |
-| Must be demonstrated | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling, a minimal Swing interface, `java.time` |
+| Must be demonstrated | Abstraction, associations, encapsulation, inheritance, polymorphism, exception handling, a Swing interface (the brief's minimum, now exceeded), `java.time` |
 | Must be delivered | Source in packages, `README.md` with the checklist filled in, screenshots of the interface, commit history |
 
 `main` and `development` are protected: no direct pushes, no force pushes, every

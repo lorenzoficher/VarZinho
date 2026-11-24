@@ -28,8 +28,8 @@ identity.
 1. Model the domain in Java with correct object-oriented design
 2. Demonstrate encapsulation, inheritance, polymorphism, abstraction,
    associations and exception handling
-3. Produce a working, testable system, driven from a minimal Swing interface
-   and exercised by automated tests
+3. Produce a working, testable system, driven from a Swing interface and
+   exercised by automated tests
 4. Keep persistence swappable behind an abstraction
 
 ## Non-goals
@@ -39,7 +39,7 @@ Stated explicitly so they are not mistaken for omissions:
 | Not doing | Why |
 |---|---|
 | Video decoding or encoding in Java | No video library on the classpath. Since 2.0 a phone's clips are real files, but FFmpeg — an external program — writes them; see `CONTEXT.md` |
-| A polished or complete interface | Section 2.9 of the brief asks for a minimal one; every rule stays in the domain, never on the screen |
+| Business rules in the interface | The window grew past the brief's minimum — a sidebar workspace with light and dark themes — but every rule stays in the domain, never on the screen |
 | Sponsors and multi-angle | The public spectator view in #188 covers a single phone court |
 | Automatic play detection | Listed as future work |
 | Classifying the kind of play | Per-sport by nature; the system must serve any sport |
@@ -112,8 +112,12 @@ status (active, inactive, maintenance) determines whether it records.
 
 ### FR-7 — Graphical interface
 
-A minimal Swing interface drives the system: the user supplies data, runs at
-least one real operation, and sees the result. It is the layer that catches
+A Swing interface drives the system: the user supplies data, runs at least
+one real operation, and sees the result. It goes beyond the brief's minimum: a
+sidebar workspace with light and dark themes, pages for the dashboard, courts,
+cameras, highlights, archive, operators and settings, the capture on F2, and
+an archive filtered by court and by day whose clips open in the system's
+video player. It is the layer that catches
 domain exceptions and turns them into a message a person can read — triggering
 a court with no active camera reports why nothing was captured, rather than
 failing silently or printing a stack trace.
@@ -156,14 +160,14 @@ Deliberately deferred, recorded so the scope boundary is visible:
 - `Match` grouping highlights, with teams and score
 - Automatic play detection
 - Sponsor features
-- Advanced archive search and clip playback beyond the delivered court filter
+- Archive search beyond the delivered court, day and text filters
 
 ## Risks
 
 | Risk | Mitigation |
 |---|---|
 | ~~Official brief contradicts these decisions~~ — it did, and required a GUI | Reconciled in #30; the brief now lives in `docs/ASSIGNMENT-BRIEF.md` |
-| Swing is new to the team and was never planned for | Keep it minimal, give it its own issue and its own owner |
+| Swing is new to the team and was never planned for | Started minimal, with its own issue and its own owner; it grew only after the model was done, and never took a rule |
 | TDD unfamiliar to the team — time lost to tooling | Maven preconfigured; test only real logic, never accessors |
 | Five people editing the same files | Work split by aggregate, no cross-dependency |
 | Scope creep near the deadline | Non-goals are explicit; new work needs an issue |

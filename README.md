@@ -31,8 +31,10 @@ Trabalho da disciplina **AL0330 — Programação Orientada a Objetos**
 
 O objetivo é a **modelagem do domínio** — classes, relacionamentos,
 encapsulamento, herança, polimorfismo e tratamento de exceções. O sistema é
-operado por uma interface gráfica mínima em Swing, exigida pelo enunciado, e
-verificado por testes automatizados.
+operado por uma interface gráfica em Swing, exigida pelo enunciado, e
+verificado por testes automatizados. A interface começou mínima; no segundo
+trabalho ganhou navegação lateral, dashboard e temas claro e escuro, sem
+assumir nenhuma regra de negócio.
 
 Na versão 2.0, um celular pode servir de câmera: o lance capturado por ele vira
 um arquivo `.mp4` de verdade, que abre no player. Quem grava e corta o vídeo é o
@@ -46,6 +48,7 @@ resolução e tamanho.
 - Maven
 - JUnit 5
 - FlatLaf, FlatLaf Extras e MigLayout Swing — interface gráfica, aprovados na [#158](https://github.com/lorenzoficher/VarZinho/issues/158)
+- Ícones [Tabler Icons](https://tabler.io/icons), licença MIT — arquivos SVG copiados para `src/main/resources/icons/tabler/`, junto com o [`LICENSE`](src/main/resources/icons/tabler/LICENSE); não são uma dependência do Maven
 - FFmpeg — opcional, só para a captura com o celular
 - PostgreSQL, via Docker — opcional, só para o banco de dados
 
@@ -335,7 +338,7 @@ usuário e senha:
 - Depois de entrar, a página **Operadores** cadastra outro operador, que poderá
   entrar na próxima execução.
 
-![Entrada do operador](docs/screenshots/05-entrada-do-operador.png)
+![Entrada do operador](docs/screenshots/01-entrada-do-operador-claro.png)
 
 *Entrada do operador: usuário e senha antes da janela principal.*
 
@@ -344,9 +347,10 @@ O **Dashboard** abre após o login. Escolha a quadra no cabeçalho ou em **Suas 
 - Em **Quadras**, informe o número para cadastrar uma quadra. Ela passa a aparecer no dashboard e nos filtros.
 - Para instalar várias câmeras, selecione a quadra, preencha o formulário e clique em **Cadastrar câmera**. Para a próxima, informe outro ID e ajuste os demais campos se necessário. A página lista as câmeras da quadra. Cada nova câmera começa parada e pode ser iniciada em **Câmeras**.
 - Em **Câmeras**, use **Iniciar**, **Parar** ou **Liberar** na linha da câmera. O menu **Ações** permite movê-la para outra quadra, configurá-la, enviá-la para manutenção ou removê-la. Em **Movimento PTZ**, selecione uma câmera compatível para ajustar panorâmica, inclinação e zoom.
-- Quando o buffer atingir 30 segundos, clique em **Salvar Melhor Momento**. O histórico mostra a quadra, a câmera, a data e a duração do lance confirmado.
+- Quando o buffer atingir 30 segundos, clique em **Salvar Melhor Momento** no dashboard ou em **Salvar lance (F2)** na página **Melhores momentos**. A tecla **F2** salva o lance da quadra selecionada de qualquer ponto da janela. O histórico mostra a quadra, a câmera, a data e a duração do lance confirmado.
 - Selecione uma gravação no histórico e use **Renomear gravação** para dar um nome como “Lance Fernando Costa”. O nome fica salvo no acervo e aparece na busca. **Excluir gravação** pede confirmação e abre com **Cancelar** selecionado. Ao confirmar, o sistema remove o registro e o MP4 original em `clips/`, quando existir. Cópias exportadas ficam com quem as salvou.
-- **Melhores momentos** reúne captura e histórico. Em **Arquivos**, use a busca, a quadra e o filtro **Hoje** para localizar uma gravação. A categoria pode ser editada durante a sessão. Para um MP4 real do celular, **Assistir** abre os detalhes, com opções de reprodução no player do sistema e de cópia do vídeo. As câmeras simuladas geram registros de lances.
+- **Melhores momentos** reúne captura e histórico. Em **Arquivos**, use a busca, a quadra e o filtro **Dia** para localizar uma gravação. O filtro **Dia** oferece **Todos os dias**, **Hoje**, **Ontem** e **Escolher data**; nesta última, digite a data como dd/mm/aaaa e tecle **Enter**. O dia é o do fuso do ginásio, não o de UTC. A categoria pode ser editada durante a sessão.
+- Para abrir um clipe, clique em **Assistir** na linha do lance (ou selecione-o e tecle **Ctrl+Enter**). Abre-se a janela do lance, com **Reproduzir vídeo**, que abre o MP4 no player do sistema, e **Baixar vídeo**, que salva uma cópia onde você escolher. **Assistir ao vídeo**, acima da tabela, abre o arquivo do lance selecionado direto no player. Só os lances do celular têm MP4: as câmeras simuladas geram registros sem vídeo, e a linha mostra **Sem MP4**.
 - No histórico, **Ctrl+F** leva à busca. Digite, por exemplo, o ID de uma câmera, uma data ou a categoria **Defesa**. **Enter** seleciona o primeiro resultado. Use as setas para escolher outro lance e **Ctrl+Enter** na tabela para abrir o selecionado. **Esc** no campo de busca limpa o texto.
 - Em **Configurações**, alterne entre os temas claro e escuro ou escolha um nome de exibição para a quadra durante a sessão. A barra de mensagens e o sino do cabeçalho mostram o retorno das operações.
 
@@ -492,21 +496,59 @@ o fluxo inteiro sem abrir nenhuma janela.
 
 ## Capturas de tela
 
-![Equipamentos da quadra](docs/screenshots/01-equipamentos-da-quadra.png)
+Cada tela aparece nos temas claro e escuro, alternados pelo botão **Alternar
+tema**. A tela de entrada, mostrada em [O que a interface faz](#o-que-a-interface-faz),
+só existe no tema claro: o VarZinho sempre abre no claro, e o botão de tema só
+aparece depois de entrar.
 
-*Equipamentos da quadra: a câmera `ptz-1` está parada e a `fixed-1` está ativa.*
+**Dashboard.** A quadra 1 com o buffer de simulação cheio (30 de 30 segundos),
+o botão **Salvar Melhor Momento**, o controle rápido da câmera PTZ, os cartões
+das quadras e as câmeras da quadra selecionada.
 
-![Captura disparada](docs/screenshots/02-captura-disparada.png)
+| Claro | Escuro |
+|---|---|
+| ![Dashboard, tema claro](docs/screenshots/02-dashboard-claro.png) | ![Dashboard, tema escuro](docs/screenshots/02-dashboard-escuro.png) |
 
-*Captura disparada: o lance foi salvo e a confirmação aparece abaixo do botão.*
+**Câmeras da quadra.** Na página **Câmeras**, a `fixed-1` está gravando e a
+`ptz-1` está parada; cada linha oferece **Parar** ou **Iniciar** e o menu
+**Ações**. Abaixo ficam **Mover câmera** e **Controle PTZ**.
 
-![Acervo listado](docs/screenshots/03-acervo-listado.png)
+| Claro | Escuro |
+|---|---|
+| ![Câmeras da quadra, tema claro](docs/screenshots/03-cameras-da-quadra-claro.png) | ![Câmeras da quadra, tema escuro](docs/screenshots/03-cameras-da-quadra-escuro.png) |
 
-*Acervo de lances filtrado pela quadra 1.*
+**Lance salvo.** Na página **Melhores momentos**, depois de **F2**: a
+confirmação "Salvo: quadra 1 · câmera fixed-1 · … · 30 s" aparece abaixo do
+botão, e o lance entra no histórico. Como a câmera é simulada, a linha mostra
+**Sem MP4**, e a barra de mensagens explica que só a quadra do celular grava vídeo.
 
-![Erro: quadra sem câmera ativa](docs/screenshots/04-erro-quadra-sem-camera-ativa.png)
+| Claro | Escuro |
+|---|---|
+| ![Lance salvo, tema claro](docs/screenshots/04-lance-salvo-claro.png) | ![Lance salvo, tema escuro](docs/screenshots/04-lance-salvo-escuro.png) |
 
-*Disparo numa quadra sem câmera ativa: a exceção de domínio chega à interface como um aviso ("Court 2 has no active camera."). Demonstra a seção 2.8 do enunciado (tratamento de exceções).*
+**Acervo filtrado.** Na página **Arquivos**, o histórico filtrado por
+**Quadra 1** e **Dia: Hoje**, com a busca, **Assistir ao vídeo**, **Renomear
+gravação** e **Excluir gravação**.
+
+| Claro | Escuro |
+|---|---|
+| ![Acervo filtrado, tema claro](docs/screenshots/05-acervo-filtrado-claro.png) | ![Acervo filtrado, tema escuro](docs/screenshots/05-acervo-filtrado-escuro.png) |
+
+**Erro: quadra sem câmera ativa.** A quadra 2 tem só a `fixed-2`, parada. Ao
+salvar um lance nela, a exceção de domínio chega à interface como uma mensagem
+na barra inferior: "Não há câmera ativa na quadra 2." Demonstra a seção 2.8 do
+enunciado (tratamento de exceções).
+
+| Claro | Escuro |
+|---|---|
+| ![Erro de quadra sem câmera ativa, tema claro](docs/screenshots/06-erro-quadra-sem-camera-ativa-claro.png) | ![Erro de quadra sem câmera ativa, tema escuro](docs/screenshots/06-erro-quadra-sem-camera-ativa-escuro.png) |
+
+**Configurações.** **Alternar tema**, o nome de exibição da quadra selecionada
+durante a sessão e o guia **Como conectar a câmera** do celular.
+
+| Claro | Escuro |
+|---|---|
+| ![Configurações, tema claro](docs/screenshots/07-configuracoes-claro.png) | ![Configurações, tema escuro](docs/screenshots/07-configuracoes-escuro.png) |
 
 ## Documentação
 
@@ -546,8 +588,13 @@ documentada. Só um erro de JavaDoc faz o build falhar.
 
 ## Idioma
 
-**Todo o código e a documentação técnica são escritos em inglês.** Este README
-é a única exceção, por ser a porta de entrada do repositório.
+**Todo o código e a documentação técnica são escritos em inglês.** Há duas
+exceções, ambas em português: este README, por ser a porta de entrada do
+repositório, e o texto que a janela mostra ao operador — rótulos, botões,
+diálogos e mensagens. Mesmo em `ui/`, identificadores e mensagens de log
+continuam em inglês; a classe
+[`PortugueseText`](src/main/java/br/edu/unipampa/varzinho/ui/PortugueseText.java)
+traduz as mensagens dos casos de uso na fronteira da interface.
 
 ## Equipe
 

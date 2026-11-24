@@ -29,8 +29,12 @@ presentation machine may run older JDKs.
 ## Language
 
 **All code, comments, commit messages, branch names, issues and technical
-documentation are written in English.** The only exception is `README.md`,
-which is in Portuguese.
+documentation are written in English.** There are two exceptions, both in
+Portuguese: `README.md`, and the text the window shows the operator — labels,
+buttons, dialogs and messages in `ui/`. Code, identifiers and log messages stay
+in English even there: the domain and the use cases report in English, and
+`PortugueseText` translates at the interface boundary, logging any message it
+cannot translate instead of showing it.
 
 This includes identifiers: `Highlight`, not `Lance`. `saveHighlight()`, not
 `salvarLance()`.
@@ -142,10 +146,23 @@ imports no `domain/` or `infrastructure/`. `ArchitectureTest` enforces every
 one of these.
 
 Adding a third-party library requires agreement from the team — open an issue
-first. Right now the dependencies are JUnit 5; the PostgreSQL JDBC driver and
-Testcontainers (test scope only), agreed in #145; and FlatLaf, FlatLaf Extras
-and MigLayout Swing, agreed in #158. No object-relational mapper: a mapper wants
-entities that can be built empty.
+first. Right now `pom.xml` declares:
+
+| Dependency | Scope | Agreed in |
+|---|---|---|
+| FlatLaf, FlatLaf Extras | compile | #158 |
+| MigLayout Swing | compile | #158 |
+| PostgreSQL JDBC driver | runtime | #145 |
+| JUnit 5 (`junit-jupiter`) | test | — |
+| Testcontainers (`postgresql`, `junit-jupiter`) | test | #145 |
+
+No object-relational mapper: a mapper wants entities that can be built empty.
+
+The window's icons are not a library: they are SVG files from the Tabler Icons
+set, copied into `src/main/resources/icons/tabler/` and drawn by FlatLaf
+Extras' `FlatSVGIcon` through `VarZinhoIcons`. Tabler Icons is MIT-licensed;
+its licence text sits beside the icons in
+`src/main/resources/icons/tabler/LICENSE` and must ship with them.
 
 FFmpeg is a **runtime** dependency, not a library: an external program on the
 `PATH`, needed only when `VARZINHO_STREAM_URL` is set. The build and every test
@@ -180,8 +197,11 @@ Real video capture used to be on that list too. VarZinho 2.0 took it off, for
 one phone and through FFmpeg only; the reasoning is in `CONTEXT.md`.
 
 The graphical interface used to be on that list and no longer is:
-[docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md) requires one. It stays
-**minimal** — the brief's word — and it owns no business rule.
+[docs/ASSIGNMENT-BRIEF.md](docs/ASSIGNMENT-BRIEF.md) requires one. It is no
+longer the minimal window the brief's word allowed: since the second assignment
+it is a sidebar workspace with light and dark themes (see `CONTEXT.md`, "A
+clearer interface, still without rules"). What has not changed is that it owns
+no business rule.
 
 A real database left that list on 2026-11-11, for the second assignment:
 PostgreSQL in Docker, reached through plain JDBC, alongside CSV rather than
