@@ -8,6 +8,14 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+/**
+ * The public spectator view: a web page that streams one court live and sells a clip of it.
+ *
+ * <p>It always listens on the loopback only; reaching it from outside takes a reverse proxy
+ * at a public HTTPS origin, or a temporary tunnel in demo mode. A sale is paid through a
+ * real Pix, a simulated one in demo mode, or not offered at all, and a clip is handed over
+ * only once its payment is confirmed.
+ */
 public final class SpectatorServer implements AutoCloseable {
     private final HttpServer server;
     private final ThreadPoolExecutor workers = new ThreadPoolExecutor(4, 8, 30, TimeUnit.SECONDS,
@@ -31,10 +39,36 @@ public final class SpectatorServer implements AutoCloseable {
         server.start();
     }
 
+    /**
+     * Starts the server with real Pix sales when {@code token} is given, and no match yet.
+     *
+     * @param address the public HTTPS origin a reverse proxy serves this server at; blank
+     *     or missing to serve only this machine
+     * @param token the Mercado Pago access token that turns on real Pix sales; blank or
+     *     missing to only watch
+     * @param store the folder the clip orders are kept in
+     * @return the running server
+     * @throws IllegalArgumentException if the address is not a bare HTTPS origin
+     * @throws IOException if the port cannot be bound
+     */
     public static SpectatorServer open(String address, String token, Path store) throws IOException {
         return open(address, token, store, false);
     }
 
+    /**
+     * Starts the server, and no match yet. In demo mode every payment is simulated and the
+     * token is ignored.
+     *
+     * @param address the public HTTPS origin a reverse proxy serves this server at; blank
+     *     or missing to serve only this machine
+     * @param token the Mercado Pago access token that turns on real Pix sales; blank or
+     *     missing to only watch
+     * @param store the folder the clip orders are kept in
+     * @param demo whether payments are simulated instead of charged
+     * @return the running server
+     * @throws IllegalArgumentException if the address is not a bare HTTPS origin
+     * @throws IOException if the port cannot be bound
+     */
     public static SpectatorServer open(String address, String token, Path store, boolean demo) throws IOException {
         String publicOrigin = null;
         if (address != null && !address.isBlank()) {
@@ -52,6 +86,14 @@ public final class SpectatorServer implements AutoCloseable {
                 publicOrigin, null, orders, 0);
     }
 
+    /**
+     * Opens a temporary public address for a demo, through a Cloudflare quick tunnel that
+     * lives until the server closes. A server that already has a public origin keeps it.
+     *
+     * @return the address spectators open
+     * @throws IllegalStateException if the server is not in demo mode
+     * @throws IOException if the tunnel cannot be started
+     */
     public synchronized String shareDemo() throws IOException {
         if (orders == null || !orders.isDemo()) throw new IllegalStateException("temporary sharing requires demo mode");
         if (!origin.startsWith("https://")) {
@@ -66,6 +108,8 @@ public final class SpectatorServer implements AutoCloseable {
      *
      * @param source an address FFmpeg reads the live picture from — the recorder's relay,
      *     never the phone itself, which may serve a single client
+     * @param courtNumber the court being streamed, which spectators buy clips of
+     * @param folder where the broadcast's live fragments are written
      * @return the address spectators open
      * @throws IllegalStateException if a match is already streaming
      * @throws IOException if the broadcast encoder cannot be started

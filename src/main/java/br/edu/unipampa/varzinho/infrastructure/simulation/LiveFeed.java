@@ -24,6 +24,12 @@ public final class LiveFeed implements Feed {
     private int leftOutCourtNumber;
     private int sequence;
 
+    /**
+     * A feed for every court of {@code gym}, including courts added later.
+     *
+     * @param gym the gym whose courts receive each second
+     * @throws IllegalArgumentException if the gym is missing
+     */
     public LiveFeed(Gym gym) {
         if (gym == null) throw new IllegalArgumentException("a live feed needs a gym");
         this.gym = gym;
@@ -34,12 +40,23 @@ public final class LiveFeed implements Feed {
     /**
      * A feed for every court but the one numbered {@code leftOutCourtNumber}, which
      * another feed records. Courts added to the gym later are fed too.
+     *
+     * @param gym the gym whose courts receive each second
+     * @param leftOutCourtNumber the court another feed records
+     * @throws IllegalArgumentException if the gym is missing or the number is not positive
      */
     public LiveFeed(Gym gym, int leftOutCourtNumber) {
         this(gym);
         excludeCourt(leftOutCourtNumber);
     }
 
+    /**
+     * Stops feeding the court numbered {@code leftOutCourtNumber}, because another feed now
+     * records it. Only one court is left out at a time: this replaces any earlier one.
+     *
+     * @param leftOutCourtNumber the court another feed records
+     * @throws IllegalArgumentException if the number is not positive
+     */
     public void excludeCourt(int leftOutCourtNumber) {
         if (leftOutCourtNumber <= NO_COURT) {
             throw new IllegalArgumentException("a live feed cannot leave out court " + leftOutCourtNumber);
