@@ -23,6 +23,12 @@ public final class CsvOperatorStore implements OperatorStore {
 
     private final Path file;
 
+    /**
+     * Keeps the accounts in {@code file}.
+     *
+     * @param file where accounts are stored; it need not exist until the first operator
+     * @throws IllegalArgumentException if the file is missing
+     */
     public CsvOperatorStore(Path file) {
         if (file == null) throw new IllegalArgumentException("operators need a file to live in");
         this.file = file;

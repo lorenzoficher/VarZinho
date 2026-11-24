@@ -23,6 +23,12 @@ public final class SegmentLog {
     private final Path listFile;
     private long bytesConsumed;
 
+    /**
+     * Reads {@code listFile} from its start; the file need not exist yet.
+     *
+     * @param listFile the segment list FFmpeg writes
+     * @throws IllegalArgumentException if the file is missing
+     */
     public SegmentLog(Path listFile) {
         if (listFile == null) {
             throw new IllegalArgumentException("a segment log needs the file FFmpeg writes");

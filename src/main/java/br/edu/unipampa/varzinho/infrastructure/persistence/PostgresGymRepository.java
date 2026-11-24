@@ -94,6 +94,10 @@ public final class PostgresGymRepository implements GymRepository {
      * Connects to the database and creates the gym's tables when they are missing. Tables
      * that already exist are left as they are, the stored gym included.
      *
+     * @param url the JDBC url of the PostgreSQL database
+     * @param user the database user
+     * @param password the user's password, which may be empty for a local database
+     * @return a repository whose tables are ready
      * @throws IllegalArgumentException if the url or the user is missing
      * @throws RepositoryException if the database cannot be reached or the tables cannot be created
      */

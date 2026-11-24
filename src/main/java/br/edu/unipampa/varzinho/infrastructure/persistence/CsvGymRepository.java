@@ -43,6 +43,12 @@ public final class CsvGymRepository implements GymRepository {
     private final Map<String, CameraCsvFormat<?>> formatsByKind;
     private final Map<Class<?>, CameraCsvFormat<?>> formatsByClass;
 
+    /**
+     * Keeps the gym in {@code file}, with the formats for the domain's standard cameras.
+     *
+     * @param file where the gym is stored; it need not exist until the first save
+     * @throws IllegalArgumentException if the file is missing
+     */
     public CsvGymRepository(Path file) {
         this(file, CameraCsvFormats.standard());
     }
@@ -50,6 +56,11 @@ public final class CsvGymRepository implements GymRepository {
     /**
      * Registers one format per kind and exact camera class. Gym and court are reserved
      * kinds because they describe the structure, never a camera.
+     *
+     * @param file where the gym is stored; it need not exist until the first save
+     * @param formats one format per camera class the gym may hold
+     * @throws IllegalArgumentException if the file or the formats are missing, or if two
+     *         formats share a kind or a class, or one uses a reserved or malformed kind
      */
     public CsvGymRepository(Path file, List<CameraCsvFormat<?>> formats) {
         if (file == null) {

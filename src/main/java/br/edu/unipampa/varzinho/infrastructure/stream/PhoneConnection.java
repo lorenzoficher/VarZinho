@@ -32,6 +32,8 @@ public final class PhoneConnection {
     /**
      * Starts recording the phone at {@code streamUrl} into {@code segmentFolder}.
      *
+     * @param streamUrl the phone's stream address; blank or missing when there is no phone
+     * @param segmentFolder the folder the recorder's ring of segments is written to
      * @param bufferSeconds how many seconds the phone's camera keeps, and so how long its clips are
      * @param onFailure told why, in words for the operator, when an address was given but
      *     the phone could not be reached
@@ -51,6 +53,17 @@ public final class PhoneConnection {
         }
     }
 
+    /**
+     * Starts recording the phone, failing loudly instead of falling back to no phone.
+     *
+     * @param streamUrl the phone's stream address
+     * @param segmentFolder the folder the recorder's ring of segments is written to
+     * @param bufferSeconds how many seconds the phone's camera keeps
+     * @return the phone, recording; its footage may not have arrived yet
+     * @throws IllegalArgumentException if the address, the folder or the buffer length is invalid
+     * @throws IOException if FFmpeg is missing, the folder cannot be cleared, or no loopback
+     *         port is free
+     */
     public static PhoneConnection start(String streamUrl, Path segmentFolder, int bufferSeconds) throws IOException {
         FfmpegRecorder recorder = new FfmpegRecorder(streamUrl, segmentFolder, freeLoopbackUdpPort());
         recorder.start();
@@ -64,10 +77,20 @@ public final class PhoneConnection {
                 streamUrl, new FfmpegClipAssembler(index));
     }
 
+    /**
+     * The camera that captures from this phone.
+     *
+     * @return the phone's camera
+     */
     public StreamCamera camera() {
         return camera;
     }
 
+    /**
+     * The address this phone is recorded from.
+     *
+     * @return the stream address the connection was opened with
+     */
     public String streamUrl() {
         return streamUrl;
     }
@@ -75,6 +98,8 @@ public final class PhoneConnection {
     /**
      * Where to read the phone's live picture without opening another connection to the
      * phone. See {@link FfmpegRecorder#liveRelay()}.
+     *
+     * @return the loopback address of the recorder's relay
      */
     public String liveRelay() {
         return recorder.liveRelay();
@@ -88,7 +113,14 @@ public final class PhoneConnection {
         }
     }
 
-    /** Only a completed segment proves that FFmpeg could read the supplied address. */
+    /**
+     * Waits up to fifteen seconds for the first finished segment. Only a completed segment
+     * proves that FFmpeg could read the supplied address. On failure the recorder is stopped.
+     *
+     * @throws IllegalStateException if no segment arrives in time or FFmpeg exits first
+     * @throws java.io.UncheckedIOException if the phone refused the connection; its cause
+     *         names only the host and port, never the full address
+     */
     public void awaitFootage() {
         long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
         var log = new SegmentLog(recorder.segmentList());
@@ -109,6 +141,7 @@ public final class PhoneConnection {
         throw recorder.startupFailure();
     }
 
+    /** Stops recording the phone. Safe to call more than once. */
     public void disconnect() { recorder.stop(); }
 
     /**
@@ -124,6 +157,8 @@ public final class PhoneConnection {
     }
 
     /**
+     * Reports the phone dropping out, which ends the recording without anyone asking.
+     *
      * @param action run, on FFmpeg's own thread, once the recorder exits for any reason
      *     other than being stopped
      */

@@ -28,6 +28,7 @@ import java.util.stream.Stream;
  */
 public final class FfmpegRecorder {
 
+    /** How many one-second segment files the ring reuses, more than any buffer reads. */
     public static final int RING_SEGMENTS = 40;
 
     private static final String SEGMENT_LIST = "segments.csv";
@@ -61,6 +62,10 @@ public final class FfmpegRecorder {
     private volatile boolean stopRequested;
 
     /**
+     * Prepares a recorder of the phone at {@code streamUrl}; nothing runs until {@link #start}.
+     *
+     * @param streamUrl the phone's stream address, such as {@code http://192.168.0.42:8080/video}
+     * @param bufferFolder the folder the ring of segments is written to
      * @param relayPort the loopback UDP port the recorded video is also published on
      * @throws IllegalArgumentException if the address is not an http, https or rtsp
      *         address with a host, the folder is missing, or the port is not a valid one
@@ -139,6 +144,7 @@ public final class FfmpegRecorder {
      * dropping off the network. An exit {@link #stop} asked for is not reported. The
      * action runs on a background thread.
      *
+     * @param action what to do when the recording ends on its own
      * @throws IllegalStateException if the recorder was never started
      */
     public void onExit(Runnable action) {
@@ -152,6 +158,11 @@ public final class FfmpegRecorder {
         });
     }
 
+    /**
+     * The file FFmpeg appends each finished segment to; {@link SegmentLog} reads it.
+     *
+     * @return the segment list inside the buffer folder, which may not exist yet
+     */
     public Path segmentList() {
         return bufferFolder.resolve(SEGMENT_LIST);
     }
@@ -161,6 +172,8 @@ public final class FfmpegRecorder {
      * it is encoded. Nobody listening costs nothing: the datagrams are simply dropped.
      * A reader gives up after {@link #READ_TIMEOUT_MICROSECONDS} without a packet, which
      * is how a dropped phone reaches it too.
+     *
+     * @return the loopback UDP address of the relay
      */
     public String liveRelay() {
         return "udp://" + LOOPBACK + ":" + relayPort + "?timeout=" + READ_TIMEOUT_MICROSECONDS

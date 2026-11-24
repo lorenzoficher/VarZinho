@@ -42,6 +42,12 @@ public final class CsvHighlightRepository implements HighlightRepository {
 
     private final Path file;
 
+    /**
+     * Keeps the archive in {@code file}.
+     *
+     * @param file where highlights are stored; it need not exist until the first save
+     * @throws IllegalArgumentException if the file is missing
+     */
     public CsvHighlightRepository(Path file) {
         if (file == null) {
             throw new IllegalArgumentException("the archive needs a file to live in");

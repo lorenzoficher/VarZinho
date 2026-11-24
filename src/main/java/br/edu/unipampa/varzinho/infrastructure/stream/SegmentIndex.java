@@ -20,6 +20,12 @@ public final class SegmentIndex {
 
     private final Map<Integer, Path> segments;
 
+    /**
+     * Remembers at most {@code ringSize} seconds, forgetting the oldest first.
+     *
+     * @param ringSize how many segment files the recorder's ring holds
+     * @throws IllegalArgumentException if the ring holds no segment
+     */
     public SegmentIndex(int ringSize) {
         if (ringSize < 1) {
             throw new IllegalArgumentException("a ring must hold at least one segment");
@@ -32,6 +38,14 @@ public final class SegmentIndex {
         };
     }
 
+    /**
+     * Records that {@code segment} now holds second {@code sequence}. Once the index is full,
+     * the oldest second is forgotten, because the ring has reused its file.
+     *
+     * @param sequence the second's number, as the camera's frames carry it
+     * @param segment the file that holds that second
+     * @throws IllegalArgumentException if the segment file is missing
+     */
     public synchronized void register(int sequence, Path segment) {
         if (segment == null) {
             throw new IllegalArgumentException("second " + sequence + " needs a segment file");
@@ -40,6 +54,10 @@ public final class SegmentIndex {
     }
 
     /**
+     * The file that holds the frame's second, while the ring still has it.
+     *
+     * @param frame a frame of the camera this index serves
+     * @return the segment file registered for the frame's second
      * @throws ClipAssemblyException if the second was never registered or the ring has
      *         already overwritten it
      */

@@ -7,6 +7,9 @@ import java.util.List;
 
 /** The angle is the only CSV field specific to a fixed camera. */
 public final class FixedCameraCsvFormat implements CameraCsvFormat<FixedCamera> {
+    /** Creates the format; it keeps no state, so one instance serves every gym. */
+    public FixedCameraCsvFormat() { }
+
     @Override
     public String kind() { return "fixed"; }
 

@@ -34,6 +34,12 @@ public final class FfmpegClipAssembler implements ClipAssembler {
     private final String executable;
     private final Duration timeout;
 
+    /**
+     * Assembles clips from the segments {@code index} knows, with the FFmpeg on this machine.
+     *
+     * @param index where each second's segment file is
+     * @throws IllegalArgumentException if the index is missing
+     */
     public FfmpegClipAssembler(SegmentIndex index) {
         this(index, FfmpegExecutable.command(), TIMEOUT);
     }

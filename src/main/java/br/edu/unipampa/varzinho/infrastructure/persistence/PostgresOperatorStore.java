@@ -41,6 +41,10 @@ public final class PostgresOperatorStore implements OperatorStore {
      * Opens the store, creating its table and case-insensitive unique index if missing.
      * Existing accounts are retained. Each operation opens its own connection.
      *
+     * @param url the JDBC url of the PostgreSQL database
+     * @param user the database user
+     * @param password the user's password, which may be empty for a local database
+     * @return a store whose table and index are ready
      * @throws IllegalArgumentException if the url or user is missing
      * @throws RepositoryException if the database cannot be reached or prepared
      */

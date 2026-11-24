@@ -10,10 +10,20 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-/** WinGet can install the package while an already-open IDE still has the old PATH. */
+/**
+ * Finds the FFmpeg program on this machine, which is a runtime dependency, never a build one.
+ *
+ * <p>Besides the {@code PATH}, on Windows it also looks where WinGet installs FFmpeg: WinGet
+ * can install the package while an already-open IDE still has the old {@code PATH}.
+ */
 public final class FfmpegExecutable {
     private FfmpegExecutable() { }
 
+    /**
+     * Looks for an executable FFmpeg on the {@code PATH} and, on Windows, in WinGet's folders.
+     *
+     * @return the program's path; empty when FFmpeg is not installed where it can be found
+     */
     public static Optional<Path> find() {
         String path = java.util.Objects.toString(System.getenv("PATH"), "");
         if (File.separatorChar != '\\') return onPath(path, ":", "ffmpeg");
@@ -24,6 +34,12 @@ public final class FfmpegExecutable {
         return findWindows(path, roots);
     }
 
+    /**
+     * The command to start FFmpeg with. When it was not found, the bare name lets the
+     * process start fail with an error that names the missing program.
+     *
+     * @return the path {@link #find()} found, or {@code "ffmpeg"}
+     */
     public static String command() {
         return find().map(Path::toString).orElse("ffmpeg");
     }

@@ -13,6 +13,9 @@ import java.util.Optional;
 public final class InMemoryOperatorStore implements OperatorStore {
     private final Map<String, Operator> operatorsByUsername = new LinkedHashMap<>();
 
+    /** Starts with no account, as on a first run. */
+    public InMemoryOperatorStore() { }
+
     @Override
     public void save(Operator operator) {
         StorableOperators.requireStorable(operator);
