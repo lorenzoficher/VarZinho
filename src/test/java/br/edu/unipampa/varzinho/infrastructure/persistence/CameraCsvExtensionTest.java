@@ -34,7 +34,7 @@ class CameraCsvExtensionTest {
         Gym gym = gymWithTaggedCamera();
 
         repository.save(gym);
-        Camera restored = repository.load().orElseThrow().findCourt(4).getCameras().get(0);
+        Camera restored = repository.load().orElseThrow().findCourt(4).orElseThrow().getCameras().get(0);
 
         TaggedCamera tagged = assertInstanceOf(TaggedCamera.class, restored);
         assertEquals(7, tagged.channel);
@@ -99,7 +99,7 @@ class CameraCsvExtensionTest {
 
         repository.save(gymWithTaggedCamera());
 
-        assertInstanceOf(TaggedCamera.class, repository.load().orElseThrow().findCourt(4).getCameras().get(0));
+        assertInstanceOf(TaggedCamera.class, repository.load().orElseThrow().findCourt(4).orElseThrow().getCameras().get(0));
     }
 
     @Test
@@ -127,10 +127,10 @@ class CameraCsvExtensionTest {
 
         Gym gym = repository.load().orElseThrow();
 
-        FixedCamera fixed = assertInstanceOf(FixedCamera.class, gym.findCourt(1).getCameras().get(0));
+        FixedCamera fixed = assertInstanceOf(FixedCamera.class, gym.findCourt(1).orElseThrow().getCameras().get(0));
         assertEquals(45, fixed.getAngle());
         assertEquals(CameraStatus.ACTIVE, fixed.getStatus());
-        PtzCamera ptz = assertInstanceOf(PtzCamera.class, gym.findCourt(1).getCameras().get(1));
+        PtzCamera ptz = assertInstanceOf(PtzCamera.class, gym.findCourt(1).orElseThrow().getCameras().get(1));
         assertEquals(90, ptz.getPan());
         assertEquals(-20, ptz.getTilt());
         assertEquals(3, ptz.getZoom());

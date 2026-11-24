@@ -93,7 +93,7 @@ class PostgresGymRepositoryTest extends GymRepositoryContractTest {
 
         repository.save(gym);
 
-        assertEquals(List.of("z-ptz", "a-fixed"), repository.load().orElseThrow().findCourt(1).getCameras()
+        assertEquals(List.of("z-ptz", "a-fixed"), repository.load().orElseThrow().findCourt(1).orElseThrow().getCameras()
                 .stream().map(Camera::getId).toList());
     }
 
@@ -122,7 +122,7 @@ class PostgresGymRepositoryTest extends GymRepositoryContractTest {
 
         repository.save(gym);
 
-        List<Camera> stored = repository.load().orElseThrow().findCourt(1).getCameras();
+        List<Camera> stored = repository.load().orElseThrow().findCourt(1).orElseThrow().getCameras();
         assertEquals(List.of("fixed-1"), stored.stream().map(Camera::getId).toList());
         assertEquals(CameraStatus.INACTIVE, stored.get(0).getStatus());
     }
@@ -140,7 +140,7 @@ class PostgresGymRepositoryTest extends GymRepositoryContractTest {
         Gym loaded = repository.load().orElseThrow();
         assertEquals(hostileName, loaded.getName());
         assertEquals("Rua A, 12", loaded.getAddress());
-        assertEquals("Bullet, 2nd gen", loaded.findCourt(1).getCameras().get(0).getModel());
+        assertEquals("Bullet, 2nd gen", loaded.findCourt(1).orElseThrow().getCameras().get(0).getModel());
     }
 
     @Test

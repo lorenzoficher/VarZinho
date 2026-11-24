@@ -24,8 +24,8 @@ class ConnectStreamCameraTest {
         CourtView court = new ConnectStreamCamera(gym, phone).connect();
 
         assertEquals(5, court.getNumber());
-        assertEquals("phone-1", gym.findCourt(5).getCameras().get(0).getId());
-        assertEquals(1, gym.findCourt(5).getCameras().size());
+        assertEquals("phone-1", gym.findCourt(5).orElseThrow().getCameras().get(0).getId());
+        assertEquals(1, gym.findCourt(5).orElseThrow().getCameras().size());
         assertTrue(phone.isRecording());
     }
 
@@ -57,7 +57,7 @@ class ConnectStreamCameraTest {
 
         assertFalse(phone.isRecording());
         assertEquals(1, gym.getCourts().size());
-        assertEquals(1, gym.findCourt(1).getCameras().size());
+        assertEquals(1, gym.findCourt(1).orElseThrow().getCameras().size());
     }
 
     private static Gym arena() {

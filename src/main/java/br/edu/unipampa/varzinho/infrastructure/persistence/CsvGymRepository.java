@@ -188,7 +188,7 @@ public final class CsvGymRepository implements GymRepository {
         Camera camera = format.build(fields[2], fields[3], Resolution.valueOf(fields[4]),
                 Integer.parseInt(fields[5]), List.copyOf(Arrays.asList(fields).subList(COMMON_COLUMNS, fields.length)));
         int courtNumber = Integer.parseInt(fields[1]);
-        if (gym.findCourt(courtNumber) == null) {
+        if (gym.findCourt(courtNumber).isEmpty()) {
             throw unreadable(lineNumber, "a camera on court " + courtNumber + ", which the file never declared");
         }
         gym.installCamera(courtNumber, camera);

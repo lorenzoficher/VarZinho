@@ -3,6 +3,7 @@ package br.edu.unipampa.varzinho.domain.structure;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.exception.DuplicateCameraException;
@@ -138,10 +139,10 @@ public final class Gym {
      * Looks up one court by its number.
      *
      * @param number the court's number
-     * @return the court, or {@code null} if the gym has no court with that number
+     * @return the court, or empty if the gym has no court with that number
      */
-    public Court findCourt(int number) {
-        return courts.get(number);
+    public Optional<Court> findCourt(int number) {
+        return Optional.ofNullable(courts.get(number));
     }
 
     /** {@return an unmodifiable copy of the gym's courts, in no particular order} */

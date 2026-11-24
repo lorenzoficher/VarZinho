@@ -33,7 +33,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -138,19 +137,19 @@ class CourtPanelTest {
 
     @Test
     void stopSwitchesOffTheSelectedCameraAndItsLineFollows() {
-        Camera camera = gym.findCourt(1).getCameras().get(1);
+        Camera camera = gym.findCourt(1).orElseThrow().getCameras().get(1);
 
         panel.selectCamera(1);
         panel.stopButton().doClick();
 
         assertEquals(CameraStatus.INACTIVE, camera.getStatus());
         assertEquals("ptz-1 · PTZ · HD (1280x720) · Parada · panorâmica 0 inclinação 0 zoom 1", panel.cameraLines().get(1));
-        assertEquals(CameraStatus.ACTIVE, gym.findCourt(1).getCameras().get(0).getStatus());
+        assertEquals(CameraStatus.ACTIVE, gym.findCourt(1).orElseThrow().getCameras().get(0).getStatus());
     }
 
     @Test
     void startingACameraInMaintenanceReportsTheDomainRefusal() {
-        Camera camera = gym.findCourt(1).getCameras().get(0);
+        Camera camera = gym.findCourt(1).orElseThrow().getCameras().get(0);
         panel.selectCamera(0);
         panel.maintenanceButton().doClick();
 
@@ -184,9 +183,9 @@ class CourtPanelTest {
         courts.installButton().doClick(0);
         var saved = new CsvGymRepository(store).load().orElseThrow();
         assertEquals(List.of("gol-norte", "gol-sul"),
-                saved.findCourt(3).getCameras().stream().map(Camera::getId).toList());
+                saved.findCourt(3).orElseThrow().getCameras().stream().map(Camera::getId).toList());
         assertEquals(3, courts.selectedCourtNumber());
-        assertEquals(2, saved.findCourt(1).getCameras().size());
+        assertEquals(2, saved.findCourt(1).orElseThrow().getCameras().size());
     }
 
     @Test
@@ -199,7 +198,7 @@ class CourtPanelTest {
 
         panel.installButton().doClick();
 
-        List<Camera> cameras = gym.findCourt(2).getCameras();
+        List<Camera> cameras = gym.findCourt(2).orElseThrow().getCameras();
         assertEquals(2, cameras.size());
         Camera installed = cameras.get(1);
         assertInstanceOf(FixedCamera.class, installed);
@@ -217,7 +216,7 @@ class CourtPanelTest {
 
         panel.installButton().doClick();
 
-        List<Camera> cameras = gym.findCourt(1).getCameras();
+        List<Camera> cameras = gym.findCourt(1).orElseThrow().getCameras();
         assertEquals(3, cameras.size());
         assertInstanceOf(PtzCamera.class, cameras.get(2));
         assertEquals(3, panel.cameraLines().size());
@@ -231,7 +230,7 @@ class CourtPanelTest {
         panel.installButton().doClick();
 
         assertEquals(List.of("A câmera precisa de um identificador."), errors);
-        assertEquals(2, gym.findCourt(1).getCameras().size());
+        assertEquals(2, gym.findCourt(1).orElseThrow().getCameras().size());
         assertEquals("Fixed Lite", panel.modelField().getText());
     }
 
@@ -244,7 +243,7 @@ class CourtPanelTest {
         panel.installButton().doClick();
 
         assertEquals(List.of("A câmera fixed-1 já está instalada na quadra 1."), errors);
-        assertEquals(1, gym.findCourt(2).getCameras().size());
+        assertEquals(1, gym.findCourt(2).orElseThrow().getCameras().size());
     }
 
     @Test
@@ -263,7 +262,7 @@ class CourtPanelTest {
         for (int second = 0; second < Court.DEFAULT_CAPTURE_SECONDS; second++) {
             feed.tick(start.plusSeconds(second));
         }
-        Highlight highlight = gym.findCourt(2).triggerCapture();
+        Highlight highlight = gym.findCourt(2).orElseThrow().triggerCapture();
 
         assertEquals("fixed-3", highlight.getCameraId());
     }
@@ -327,10 +326,10 @@ class CourtPanelTest {
 
         panel.removeSelectedCourt(number -> true);
 
-        assertNull(gym.findCourt(3));
+        assertTrue(gym.findCourt(3).isEmpty());
         assertFalse(panel.courtNumbers().contains(3));
         assertFalse(panel.moveTargets().contains(3));
-        assertTrue(gym.findCourt(panel.selectedCourtNumber()) != null);
+        assertTrue(gym.findCourt(panel.selectedCourtNumber()).isPresent());
         assertTrue(errors.isEmpty());
     }
 
@@ -369,12 +368,12 @@ class CourtPanelTest {
 
     @Test
     void removingTheSelectedCameraTakesItOffTheCourt() {
-        Camera kept = gym.findCourt(1).getCameras().get(0);
+        Camera kept = gym.findCourt(1).orElseThrow().getCameras().get(0);
 
         panel.selectCamera(1);
         panel.removeCameraButton().doClick();
 
-        assertEquals(List.of(kept), gym.findCourt(1).getCameras());
+        assertEquals(List.of(kept), gym.findCourt(1).orElseThrow().getCameras());
         assertEquals(List.of("fixed-1 · Fixa · Full HD (1920x1080) · Ativa"), panel.cameraLines());
     }
 
@@ -383,12 +382,12 @@ class CourtPanelTest {
         panel.removeCameraButton().doClick();
 
         assertEquals(List.of("Selecione uma câmera primeiro."), errors);
-        assertEquals(2, gym.findCourt(1).getCameras().size());
+        assertEquals(2, gym.findCourt(1).orElseThrow().getCameras().size());
     }
 
     @Test
     void movingTheSelectedPtzAimsItAndItsLineFollows() {
-        PtzCamera ptz = (PtzCamera) gym.findCourt(1).getCameras().get(1);
+        PtzCamera ptz = (PtzCamera) gym.findCourt(1).orElseThrow().getCameras().get(1);
         panel.selectCamera(1);
         panel.panSpinner().setValue(90);
         panel.tiltSpinner().setValue(-10);
@@ -404,7 +403,7 @@ class CourtPanelTest {
 
     @Test
     void aimingPastTheHeadsReachIsRefusedWithTheDomainMessage() {
-        PtzCamera ptz = (PtzCamera) gym.findCourt(1).getCameras().get(1);
+        PtzCamera ptz = (PtzCamera) gym.findCourt(1).orElseThrow().getCameras().get(1);
         panel.selectCamera(1);
         panel.panSpinner().setValue(400);
 
@@ -416,7 +415,7 @@ class CourtPanelTest {
 
     @Test
     void aimingAFixedCameraIsRefusedEvenIfTheButtonWasLeftEnabled() {
-        FixedCamera fixed = (FixedCamera) gym.findCourt(1).getCameras().get(0);
+        FixedCamera fixed = (FixedCamera) gym.findCourt(1).orElseThrow().getCameras().get(0);
         CameraStatus statusBefore = fixed.getStatus();
         int angleBefore = fixed.getAngle();
         panel.selectCamera(0);
@@ -426,7 +425,7 @@ class CourtPanelTest {
         panel.moveButton().doClick();
 
         assertEquals(List.of("A câmera " + fixed.getId() + " não pode ser apontada."), errors);
-        assertSame(fixed, gym.findCourt(1).getCameras().get(0));
+        assertSame(fixed, gym.findCourt(1).orElseThrow().getCameras().get(0));
         assertEquals(statusBefore, fixed.getStatus());
         assertEquals(angleBefore, fixed.getAngle());
         assertEquals(0, gymRepository.saves);
@@ -471,14 +470,14 @@ class CourtPanelTest {
 
     @Test
     void movingTheSelectedCameraTakesItToTheChosenCourt() {
-        Camera ptz = gym.findCourt(1).getCameras().get(1);
+        Camera ptz = gym.findCourt(1).orElseThrow().getCameras().get(1);
 
         panel.selectCamera(1);
         panel.moveTargetSelector().setSelectedItem(2);
         panel.moveToCourtButton().doClick();
 
         assertEquals(1, panel.cameraLines().size());
-        assertTrue(gym.findCourt(2).getCameras().contains(ptz));
+        assertTrue(gym.findCourt(2).orElseThrow().getCameras().contains(ptz));
         assertEquals(CameraStatus.INACTIVE, ptz.getStatus());
         assertEquals(1, gymRepository.saves);
     }
@@ -503,7 +502,7 @@ class CourtPanelTest {
         panel.moveTargetSelector().setSelectedItem(5);
         panel.moveToCourtButton().doClick();
 
-        assertEquals(1, gym.findCourt(5).getCameras().size());
+        assertEquals(1, gym.findCourt(5).orElseThrow().getCameras().size());
     }
 
     @Test
@@ -534,7 +533,7 @@ class CourtPanelTest {
 
         assertEquals(2, errors.size());
         assertTrue(errors.get(0).startsWith("Não foi possível salvar a academia."), errors.get(0));
-        assertTrue(gym.findCourt(2).getCameras().stream().anyMatch(camera -> camera.getId().equals("fixed-9")));
+        assertTrue(gym.findCourt(2).orElseThrow().getCameras().stream().anyMatch(camera -> camera.getId().equals("fixed-9")));
         assertEquals(3, csvPanel.selectedCourtNumber());
         assertEquals(3, gym.getCourts().size());
     }

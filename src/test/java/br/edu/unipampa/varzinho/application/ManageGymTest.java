@@ -239,7 +239,7 @@ class ManageGymTest {
         FixedCamera camera = fixedCamera("fixed-1");
         gym.installCamera(1, camera);
         camera.startRecording();
-        Court court = gym.findCourt(1);
+        Court court = gym.findCourt(1).orElseThrow();
         court.record(new Frame(Instant.parse("2026-11-10T20:00:00Z"), 1));
         court.record(new Frame(Instant.parse("2026-11-10T20:00:01Z"), 2));
 

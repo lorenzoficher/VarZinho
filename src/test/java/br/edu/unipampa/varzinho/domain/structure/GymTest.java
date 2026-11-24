@@ -1,12 +1,12 @@
 package br.edu.unipampa.varzinho.domain.structure;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +31,7 @@ class GymTest {
         Court opened = gym.openNextCourt();
 
         assertEquals(1, opened.getNumber());
-        assertSame(opened, gym.findCourt(1));
+        assertSame(opened, gym.findCourt(1).orElseThrow());
         assertEquals(1, gym.getCourts().size());
     }
 
@@ -46,24 +46,24 @@ class GymTest {
         Court opened = gym.openNextCourt();
 
         assertEquals(5, opened.getNumber());
-        assertSame(opened, gym.findCourt(5));
-        assertSame(first, gym.findCourt(1));
-        assertSame(fourth, gym.findCourt(4));
+        assertSame(opened, gym.findCourt(5).orElseThrow());
+        assertSame(first, gym.findCourt(1).orElseThrow());
+        assertSame(fourth, gym.findCourt(4).orElseThrow());
         assertEquals(3, gym.getCourts().size());
     }
 
     @Test
-    void findAddedCourt() {
+    void findsTheCourtRegisteredUnderANumber() {
         Gym gym = new Gym("Arena", "Rua A");
         Court court = new Court(1);
         gym.addCourt(court);
-        assertSame(court, gym.findCourt(1));
+        assertEquals(Optional.of(court), gym.findCourt(1));
     }
 
     @Test
-    void findUnknownCourt() {
+    void findsNoCourtForAnUnregisteredNumber() {
         Gym gym = new Gym("Arena", "Rua A");
-        assertNull(gym.findCourt(99));
+        assertTrue(gym.findCourt(99).isEmpty());
     }
 
     @Test
@@ -85,7 +85,7 @@ class GymTest {
 
         gym.installCamera(1, camera);
 
-        assertEquals(List.of(camera), gym.findCourt(1).getCameras());
+        assertEquals(List.of(camera), gym.findCourt(1).orElseThrow().getCameras());
     }
 
     @Test
@@ -99,7 +99,7 @@ class GymTest {
                 () -> gym.installCamera(2, new FixedCamera("fixed-1", "Fixed", Resolution.HD, 30, 45)));
 
         assertEquals("camera fixed-1 is already installed on court 1", refusal.getMessage());
-        assertTrue(gym.findCourt(2).getCameras().isEmpty());
+        assertTrue(gym.findCourt(2).orElseThrow().getCameras().isEmpty());
     }
 
     @Test
@@ -119,8 +119,8 @@ class GymTest {
 
         gym.moveCamera(camera, 2);
 
-        assertTrue(gym.findCourt(1).getCameras().isEmpty());
-        assertEquals(List.of(camera), gym.findCourt(2).getCameras());
+        assertTrue(gym.findCourt(1).orElseThrow().getCameras().isEmpty());
+        assertEquals(List.of(camera), gym.findCourt(2).orElseThrow().getCameras());
         assertEquals(CameraStatus.INACTIVE, camera.getStatus());
     }
 
@@ -147,7 +147,7 @@ class GymTest {
                 () -> gym.moveCamera(camera, 9));
 
         assertEquals("court 9 is not registered", refusal.getMessage());
-        assertEquals(List.of(camera), gym.findCourt(1).getCameras());
+        assertEquals(List.of(camera), gym.findCourt(1).orElseThrow().getCameras());
         assertEquals(CameraStatus.ACTIVE, camera.getStatus());
     }
 
@@ -177,7 +177,7 @@ class GymTest {
 
         gym.removeCourt(2);
 
-        assertNull(gym.findCourt(2));
+        assertTrue(gym.findCourt(2).isEmpty());
         assertEquals(List.of(1), gym.getCourts().stream().map(Court::getNumber).toList());
     }
 
@@ -196,7 +196,7 @@ class GymTest {
         gym.installCamera(2, camera);
 
         assertThrows(IllegalStateException.class, () -> gym.removeCourt(2));
-        assertEquals(List.of(camera), gym.findCourt(2).getCameras());
+        assertEquals(List.of(camera), gym.findCourt(2).orElseThrow().getCameras());
     }
 
     @Test

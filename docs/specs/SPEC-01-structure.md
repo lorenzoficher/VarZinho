@@ -14,7 +14,7 @@ public class Gym {
     public void installCamera(int courtNumber, Camera camera);
     public void moveCamera(Camera camera, int toCourt);
     public void removeCourt(int number);
-    public Court findCourt(int number);
+    public Optional<Court> findCourt(int number);  // empty for an unknown number
     public List<Court> getCourts();             // unmodifiable
 }
 

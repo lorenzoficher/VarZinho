@@ -289,10 +289,7 @@ public final class ManageGym {
     }
 
     private Court requireCourt(int courtNumber) {
-        Court court = gym.findCourt(courtNumber);
-        if (court == null) {
-            throw new IllegalArgumentException("court " + courtNumber + " is not registered");
-        }
-        return court;
+        return gym.findCourt(courtNumber).orElseThrow(
+                () -> new IllegalArgumentException("court " + courtNumber + " is not registered"));
     }
 }
