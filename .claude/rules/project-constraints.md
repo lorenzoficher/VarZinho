@@ -26,8 +26,13 @@
 - **The dependency arrow points inward.** `domain/` never imports from `application/`
   or `infrastructure/`. Persistence knows the domain; the domain knows nothing about
   persistence.
-- **All persistence goes through the `HighlightRepository` interface.** CSV is
-  today's implementation (`CsvHighlightRepository`), not the contract.
+- **All persistence goes through the ports in `application/port/`:**
+  `HighlightRepository`, `GymRepository` and `OperatorStore`. Each has a CSV and a
+  PostgreSQL adapter (`CsvHighlightRepository` and `PostgresHighlightRepository`,
+  and so on); neither is the contract. `bootstrap/Storage` picks one per run: CSV
+  under `data/` by default, PostgreSQL when `VARZINHO_DATABASE_URL` names a
+  database, and an unreachable database stops the application rather than falling
+  back to CSV.
 - **FFmpeg is a runtime dependency, never a build one.** It is an external program
   on the `PATH`, used only when `VARZINHO_STREAM_URL` names a phone stream. `mvn
   compile` and `mvn test` must keep passing on a machine without it.
@@ -67,9 +72,10 @@ metadata only. The reversal and its reasoning are in `CONTEXT.md`.
 now required here too: minimal, in Swing, confined to `ui/`, owning no rule. The
 reversal and its reasoning are in `CONTEXT.md`.
 
-**A real database was on this list until 2026-11-11.** The second assignment is
-expected to ask for one: PostgreSQL in Docker, reached through plain JDBC, alongside
-CSV. The reversal and its reasoning are in `CONTEXT.md`.
+**A real database was on this list until 2026-11-11.** It came in for the
+second assignment, and the code now has it: PostgreSQL in Docker, reached through plain JDBC,
+alongside CSV. Operator accounts and sign-in arrived with it, stored the same way.
+The reversal and its reasoning are in `CONTEXT.md`.
 
 ## Language
 
