@@ -49,7 +49,7 @@ public final class SpectatorServer implements AutoCloseable {
      * @param store the folder the clip orders are kept in
      * @return the running server
      * @throws IllegalArgumentException if the address is not a bare HTTPS origin
-     * @throws IOException if the port cannot be bound
+     * @throws IOException if the orders folder cannot be created or the port cannot be bound
      */
     public static SpectatorServer open(String address, String token, Path store) throws IOException {
         return open(address, token, store, false);
@@ -67,7 +67,7 @@ public final class SpectatorServer implements AutoCloseable {
      * @param demo whether payments are simulated instead of charged
      * @return the running server
      * @throws IllegalArgumentException if the address is not a bare HTTPS origin
-     * @throws IOException if the port cannot be bound
+     * @throws IOException if the orders folder cannot be created or the port cannot be bound
      */
     public static SpectatorServer open(String address, String token, Path store, boolean demo) throws IOException {
         String publicOrigin = null;
@@ -109,7 +109,7 @@ public final class SpectatorServer implements AutoCloseable {
      * @param source an address FFmpeg reads the live picture from — the recorder's relay,
      *     never the phone itself, which may serve a single client
      * @param courtNumber the court being streamed, which spectators buy clips of
-     * @param folder where the broadcast's live fragments are written
+     * @param folder the folder a fresh directory for this broadcast's live fragments is created in
      * @return the address spectators open
      * @throws IllegalStateException if a match is already streaming
      * @throws IOException if the broadcast encoder cannot be started
