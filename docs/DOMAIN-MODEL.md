@@ -15,6 +15,7 @@ classDiagram
         +openNextCourt() Court
         +installCamera(int, Camera)
         +moveCamera(Camera, int)
+        +removeCourt(int)
         +findCourt(int) Court
         +getCourts() List~Court~
     }
@@ -64,6 +65,11 @@ classDiagram
     class Aimable {
         <<interface>>
         +moveTo(int, int, int)
+    }
+
+    class ClipAssembler {
+        <<interface>>
+        +assemble(List~Frame~, Path)
     }
 
     class StreamCamera {
@@ -152,6 +158,7 @@ classDiagram
     Camera <|-- PtzCamera
     Camera <|-- StreamCamera
     Aimable <|.. PtzCamera
+    StreamCamera ..> ClipAssembler
     Highlight "1" *-- "1" VideoClip
     HighlightRepository <|.. CsvHighlightRepository
     HighlightRepository <|.. PostgresHighlightRepository
@@ -185,7 +192,14 @@ arrives inactive and starts with an empty buffer when recording resumes.
 `Gym.openNextCourt()` adds the court numbered one past the highest existing
 one — court 1 on an empty gym — and returns it. The phone gets its own court
 this way (`ConnectStreamCamera`), so the numbering rule lives in the gym rather
-than in whoever needs a new court.
+than in whoever needs a new court. `Gym.removeCourt(int)` takes a court out
+only when it holds no camera: cameras outlive the court, so the operator
+removes or moves them first, and highlights captured there are untouched.
+
+`StreamCamera` hands its recorded window to a `ClipAssembler`, received in its
+constructor, which writes the playable file and returns only once it exists.
+It is the only thing the domain knows about real video; the FFmpeg
+implementation, `FfmpegClipAssembler`, lives in `infrastructure/stream/`.
 
 Aiming is a capability, not a kind of camera. `Aimable` declares only
 `moveTo(pan, tilt, zoom)` and `PtzCamera` is its one implementation, so a
