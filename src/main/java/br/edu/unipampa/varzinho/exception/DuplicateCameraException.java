@@ -9,6 +9,11 @@ package br.edu.unipampa.varzinho.exception;
  */
 public final class DuplicateCameraException extends DomainException {
 
+    /**
+     * Builds an exception naming the camera that could not be installed.
+     *
+     * @param message the duplicate id and the gym it belongs to
+     */
     public DuplicateCameraException(String message) {
         super(message);
     }

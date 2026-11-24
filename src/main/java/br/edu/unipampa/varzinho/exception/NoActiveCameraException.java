@@ -9,6 +9,11 @@ package br.edu.unipampa.varzinho.exception;
  */
 public final class NoActiveCameraException extends DomainException {
 
+    /**
+     * Builds an exception naming the court whose cameras were all unavailable.
+     *
+     * @param message the court number and the reason no camera could be used
+     */
     public NoActiveCameraException(String message) {
         super(message);
     }

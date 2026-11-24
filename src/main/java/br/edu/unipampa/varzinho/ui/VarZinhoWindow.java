@@ -28,11 +28,11 @@ import java.util.logging.Logger;
  */
 public final class VarZinhoWindow extends JFrame {
     private static final Logger LOGGER = Logger.getLogger(VarZinhoWindow.class.getName());
-    private final List<Timer> clocks = new ArrayList<>();
-    private final CaptureActivity captureActivity = new CaptureActivity();
-    private final MessageBar messages = new MessageBar();
-    private final ArenaWorkspace workspace;
-    private boolean phoneDropReported;
+    private transient final List<Timer> clocks = new ArrayList<>();
+    private transient final CaptureActivity captureActivity = new CaptureActivity();
+    private transient final MessageBar messages = new MessageBar();
+    private transient final ArenaWorkspace workspace;
+    private transient boolean phoneDropReported;
 
     /**
      * Creates the window and starts the feed timers.
@@ -68,10 +68,20 @@ public final class VarZinhoWindow extends JFrame {
         super.dispose();
     }
 
+    /**
+     * Shows the warnings collected while starting up, such as records skipped from a corrupted file.
+     *
+     * @param warnings the messages to show; an empty list shows nothing
+     */
     public void showStartupWarnings(List<String> warnings) {
         messages.showStartupWarnings(warnings);
     }
 
+    /**
+     * Wires the recording editor so the archive page can rename and delete saved highlights.
+     *
+     * @param editor the use case that renames and deletes recordings
+     */
     public void enableRecordingEditing(br.edu.unipampa.varzinho.application.port.RecordingEditor editor) {
         workspace.enableRecordingEditing(editor);
     }
@@ -79,6 +89,14 @@ public final class VarZinhoWindow extends JFrame {
     /**
      * Runs the phone's feed on a clock of its own, shows its court and offers the stream
      * in the browser.
+     *
+     * @param phoneFeed  the clock that drives the phone's buffer and status updates;
+     *                   must not be {@code null}
+     * @param phoneCourt the court number to select for the phone's view
+     * @param streamUrl  the local-network stream address; must not be {@code null} or blank
+     * @param publicUrl  the public viewer link to copy, or {@code null} when there is none
+     * @throws IllegalArgumentException if {@code phoneFeed} is {@code null} or
+     *                                  {@code streamUrl} is {@code null} or blank
      */
     public void followPhone(Feed phoneFeed, int phoneCourt, String streamUrl, String publicUrl) {
         if (phoneFeed == null) throw new IllegalArgumentException("a followed phone needs its feed");
@@ -107,6 +125,13 @@ public final class VarZinhoWindow extends JFrame {
                 + (publicUrl == null ? "Transmissão disponível na rede local." : "Link da partida disponível para copiar."));
     }
 
+    /**
+     * Enables the prompt that lets the operator connect a phone camera and, if an address
+     * was stored from a previous session, tries to connect straight away.
+     *
+     * @param initialAddress the address to try on startup, or {@code null} to skip the auto-connect
+     * @param prepareConnection builds the connection runnable for a given stream address
+     */
     public void offerPhoneConnection(String initialAddress, java.util.function.Function<String, Runnable> prepareConnection) {
         enablePhonePrompt(initialAddress, prepareConnection);
         if (initialAddress != null && !initialAddress.isBlank()) connectToPhone(initialAddress, prepareConnection);
@@ -162,6 +187,8 @@ public final class VarZinhoWindow extends JFrame {
     /**
      * Tells the operator, once, that the phone's court can no longer capture. FFmpeg
      * exiting and the phone going silent are two signs of the same drop.
+     *
+     * @param disconnect the action that releases the phone's connection resources
      */
     public void phoneDropped(Runnable disconnect) {
         captureActivity.whenIdle(() -> {

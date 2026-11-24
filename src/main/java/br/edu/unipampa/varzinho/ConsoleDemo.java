@@ -21,8 +21,8 @@ import java.util.List;
  *
  * <p>It builds a gym, records a full buffer, triggers a capture, persists the highlight,
  * reloads it, and prints enough output to confirm everything worked. It also shows the
- * expected {@link br.edu.unipampa.varzinho.exception.NoActiveCameraException} when a
- * court without active cameras is asked to capture.
+ * expected {@link NoActiveCameraException} when a court without active cameras
+ * is asked to capture.
  *
  * <p>Run with {@code mvn exec:java -Dexec.mainClass=br.edu.unipampa.varzinho.ConsoleDemo}
  * or directly from an IDE.
