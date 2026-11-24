@@ -44,6 +44,17 @@ class CsvGymRepositoryTest extends GymRepositoryContractTest {
     }
 
     @Test
+    void aFixedCameraAimedOutsideTheCircleIsReportedWithItsNumber() throws IOException {
+        Path file = directory.resolve("gym.csv");
+        Files.write(file, List.of(CsvGymRepository.HEADER, "gym,Arena,Rua A", "court,1",
+                "fixed,1,fixed-1,Bullet,FULL_HD,30,ACTIVE,400"));
+
+        RepositoryException damage = assertThrows(RepositoryException.class, () -> repository().load());
+
+        assertTrue(damage.getMessage().contains("line 4"), damage.getMessage());
+    }
+
+    @Test
     void aCameraOnACourtTheFileNeverDeclaredIsReportedWithItsNumber() throws IOException {
         Path file = directory.resolve("gym.csv");
         Files.write(file, List.of(CsvGymRepository.HEADER, "gym,Arena,Rua A",
