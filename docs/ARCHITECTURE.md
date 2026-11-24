@@ -6,11 +6,15 @@ persistence behind an abstraction, and errors as domain exceptions.
 ## Layers
 
 ```
+bootstrap/                       Launcher and Storage: the composition root
 ui/                              Swing windows; Main starts the launcher
+application/                     use cases and the read models the window displays
 application/port/                repository contracts and persistence failures
 infrastructure/persistence/      CSV, PostgreSQL and in-memory storage adapters
 infrastructure/stream/           FFmpeg adapter behind ClipAssembler
-domain/                          structure, capture, highlight and people
+infrastructure/simulation/       the clock that feeds the simulated cameras
+infrastructure/spectator/        the public spectator view
+domain/                          structure, capture, highlight and the operator account
 exception/                       domain failures, independent of other packages
 ```
 
@@ -25,9 +29,10 @@ nor Swing or AWT. Application code imports no infrastructure, UI or bootstrap
 package, nor Swing or AWT. Infrastructure imports no UI or bootstrap package.
 Domain exceptions import no other project package.
 
-The UI still constructs and calls adapters at this stage. Introducing use
-cases and restricting the UI's dependencies belong to the following work
-items; moving packages does not change capture or persistence behaviour.
+The window constructs no adapter. `bootstrap/Launcher` is the composition
+root: it builds the storage, the use cases and, when there is one, the phone,
+and hands them to the window, which reaches the model only through the use
+cases in `application/`.
 
 The brief's responsibilities remain distinct: `domain/` models the system,
 application ports define storage contracts, infrastructure implements storage
@@ -35,35 +40,53 @@ and video integration, and `ui/` handles interaction.
 
 ## Persistence
 
-Highlights can be stored in a CSV file or in PostgreSQL. To avoid coupling the
-system to either, all persistence goes through an interface:
+Three things are kept between runs: the highlight archive, the gym's structure
+and the operator accounts. Each has its own port in `application/port/`, and
+each port has two adapters a run can store in — a CSV file and a PostgreSQL
+table — plus an in-memory one for tests and for a damaged gym file:
+
+| Port | CSV (default) | PostgreSQL | In memory |
+|---|---|---|---|
+| `HighlightRepository` | `CsvHighlightRepository`, `data/highlights.csv` | `PostgresHighlightRepository`, table `highlight` | `InMemoryHighlightRepository` |
+| `GymRepository` | `CsvGymRepository`, `data/gym.csv` | `PostgresGymRepository`, tables `gym`, `court`, `camera` | `InMemoryGymRepository` |
+| `OperatorStore` | `CsvOperatorStore`, `data/operators.csv` | `PostgresOperatorStore`, table `operator_account` | `InMemoryOperatorStore` |
+
+The adapters of one port pass the same contract test
+(`HighlightRepositoryContractTest`, `GymRepositoryContractTest`,
+`OperatorStoreContractTest`), and nothing else in the system changes between
+them — because nothing else in the system mentions CSV or SQL.
 
 ```java
 public interface HighlightRepository {
-    void save(Highlight highlight);
-    Optional<Highlight> findById(String id);
-    List<Highlight> findAll();
-    List<Highlight> findByCourt(int courtNumber);
+    void save(Highlight highlight) throws RepositoryException;
+    void rename(String id, String title) throws RepositoryException;
+    void delete(String id) throws RepositoryException;
+    Optional<Highlight> findById(String id) throws RepositoryException;
+    List<Highlight> findAll() throws RepositoryException;
+    List<Highlight> findByCourt(int courtNumber) throws RepositoryException;
 }
 ```
 
-`CsvHighlightRepository` implements it against a file, and
-`PostgresHighlightRepository` against a database table. Both pass the same
-contract test, and nothing else in the system changes between them — because
-nothing else in the system mentions CSV or SQL.
+### How the launcher picks one
 
-Which one a run uses is decided once, in the composition root (`bootstrap/Storage`):
-CSV under `data/` by default, PostgreSQL when `VARZINHO_DATABASE_URL` names a
-database (with `VARZINHO_DATABASE_USER` and `VARZINHO_DATABASE_PASSWORD`). A
-database that is named but unreachable stops the application before any window
-opens; it never falls back to CSV, because highlights written to a file would look
-lost from the database.
+The choice is made once per run, for all three ports together, in
+`bootstrap/Storage.fromEnvironment`, which `bootstrap/Launcher` calls before
+anything else:
 
-The operator accounts follow the same choice: `data/operators.csv` by default,
-`PostgresOperatorStore` when a database is named. The launcher hands that store to
-`OperatorAccess`, and `ui/SignInDialog` asks for a sign-in — or for the first
-operator, when none is stored — before the main window is built. Closing that
-gate exits without opening the window.
+- `VARZINHO_DATABASE_URL` unset or blank: the three CSV adapters, under `data/`.
+- `VARZINHO_DATABASE_URL` set: the three PostgreSQL adapters, opened with
+  `VARZINHO_DATABASE_USER` and `VARZINHO_DATABASE_PASSWORD`. A missing user is
+  refused before any connection is tried.
+
+A database that is named but unreachable stops the application before any
+window opens; it never falls back to CSV, because highlights written to a file
+would look lost from the database. The error message names the database but
+masks its password.
+
+The launcher then hands the operator store to `OperatorAccess`, and
+`ui/SignInDialog` asks for a sign-in — or for the first operator, when none is
+stored — before the main window is built. Closing that gate exits without
+opening the window.
 
 This is **dependency inversion**: the high-level policy depends on an
 abstraction, not on the low-level detail. It is also the project's clearest
@@ -281,8 +304,9 @@ the saved gym or creates the sample gym on the first run. The court panel
 creates courts, installs and moves cameras, changes camera status and points a
 PTZ camera. The capture panel saves a highlight from the selected court, and
 the archive panel lists persisted highlights with an optional court filter.
-People registration remains in `ConsoleDemo`, because people do not
-participate in the capture operation.
+The operators page (`OperatorsPanel`) lets the signed-in operator register
+another account through `SignedInOperator`, and the sign-in offers a simulated
+password recovery (`PasswordRecoveryDialog`) through `OperatorAccess`.
 
 The stream camera receives the real `FfmpegClipAssembler`: capture returns only
 after its clip is written. `CapturePanel` runs the whole capture on a
