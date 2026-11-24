@@ -286,10 +286,13 @@ Com a janela aberta pelo bloco acima, sobre um banco novo:
 
 1. Crie o primeiro operador na tela inicial. Em **Operadores**, use
    **Cadastrar operador** para criar um segundo.
-2. Em **Quadras**, use **Adicionar quadra**. Em **Câmeras**, escolha a quadra
-   nova, clique em **+ Adicionar câmera** e confirme em **Cadastrar câmera**.
-3. Em **Melhores momentos**, salve um lance (**F2**). Em **Arquivos**, selecione
+2. Com a quadra 1 do ginásio de exemplo selecionada, cujas câmeras já gravam,
+   salve um lance em **Melhores momentos** (**F2**). Em **Arquivos**, selecione
    o lance, clique em **Renomear gravação**, dê um nome e **Salvar nome**.
+3. Em **Quadras**, digite o número da nova quadra e use **Adicionar quadra**; ela
+   fica selecionada. No quadro **Adicionar câmera** da mesma página, preencha o
+   ID e o modelo e clique em **Cadastrar câmera**. Ela entra parada, por isso o
+   lance foi salvo antes, na quadra 1.
 4. Feche a janela e reinicie também o banco:
 
    ```bash
