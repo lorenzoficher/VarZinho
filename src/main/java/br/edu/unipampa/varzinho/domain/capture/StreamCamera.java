@@ -18,6 +18,20 @@ public final class StreamCamera extends Camera {
     private final String streamUrl;
     private final ClipAssembler assembler;
 
+    /**
+     * Builds a stream camera, switched off. Building it opens no connection: the
+     * address is only recorded here.
+     *
+     * @param id the identifier, unique across the gym the camera is installed in
+     * @param model the make and model of the phone or device
+     * @param resolution the resolution it streams at
+     * @param bufferSeconds how many of the most recent seconds the camera keeps
+     * @param streamUrl the address the device streams from
+     * @param assembler what writes this camera's clips to disk
+     * @throws IllegalArgumentException if the id, model or stream address is missing or
+     *         blank, the resolution or assembler is missing, or the buffer is not at
+     *         least one second long
+     */
     public StreamCamera(String id, String model, Resolution resolution, int bufferSeconds,
             String streamUrl, ClipAssembler assembler) {
         super(id, model, resolution, bufferSeconds);
@@ -54,6 +68,7 @@ public final class StreamCamera extends Camera {
         return describeAs("stream");
     }
 
+    /** {@return the address the device streams from, never blank} */
     public String getStreamUrl() {
         return streamUrl;
     }

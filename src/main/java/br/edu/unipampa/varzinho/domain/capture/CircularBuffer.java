@@ -17,6 +17,13 @@ public final class CircularBuffer {
     private int writePosition;
     private int size;
 
+    /**
+     * Builds an empty buffer.
+     *
+     * @param capacitySeconds how many seconds the buffer holds before it starts
+     *        overwriting the oldest
+     * @throws IllegalArgumentException if the capacity is not at least one second
+     */
     public CircularBuffer(int capacitySeconds) {
         if (capacitySeconds <= 0) {
             throw new IllegalArgumentException(
@@ -25,6 +32,12 @@ public final class CircularBuffer {
         this.frames = new Frame[capacitySeconds];
     }
 
+    /**
+     * Keeps one more second. Once the buffer is full, the new second takes the place of
+     * the oldest one, which is lost.
+     *
+     * @param frame the second to keep
+     */
     public void record(Frame frame) {
         frames[writePosition] = frame;
         writePosition = (writePosition + 1) % frames.length;
@@ -63,18 +76,22 @@ public final class CircularBuffer {
         return List.copyOf(window);
     }
 
+    /** {@return how many seconds the buffer can hold, fixed when it was built} */
     public int capacity() {
         return frames.length;
     }
 
+    /** {@return how many seconds the buffer holds now, never more than its capacity} */
     public int size() {
         return size;
     }
 
+    /** {@return whether the next second recorded will overwrite the oldest} */
     public boolean isFull() {
         return size == frames.length;
     }
 
+    /** {@return whether nothing has been recorded yet} */
     public boolean isEmpty() {
         return size == 0;
     }
