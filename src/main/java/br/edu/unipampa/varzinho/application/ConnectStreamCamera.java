@@ -18,6 +18,13 @@ public final class ConnectStreamCamera {
     private final Gym gym;
     private final StreamCamera phone;
 
+    /**
+     * Prepares to connect a phone; nothing changes in the gym until {@link #connect()}.
+     *
+     * @param gym the gym the phone joins
+     * @param phone the phone's camera, not yet installed
+     * @throws IllegalArgumentException if either is missing
+     */
     public ConnectStreamCamera(Gym gym, StreamCamera phone) {
         if (gym == null) {
             throw new IllegalArgumentException("connecting a phone needs a gym");

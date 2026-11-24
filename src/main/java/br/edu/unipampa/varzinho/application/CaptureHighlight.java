@@ -17,6 +17,13 @@ public final class CaptureHighlight {
     private final Gym gym;
     private final HighlightRepository repository;
 
+    /**
+     * Captures from a gym's courts.
+     *
+     * @param gym the gym whose courts are captured
+     * @param repository where a capture goes once it is archived
+     * @throws IllegalArgumentException if either is missing
+     */
     public CaptureHighlight(Gym gym, HighlightRepository repository) {
         if (gym == null) throw new IllegalArgumentException("capturing a highlight needs a gym");
         if (repository == null) throw new IllegalArgumentException("capturing a highlight needs a highlight repository");
@@ -29,6 +36,7 @@ public final class CaptureHighlight {
      * or changes to the cameras until this returns. A stream capture waits for its
      * assembler, so the window runs the whole operation off the Swing thread.
      *
+     * @param courtNumber the court whose button was pressed
      * @return the capture with its clip finished, not yet archived
      * @throws IllegalArgumentException if the gym has no court with that number
      * @throws br.edu.unipampa.varzinho.exception.NoActiveCameraException if no camera on
