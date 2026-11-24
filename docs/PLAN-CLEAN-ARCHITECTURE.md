@@ -248,9 +248,10 @@ one adapter per port (#147, #148, #152), one contract test every adapter passes
 adapters themselves (`CREATE TABLE IF NOT EXISTS`) and the container by
 `docker-compose.yml`, which is the brief's "mecanismo automático de criação do
 banco". Registration, lookup, change and removal reach the window for courts,
-cameras, operators and highlights. What is left:
-
-- #212 — a grader sees data survive a restart in PostgreSQL by following the README.
+cameras, operators and highlights. The README gives one copy-paste block per
+shell that starts the container and opens the window on PostgreSQL, and a
+walk-through that shows a court, a camera, an operator and a renamed highlight
+surviving a restart of both the application and the database (#212).
 
 **JavaDoc** (requirement 6, criterion 10). Classes, interfaces, constructors and
 public methods, with `@param`, `@return` and `@throws`, and the HTML generated.
@@ -283,7 +284,7 @@ answers it, and the open issues that finish it.
 | 6 | Interface: visual identity | own theme in light and dark (#158), sidebar (#187) | #208 |
 | 7 | Interface: layout | pages by subject (#161), court cards (#188) | #207 |
 | 8 | Interface: usability | F2 capture (#162, #191), archive search (#163), capture on a worker (#113) | #205, #206 |
-| 9 | Database and persistence | PostgreSQL adapters (#145–#152), storage choice (#150), contract test (#144) | #212 |
+| 9 | Database and persistence | PostgreSQL adapters (#145–#152), storage choice (#150), contract test (#144), restart walk-through in the README (#212) | — |
 | 10 | JavaDoc | class Javadoc on most public types | #200–#204 |
 
 ---
@@ -297,7 +298,7 @@ What the brief asks to be handed in, and where each item comes from.
 | Complete, runnable source | `development` merged into `main` | — |
 | README: members | `README.md`, "Equipe" | done |
 | README: how to run | `README.md`, "Como executar" | done |
-| README: database configuration | `README.md`, "Como executar" | done; restart walk-through in #212 |
+| README: database configuration | `README.md`, "Como executar" | done, with the restart walk-through (#212) |
 | README: where each requirement is met | `README.md`, second-assignment section | #124 |
 | Screenshots of the screens | `docs/screenshots/` | #164 |
 | JavaDoc generated as HTML | `mvn javadoc:javadoc` | #200 |
