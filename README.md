@@ -301,12 +301,9 @@ usuário e senha:
 - Depois de entrar, a página **Operadores** cadastra outro operador, que poderá
   entrar na próxima execução.
 
-<!-- SCREENSHOT PENDENTE: salve a captura da janela de entrada em
-     docs/screenshots/05-entrada-do-operador.png e troque este comentário por:
 ![Entrada do operador](docs/screenshots/05-entrada-do-operador.png)
 
 *Entrada do operador: usuário e senha antes da janela principal.*
--->
 
 O **Dashboard** abre após o login. Escolha a quadra no cabeçalho ou em **Suas quadras**. O painel mostra as câmeras dessa quadra e quantos segundos já chegaram ao buffer. A modalidade escolhida nos botões vale para a quadra durante a sessão.
 
