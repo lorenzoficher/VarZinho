@@ -15,6 +15,14 @@ public final class Frame {
     private final Instant timestamp;
     private final int sequence;
 
+    /**
+     * Builds a frame. The sequence is not checked: the camera that numbers its frames
+     * owns that order.
+     *
+     * @param timestamp the instant the second was captured
+     * @param sequence the frame's place in its camera's sequence
+     * @throws IllegalArgumentException if the timestamp is missing
+     */
     public Frame(Instant timestamp, int sequence) {
         if (timestamp == null) {
             throw new IllegalArgumentException("a frame needs the instant it was captured");
@@ -43,10 +51,12 @@ public final class Frame {
         return Objects.hash(timestamp, sequence);
     }
 
+    /** {@return the instant the second was captured, never null} */
     public Instant getTimestamp() {
         return timestamp;
     }
 
+    /** {@return the frame's place in its camera's sequence} */
     public int getSequence() {
         return sequence;
     }
