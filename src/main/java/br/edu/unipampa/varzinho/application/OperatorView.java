@@ -16,10 +16,12 @@ public final class OperatorView {
         return new OperatorView(operator.getName(), operator.getUsername());
     }
 
+    /** {@return the operator's name} */
     public String getName() {
         return name;
     }
 
+    /** {@return the name the operator signs in with} */
     public String getUsername() {
         return username;
     }

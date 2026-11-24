@@ -24,10 +24,12 @@ public final class ArchiveListing {
         return new ArchiveListing(highlights, warning);
     }
 
+    /** {@return the readable highlights, newest first, unmodifiable} */
     public List<HighlightView> getHighlights() {
         return highlights;
     }
 
+    /** {@return the warning about unreadable highlights, or empty when every one was read} */
     public Optional<String> getWarning() {
         return Optional.ofNullable(warning);
     }

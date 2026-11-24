@@ -9,6 +9,7 @@ import java.util.List;
 
 /** Camera kinds shown by the application; a stream needs its own connection flow. */
 public enum CameraKind {
+    /** A camera pointed at one angle that never moves. */
     FIXED {
         @Override
         Camera build(CameraSpec spec) {
@@ -16,6 +17,7 @@ public enum CameraKind {
                     spec.getBufferSeconds(), spec.getFixedAngle());
         }
     },
+    /** A camera that can be aimed with pan, tilt and zoom. */
     PTZ {
         @Override
         Camera build(CameraSpec spec) {
@@ -23,6 +25,7 @@ public enum CameraKind {
                     spec.getBufferSeconds());
         }
     },
+    /** The phone, recording through its stream; never installed from the form. */
     STREAM {
         @Override
         Camera build(CameraSpec spec) {
@@ -32,7 +35,7 @@ public enum CameraKind {
 
     abstract Camera build(CameraSpec spec);
 
-    /** @return the kinds that the manual installation form can build */
+    /** {@return the kinds that the manual installation form can build} */
     public static List<CameraKind> installable() {
         return List.of(FIXED, PTZ);
     }
