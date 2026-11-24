@@ -41,6 +41,10 @@ final class PortugueseText {
             new MessagePattern("username (\\S+) is already taken", "O usuário $1 já está em uso."),
             new MessagePattern("no operator has the username (\\S+)", "Nenhum operador usa o usuário $1."),
             new MessagePattern("court (-?[0-9]+) is not registered", "A quadra $1 não está cadastrada."),
+            new MessagePattern("court (-?[0-9]+) still holds cameras",
+                    "A quadra $1 ainda tem câmeras. Remova ou mova as câmeras antes de removê-la."),
+            new MessagePattern("court (-?[0-9]+) is the only court",
+                    "A quadra $1 é a única da academia e não pode ser removida."),
             new MessagePattern("Court ([0-9]+) has no active camera[.]", "Não há câmera ativa na quadra $1."),
             new MessagePattern("a window of ([0-9]+)s was asked of the ([0-9]+)s recorded", "A captura requer $1 s, mas apenas $2 s foram gravados.")
     );

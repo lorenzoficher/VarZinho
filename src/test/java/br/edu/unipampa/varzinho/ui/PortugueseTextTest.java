@@ -71,6 +71,10 @@ class PortugueseTextTest {
         assertEquals("A câmera CAM-3 não está instalada neste ginásio.", PortugueseText.message(
                 "camera CAM-3 is not installed in this gym"));
         assertEquals("A quadra 2 não está cadastrada.", PortugueseText.message("court 2 is not registered"));
+        assertEquals("A quadra 2 ainda tem câmeras. Remova ou mova as câmeras antes de removê-la.",
+                PortugueseText.message("court 2 still holds cameras"));
+        assertEquals("A quadra 2 é a única da academia e não pode ser removida.",
+                PortugueseText.message("court 2 is the only court"));
         assertEquals("O primeiro operador já foi cadastrado.", PortugueseText.message(
                 "the first operator has already been created"));
     }

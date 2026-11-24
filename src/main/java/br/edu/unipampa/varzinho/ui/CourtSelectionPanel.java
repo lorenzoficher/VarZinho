@@ -6,6 +6,7 @@ import br.edu.unipampa.varzinho.application.ManageGym;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
@@ -13,15 +14,19 @@ import java.awt.FlowLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import java.util.function.IntPredicate;
 
-/** Chooses the current court and opens a new one. */
+/** Chooses the current court, opens a new one and removes an empty one. */
 final class CourtSelectionPanel extends JPanel {
     private final ManageGym management;
     private final Consumer<String> errorSink;
     private final JComboBox<Integer> courtSelector = new JComboBox<>();
     private final JTextField courtNumberField = new JTextField(4);
     private final JButton addCourt = new JButton("Adicionar quadra");
+    private final JButton removeCourt = new JButton("Remover quadra");
     private final List<Runnable> courtAddedListeners = new ArrayList<>();
+    private final List<IntConsumer> courtRemovedListeners = new ArrayList<>();
 
     CourtSelectionPanel(ManageGym management, Consumer<String> errorSink) {
         super(new BorderLayout(12, 0));
@@ -37,11 +42,43 @@ final class CourtSelectionPanel extends JPanel {
         adder.add(new JLabel("Número da nova quadra"));
         adder.add(courtNumberField);
         adder.add(addCourt);
+        adder.add(removeCourt);
         add(courtSelector, BorderLayout.CENTER);
         add(adder, BorderLayout.EAST);
         courtSelector.setPreferredSize(new java.awt.Dimension(240, 38));
         addCourt.setPreferredSize(new java.awt.Dimension(150, 38));
         addCourt.addActionListener(event -> addCourt());
+        removeCourt.setPreferredSize(new java.awt.Dimension(150, 38));
+        removeCourt.addActionListener(event -> removeSelectedCourt(this::confirmRemoval));
+    }
+
+    /**
+     * Removes the selected court once the operator confirms. A refusal — the court still
+     * holds cameras, or it is the only one — is reported and the court stays selected.
+     */
+    void removeSelectedCourt(IntPredicate confirm) {
+        int number = selectedCourtNumber();
+        if (!confirm.test(number)) return;
+        if (!GymChangeReporter.attempt(() -> management.removeCourt(number), errorSink)) return;
+        courtSelector.removeItem(number);
+        courtRemovedListeners.forEach(listener -> listener.accept(number));
+    }
+
+    void onCourtRemoved(IntConsumer listener) { courtRemovedListeners.add(listener); }
+
+    List<Integer> courtNumbers() {
+        List<Integer> numbers = new ArrayList<>();
+        for (int index = 0; index < courtSelector.getItemCount(); index++) numbers.add(courtSelector.getItemAt(index));
+        return numbers;
+    }
+
+    JButton removeCourtButton() { return removeCourt; }
+
+    private boolean confirmRemoval(int number) {
+        String prompt = "Remover a quadra " + number + "?\nOs lances já gravados nela continuam no acervo.";
+        Object[] options = {"Cancelar", "Remover quadra"};
+        return JOptionPane.showOptionDialog(this, prompt, "Confirmar remoção", JOptionPane.DEFAULT_OPTION,
+                JOptionPane.WARNING_MESSAGE, null, options, options[0]) == 1;
     }
 
     int selectedCourtNumber() { return (Integer) courtSelector.getSelectedItem(); }

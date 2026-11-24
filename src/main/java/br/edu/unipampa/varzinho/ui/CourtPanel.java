@@ -18,6 +18,7 @@ import java.awt.Container;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.IntPredicate;
 
 /** Arranges the four independent parts of the court area. */
 final class CourtPanel extends JPanel {
@@ -96,6 +97,12 @@ final class CourtPanel extends JPanel {
         });
         courtSelection.onCourtAdded(() -> {
             cameraPosition.addCourt(courtSelection.selectedCourtNumber());
+            refreshCourtOverview();
+        });
+        courtSelection.onCourtRemoved(number -> {
+            cameraPosition.removeCourt(number);
+            names.remove(number);
+            sports.remove(number);
             refreshCourtOverview();
         });
         cameraList.onSelectionChange(cameraPosition::updateAimAvailability);
@@ -181,6 +188,10 @@ final class CourtPanel extends JPanel {
     void selectCourt(int number) { courtSelection.selectCourt(number); }
     void onCourtChange(Runnable listener) { courtSelection.onCourtChange(listener); }
     void onCourtAdded(Runnable listener) { courtSelection.onCourtAdded(listener); }
+    void onCourtRemoved(Runnable listener) { courtSelection.onCourtRemoved(number -> listener.run()); }
+    void removeSelectedCourt(IntPredicate confirm) { courtSelection.removeSelectedCourt(confirm); }
+    List<Integer> courtNumbers() { return courtSelection.courtNumbers(); }
+    List<Integer> moveTargets() { return cameraPosition.moveTargets(); }
     void onCamerasChanged(Runnable listener) { cameraList.onCamerasChanged(listener); }
     /** Shows a change the panel did not make itself, such as the phone dropping. */
     void refreshCameras() { cameraList.refreshKeepingSelection(); }
@@ -226,6 +237,7 @@ final class CourtPanel extends JPanel {
     JButton installButton() { return cameraInstallation.installButton(); }
     JTextField courtNumberField() { return courtSelection.courtNumberField(); }
     JButton addCourtButton() { return courtSelection.addCourtButton(); }
+    JButton removeCourtButton() { return courtSelection.removeCourtButton(); }
     JSpinner panSpinner() { return cameraPosition.panSpinner(); }
     JSpinner tiltSpinner() { return cameraPosition.tiltSpinner(); }
     JSpinner zoomSpinner() { return cameraPosition.zoomSpinner(); }

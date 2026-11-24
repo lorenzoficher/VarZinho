@@ -12,6 +12,8 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
@@ -60,6 +62,16 @@ final class CameraPositionPanel extends JPanel {
             position++;
         }
         moveTargetSelector.insertItemAt(number, position);
+    }
+
+    void removeCourt(int number) { moveTargetSelector.removeItem(number); }
+
+    List<Integer> moveTargets() {
+        List<Integer> targets = new ArrayList<>();
+        for (int index = 0; index < moveTargetSelector.getItemCount(); index++) {
+            targets.add(moveTargetSelector.getItemAt(index));
+        }
+        return targets;
     }
 
     void updateAimAvailability() {
