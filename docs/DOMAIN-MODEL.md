@@ -12,6 +12,7 @@ classDiagram
         -String address
         -List~Court~ courts
         +addCourt(Court)
+        +openNextCourt() Court
         +installCamera(int, Camera)
         +moveCamera(Camera, int)
         +findCourt(int) Court
@@ -58,6 +59,11 @@ classDiagram
         +moveTo(int, int, int)
         +captureLastSeconds(int) VideoClip
         +describe() String
+    }
+
+    class Aimable {
+        <<interface>>
+        +moveTo(int, int, int)
     }
 
     class StreamCamera {
@@ -145,6 +151,7 @@ classDiagram
     Camera <|-- FixedCamera
     Camera <|-- PtzCamera
     Camera <|-- StreamCamera
+    Aimable <|.. PtzCamera
     Highlight "1" *-- "1" VideoClip
     HighlightRepository <|.. CsvHighlightRepository
     HighlightRepository <|.. PostgresHighlightRepository
@@ -175,6 +182,17 @@ goes through `Gym.installCamera(...)`; `Gym.moveCamera(...)` validates the
 destination before removing the camera from its current court. A moved camera
 arrives inactive and starts with an empty buffer when recording resumes.
 
+`Gym.openNextCourt()` adds the court numbered one past the highest existing
+one — court 1 on an empty gym — and returns it. The phone gets its own court
+this way (`ConnectStreamCamera`), so the numbering rule lives in the gym rather
+than in whoever needs a new court.
+
+Aiming is a capability, not a kind of camera. `Aimable` declares only
+`moveTo(pan, tilt, zoom)` and `PtzCamera` is its one implementation, so a
+fixed camera or a phone is never made to answer an aim it cannot take. A
+caller asks `camera instanceof Aimable`, not which class it holds:
+`ManageGym.aimCamera` and `CameraView.isAimable` do exactly that.
+
 A highlight stores the court number and camera identifier as values, rather
 than keeping mutable references. It can therefore outlive both objects and be
 rebuilt from CSV without reconstructing the capture equipment.
@@ -202,6 +220,8 @@ are, which are stored in lowercase.
   `captureLastSeconds()` through the `Camera` type.
 - **Abstraction:** `HighlightRepository`, `GymRepository` and `OperatorStore`
   are contracts with CSV, PostgreSQL and in-memory implementations.
+- **Interface segregation:** `Aimable` is kept apart from `Camera`, so only
+  the camera that can turn implements `moveTo`.
 - **Domain independence:** no class under `domain/` imports `application/` or `infrastructure/`
   or Swing.
 
