@@ -5,7 +5,7 @@ plan and its reasoning are in [PLAN-CLEAN-ARCHITECTURE.md](PLAN-CLEAN-ARCHITECTU
 this document records what actually landed, what each change fixed, and what is
 still open.
 
-State as of 2026-11-11, on `development` at `7706b5f`.
+State as of 2026-11-24, on `development` at `bf28bed`.
 
 ---
 
@@ -15,44 +15,46 @@ State as of 2026-11-11, on `development` at `7706b5f`.
 |---|---|---|---|---|---|---|
 | 0 | Record the plan | #118 | #125 | lorenzoficher | merged 2026-11-08 | — |
 | 1 | Ports in `application/`, adapters in `infrastructure/`, `ArchitectureTest` | #119 | #133 | lararios27 | merged 2026-11-08 | DIP, dependency rule |
-| 2 | One CSV format per camera kind | #120 | — | — | **open** | OCP |
+| 2 | One CSV format per camera kind | #120 | #185 | lararios27 | merged 2026-11-19 | OCP |
 | 3 | `Gym.openNextCourt()` | #128 | #135 | lararios27 | merged 2026-11-10 | SRP (rule back in the domain) |
 | 4 | `Aimable` capability | #129 | #138 | ArturKraemer | merged 2026-11-10 | ISP, LSP |
 | 5 | `ManageGym` and the read models | #121 | #141 | Inaurrara | merged 2026-11-10 | Use case layer, SRP |
 | 6 | `CaptureHighlight` | #130 | #137 | rjnlopes03 | merged 2026-11-09 | Use case layer, SRP |
 | 7 | `BrowseArchive` | #131 | #134 | Inaurrara | merged 2026-11-09 | Use case layer, DIP |
 | 8 | `GymSession` and `ConnectStreamCamera` | #132 | #142 | rjnlopes03 | merged 2026-11-11 | Use case layer, SRP |
-| 9 | The window reaches the model only through use cases | #122 | #143 | rjnlopes03 | **in review** | Dependency rule, DIP |
-| 10 | Split `CourtPanel` by responsibility | #123 | — | — | **open** | SRP |
+| 9 | The window reaches the model only through use cases | #122 | #143 | rjnlopes03 | merged 2026-11-13 | Dependency rule, DIP |
+| 10 | Split `CourtPanel` by responsibility | #123 | #177 | Inaurrara | merged 2026-11-17 | SRP |
 | 11 | Document SOLID and the layers | #124 | — | — | **open** | — |
 
-Follow-ups opened from the review of #138: #139 (the court panel checks the
-capability where it aims) and #140 (the `Aimable` Javadoc names interface
-segregation and does not tie aiming to recording). Both are open.
+Follow-ups opened from the review of #138, both merged: #139 (the court panel
+checks the capability where it aims, PR #175, 2026-11-15) and #140 (the
+`Aimable` Javadoc names interface segregation and does not tie aiming to
+recording, PR #181, 2026-11-18).
 
 Pull requests #126 and #127 were a first draft of items 1 and 2 and were closed
 unmerged on purpose: the code is written by the team, one issue each.
 
-**Tests:** 289 test runs when item 1 merged, 321 after item 8 — more runs than
-test methods, because the repository contract tests run once per adapter.
-Every pull request kept the whole suite green, with only the FFmpeg tests
-skipped where FFmpeg is absent.
+**Tests:** 289 test runs when item 1 merged, 321 after item 8, 549 on
+2026-11-24 — more runs than test methods, because the repository contract tests
+run once per adapter. Every pull request kept the whole suite green; the FFmpeg
+tests are skipped where FFmpeg is absent, and the PostgreSQL tests where Docker
+is.
 
 ---
 
 ## The gaps, and where each one stands
 
-The plan opened with seven gaps. This is each one today.
+The plan opened with seven gaps. All seven are closed.
 
 | Gap | Principle | Status |
 |---|---|---|
-| The window orchestrates capture, clip write and archive itself (`CapturePanel`) | Clean Architecture | Use case exists (`CaptureHighlight`); the window adopts it in #143 |
-| Application services live in `ui/` (`GymSession`, `givePhoneItsCourt`, `PendingClipWrites`) | Clean Architecture, SRP | **Fixed** — all three are in `application/` |
-| The window holds entities and changes them directly (`CourtPanel`) | Clean Architecture | Use case exists (`ManageGym`); the window adopts it in #143 |
-| Ports and adapters share one package; the window catches an adapter's exception | DIP | Packages **fixed**; the window stops catching in #143 |
-| A new camera kind means editing `CsvGymRepository` (`instanceof`) | OCP | **Open** — #120 |
-| Aiming casts to `PtzCamera`; the camera kind is chosen by comparing strings | OCP, LSP, ISP | Cast **fixed** (`Aimable`); string comparison ends in #143 via `CameraKind` |
-| One panel does five jobs (`CourtPanel`) | SRP | **Open** — #123 |
+| The window orchestrates capture, clip write and archive itself (`CapturePanel`) | Clean Architecture | **Fixed** — the panel presses `CaptureHighlight` (#143) |
+| Application services live in `ui/` (`GymSession`, `givePhoneItsCourt`, `PendingClipWrites`) | Clean Architecture, SRP | **Fixed** — moved to `application/` (#130, #132); `PendingClipWrites` later removed (#113) |
+| The window holds entities and changes them directly (`CourtPanel`) | Clean Architecture | **Fixed** — `ui/` sees only views, and `ArchitectureTest` forbids `domain/` imports (#143) |
+| Ports and adapters share one package; the window catches an adapter's exception | DIP | **Fixed** — packages (#119), the window stops catching (#143) |
+| A new camera kind means editing `CsvGymRepository` (`instanceof`) | OCP | **Fixed** — one `CameraCsvFormat` per kind (#120) |
+| Aiming casts to `PtzCamera`; the camera kind is chosen by comparing strings | OCP, LSP, ISP | **Fixed** — `Aimable` (#129, #139), `CameraKind` (#143) |
+| One panel does five jobs (`CourtPanel`) | SRP | **Fixed** — four panels and a layout (#123) |
 
 ---
 
@@ -89,6 +91,23 @@ them (the application), which is dependency inversion in its literal form.
 
 No behaviour changed — `git mv` plus imports.
 
+### 2. A new camera kind is one new format — #120, PR #185
+
+**Before.** `CsvGymRepository` branched on `instanceof PtzCamera` and
+`instanceof FixedCamera` to write a camera, and on the kind column to read it
+back. A third kind of camera meant editing the repository.
+
+**After.** `CameraCsvFormat` describes one kind: its `kind` column, its class,
+its own columns, and how to build the camera from them. `FixedCameraCsvFormat`
+and `PtzCameraCsvFormat` are listed in `CameraCsvFormats.standard()`.
+`CsvGymRepository` keeps its old constructor and gains one taking a list of
+formats; it refuses two formats for one kind or class and a kind named `gym` or
+`court`. The file format did not change, and old files still read.
+
+**Why it matters.** Open/closed, shown by a test: a camera class that exists
+only in the tests round-trips through the repository with its own format, and
+the repository is not edited.
+
 ### 3. A gym opens its next court — #128, PR #135
 
 **Before.** `Launcher.givePhoneItsCourt` computed "highest court number plus
@@ -111,6 +130,13 @@ Any caller wanting to aim had to know the concrete class.
 **Why it matters.** Interface segregation: `Camera` is not given a `moveTo` that
 two of its three subclasses would have to refuse — which would also have broken
 Liskov substitution.
+
+**Follow-ups.** #139 (PR #175): `ManageGym.aimCamera` binds `Aimable` with a
+pattern variable at its `instanceof` check, so no cast remains on the aiming
+path, and a test forces the Move button on for a fixed camera to show the
+refusal does not depend on the button being disabled. #140 (PR #181): the
+`Aimable` Javadoc names interface segregation as its reason, and a test pins
+that a stopped PTZ camera accepts an aim.
 
 ### 5. The gym's structure changes through `ManageGym` — #121, PR #141
 
@@ -178,15 +204,79 @@ drops. After a damaged gym file the session keeps the gym in a private
 repository that stores nothing — the application may not import the in-memory
 adapter — so the damaged file is still never overwritten.
 
+### 9. The window reaches the model only through use cases — #122, PR #143
+
+**Before.** The panels held entities, called the repositories, and caught a
+persistence exception. `Launcher`, `SampleGym`, `LiveFeed`, `SegmentFeed` and
+`PhoneConnection` all lived in `ui/`.
+
+**After.**
+
+- `CourtPanel` changes the gym through `ManageGym` and shows `CourtView` and
+  `CameraView`; the camera type is a `JComboBox<CameraKind>`. `CapturePanel`
+  presses `CaptureHighlight`. `ArchivePanel` browses through `BrowseArchive`.
+- `Feed` is in `application/`; `LiveFeed` in `infrastructure/simulation/`;
+  `SegmentFeed` and `PhoneConnection` in `infrastructure/stream/`.
+- `Launcher` and `SampleGym` are in `bootstrap/`, the composition root and the
+  one place that names every concrete adapter.
+- `ArchitectureTest` gains its `ui` row: `ui/` imports nothing from `domain/`
+  or `infrastructure/`. Run against the old `ui/` it reported 26 violations.
+
+**Why it matters.** The boundary between the window and the model is checked by
+the build, not by a reviewer, and the business rules run without opening the
+window — criterion 4 of the rubric.
+
+### 10. `CourtPanel` is split by responsibility — #123, PR #177
+
+**Before.** One panel selected courts, listed cameras, installed them, moved
+them and aimed them.
+
+**After.** `CourtSelectionPanel` (court selection and creation),
+`CameraListPanel` (the camera list and its state actions), `CameraInstallPanel`
+(installation) and `CameraPositionPanel` (moving and aiming). `CourtPanel` only
+lays them out and coordinates them. The original panel tests pass unchanged,
+and a new test checks the composition.
+
+**Why it matters.** Single responsibility in the window, where it was most
+visibly missing.
+
+---
+
+## After the plan
+
+The final brief added a database, a careful interface and JavaDoc to what the
+plan covered. What landed for them, grouped by subject; the reasoning for the
+database and the operator accounts is in `CONTEXT.md`.
+
+| Subject | Issues | What changed |
+|---|---|---|
+| Repository contract | #144 | Every adapter of a port passes one shared contract test |
+| PostgreSQL | #145, #147, #148, #152 | PostgreSQL in Docker; highlights, the gym's structure and operators stored there through plain JDBC and parameterised queries |
+| Choice of storage | #150 | `bootstrap/Storage` picks CSV or PostgreSQL once; an unreachable database stops the application instead of falling back |
+| Operators and sign-in | #146, #149, #151, #153, #154, #155, #195 | People leave the gym; an operator is an account with a hashed password, signs in before the window opens, registers others, and recovers a forgotten password through a simulated link |
+| Interface | #158, #159, #161, #162, #163, #188, #191, #193, #197 | Own light and dark theme; a sidebar by subject; court cards with camera states; F2 capture; archive search by court and day; the arena dashboard and spectator view; removing an empty court |
+| Capture | #113, #194 | A phone capture completes its file before it is archived; the live view plays from a phone app that serves one client |
+| Tests | #167 | JUnit 4 imports are refused in test sources |
+| Documentation | #156 | The documents state that a database and operator sign-in are in scope |
+
 ---
 
 ## What is still open
 
+Where each one lands in the rubric is in
+[PLAN-CLEAN-ARCHITECTURE.md](PLAN-CLEAN-ARCHITECTURE.md#rubric-coverage).
+
 | Issue | What is left |
 |---|---|
-| #122 (PR #143, in review) | Panels use `ManageGym`, `CaptureHighlight` and `BrowseArchive`; `Launcher` and `SampleGym` move to `bootstrap/`; `LiveFeed` to `infrastructure/simulation/`; `SegmentFeed` and `PhoneConnection` to `infrastructure/stream/`; `ArchitectureTest` gains the `ui` row. Until it merges, `ui/` still holds those classes and still touches entities. |
-| #120 | `CsvGymRepository` still branches on `instanceof PtzCamera` / `FixedCamera`. |
-| #123 | `CourtPanel` still selects courts, lists cameras, installs, moves and aims. Needs #122. |
-| #124 | `README.md`, `ARCHITECTURE.md`, `AGENTS.md`, `CLAUDE.md` and the rules still describe the code before this work. Needs 1–10. |
-| #139, #140 | Follow-ups to `Aimable`, from the review of #138. |
-| #118 | The plan merged in #125 but the issue was not closed. |
+| #124 | `README.md` maps each SOLID principle and each layer to classes; `ARCHITECTURE.md`, `AGENTS.md`, `CLAUDE.md` and the rules describe the packages as they are |
+| #164 | The documentation and screenshots show the new interface |
+| #200 | `mvn javadoc:javadoc` generates navigable HTML |
+| #201–#204 | JavaDoc with its contract on the domain, use cases and ports, adapters, and the window |
+| #205 | The window stays responsive while a repository operation runs |
+| #206 | Every screen can be used from the keyboard with visible focus |
+| #207 | No screen is cut off or overlapping at any supported window size |
+| #208 | Buttons, fields and headings look the same on every screen |
+| #209 | The README's first-assignment checklist names only code that exists |
+| #210 | The archive page is split by responsibility |
+| #211 | The launcher's phone address lookup returns `Optional` instead of `null` |
+| #212 | A grader sees data survive a restart in PostgreSQL by following the README |
