@@ -338,7 +338,7 @@ usuário e senha:
 - Depois de entrar, a página **Operadores** cadastra outro operador, que poderá
   entrar na próxima execução.
 
-![Entrada do operador](docs/screenshots/05-entrada-do-operador.png)
+![Entrada do operador](docs/screenshots/01-entrada-do-operador-claro.png)
 
 *Entrada do operador: usuário e senha antes da janela principal.*
 
@@ -496,21 +496,59 @@ o fluxo inteiro sem abrir nenhuma janela.
 
 ## Capturas de tela
 
-![Equipamentos da quadra](docs/screenshots/01-equipamentos-da-quadra.png)
+Cada tela aparece nos temas claro e escuro, alternados pelo botão **Alternar
+tema**. A tela de entrada, mostrada em [O que a interface faz](#o-que-a-interface-faz),
+só existe no tema claro: o VarZinho sempre abre no claro, e o botão de tema só
+aparece depois de entrar.
 
-*Equipamentos da quadra: a câmera `ptz-1` está parada e a `fixed-1` está ativa.*
+**Dashboard.** A quadra 1 com o buffer de simulação cheio (30 de 30 segundos),
+o botão **Salvar Melhor Momento**, o controle rápido da câmera PTZ, os cartões
+das quadras e as câmeras da quadra selecionada.
 
-![Captura disparada](docs/screenshots/02-captura-disparada.png)
+| Claro | Escuro |
+|---|---|
+| ![Dashboard, tema claro](docs/screenshots/02-dashboard-claro.png) | ![Dashboard, tema escuro](docs/screenshots/02-dashboard-escuro.png) |
 
-*Captura disparada: o lance foi salvo e a confirmação aparece abaixo do botão.*
+**Câmeras da quadra.** Na página **Câmeras**, a `fixed-1` está gravando e a
+`ptz-1` está parada; cada linha oferece **Parar** ou **Iniciar** e o menu
+**Ações**. Abaixo ficam **Mover câmera** e **Controle PTZ**.
 
-![Acervo listado](docs/screenshots/03-acervo-listado.png)
+| Claro | Escuro |
+|---|---|
+| ![Câmeras da quadra, tema claro](docs/screenshots/03-cameras-da-quadra-claro.png) | ![Câmeras da quadra, tema escuro](docs/screenshots/03-cameras-da-quadra-escuro.png) |
 
-*Acervo de lances filtrado pela quadra 1.*
+**Lance salvo.** Na página **Melhores momentos**, depois de **F2**: a
+confirmação "Salvo: quadra 1 · câmera fixed-1 · … · 30 s" aparece abaixo do
+botão, e o lance entra no histórico. Como a câmera é simulada, a linha mostra
+**Sem MP4**, e a barra de mensagens explica que só a quadra do celular grava vídeo.
 
-![Erro: quadra sem câmera ativa](docs/screenshots/04-erro-quadra-sem-camera-ativa.png)
+| Claro | Escuro |
+|---|---|
+| ![Lance salvo, tema claro](docs/screenshots/04-lance-salvo-claro.png) | ![Lance salvo, tema escuro](docs/screenshots/04-lance-salvo-escuro.png) |
 
-*Disparo numa quadra sem câmera ativa: a exceção de domínio chega à interface como um aviso ("Court 2 has no active camera."). Demonstra a seção 2.8 do enunciado (tratamento de exceções).*
+**Acervo filtrado.** Na página **Arquivos**, o histórico filtrado por
+**Quadra 1** e **Dia: Hoje**, com a busca, **Assistir ao vídeo**, **Renomear
+gravação** e **Excluir gravação**.
+
+| Claro | Escuro |
+|---|---|
+| ![Acervo filtrado, tema claro](docs/screenshots/05-acervo-filtrado-claro.png) | ![Acervo filtrado, tema escuro](docs/screenshots/05-acervo-filtrado-escuro.png) |
+
+**Erro: quadra sem câmera ativa.** A quadra 2 tem só a `fixed-2`, parada. Ao
+salvar um lance nela, a exceção de domínio chega à interface como uma mensagem
+na barra inferior: "Não há câmera ativa na quadra 2." Demonstra a seção 2.8 do
+enunciado (tratamento de exceções).
+
+| Claro | Escuro |
+|---|---|
+| ![Erro de quadra sem câmera ativa, tema claro](docs/screenshots/06-erro-quadra-sem-camera-ativa-claro.png) | ![Erro de quadra sem câmera ativa, tema escuro](docs/screenshots/06-erro-quadra-sem-camera-ativa-escuro.png) |
+
+**Configurações.** **Alternar tema**, o nome de exibição da quadra selecionada
+durante a sessão e o guia **Como conectar a câmera** do celular.
+
+| Claro | Escuro |
+|---|---|
+| ![Configurações, tema claro](docs/screenshots/07-configuracoes-claro.png) | ![Configurações, tema escuro](docs/screenshots/07-configuracoes-escuro.png) |
 
 ## Documentação
 
