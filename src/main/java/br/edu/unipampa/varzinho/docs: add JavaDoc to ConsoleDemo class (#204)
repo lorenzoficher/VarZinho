@@ -16,6 +16,17 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * Smoke-test that exercises the domain and CSV persistence without opening the window.
+ *
+ * <p>It builds a gym, records a full buffer, triggers a capture, persists the highlight,
+ * reloads it, and prints enough output to confirm everything worked. It also shows the
+ * expected {@link br.edu.unipampa.varzinho.exception.NoActiveCameraException} when a
+ * court without active cameras is asked to capture.
+ *
+ * <p>Run with {@code mvn exec:java -Dexec.mainClass=br.edu.unipampa.varzinho.ConsoleDemo}
+ * or directly from an IDE.
+ */
 public final class ConsoleDemo {
     private ConsoleDemo() { }
 
