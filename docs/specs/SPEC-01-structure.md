@@ -2,9 +2,8 @@
 
 **Aggregate:** `Gym`, `Court` · **Milestone:** Phase 1 — Domain
 
-The physical layout of the venue: a gym containing courts and holding the
-register of the people around it, each court holding the cameras installed on
-it and exposing the capture trigger.
+The physical layout of the venue: a gym containing courts, each court holding
+the cameras installed on it and exposing the capture trigger.
 
 ## Contract
 
@@ -16,9 +15,6 @@ public class Gym {
     public void moveCamera(Camera camera, int toCourt);
     public Court findCourt(int number);
     public List<Court> getCourts();             // unmodifiable
-    public void registerPerson(Person person);
-    public Optional<Person> findPerson(String document);
-    public List<Person> getPeople();            // unmodifiable
 }
 
 public class Court {
@@ -80,25 +76,6 @@ This is aggregation: destroying the court does not destroy its cameras.
 The trigger takes no argument. Everything the highlight knows comes from the
 court and the camera.
 
-### B-5 — A gym registers the people around it
-
-Athletes who play there and operators who work there. Registration is a
-membership list and says nothing about any highlight.
-
-- **AC-5.1** A newly created gym has nobody registered
-- **AC-5.2** A registered person is retrievable by document
-- **AC-5.3** Looking up a document that is nobody's returns empty, never null
-- **AC-5.4** Registering a document that is already registered is rejected
-- **AC-5.5** An athlete and an operator are registered through the same call
-  and come back as `Person`
-- **AC-5.6** The returned people list cannot be modified from outside
-
-AC-5.5 is the polymorphism here: `Gym` stores `Person` and never asks which
-kind it is holding.
-
-This is aggregation, like the cameras and unlike the courts: a person exists
-before being registered and after being removed.
-
 ### B-6 — Camera identity belongs to the whole gym
 
 - **AC-6.1** Installing a camera through the gym rejects an id already used on
@@ -114,18 +91,16 @@ before being registered and after being removed.
 |---|---|
 | Capture triggered with no active camera | `NoActiveCameraException` |
 | Duplicate court number | `IllegalArgumentException` |
-| Duplicate person document | `IllegalArgumentException` |
 | Duplicate camera identifier anywhere in the gym | `DuplicateCameraException` |
 | Moving a camera to an unknown court | `IllegalArgumentException` |
-| Null person passed to `registerPerson` | `IllegalArgumentException` |
 | Removing a camera that is not installed | `IllegalArgumentException` |
 | Null or blank gym name | `IllegalArgumentException` |
 | Court number not positive | `IllegalArgumentException` |
 
 ## Dependencies
 
-Needs `Camera` (SPEC-02), `Highlight` (SPEC-03), `Person` (SPEC-04),
-`CameraStatus`, `NoActiveCameraException`.
+Needs `Camera` (SPEC-02), `Highlight` (SPEC-03), `CameraStatus`,
+`NoActiveCameraException`.
 
 Write against the contracts above; do not wait for those classes to be
 finished, and do not edit them.
@@ -134,9 +109,6 @@ finished, and do not edit them.
 
 Scheduling, court availability, bookings, matches. A court is a place with
 cameras, nothing more.
-
-Memberships, fees, attendance and anything else about the registered people.
-The register is a list of who is known to the gym, not a management module.
 
 ## Verification
 
