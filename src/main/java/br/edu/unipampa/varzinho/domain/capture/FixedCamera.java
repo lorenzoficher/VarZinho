@@ -22,12 +22,17 @@ public final class FixedCamera extends Camera {
      * @param model the make and model of the equipment
      * @param resolution the resolution it records at
      * @param bufferSeconds how many of the most recent seconds the camera keeps
-     * @param angle where it was aimed when mounted, in degrees
+     * @param angle where it was aimed when mounted, in degrees (0–359 inclusive)
      * @throws IllegalArgumentException if the id or model is missing or blank, the
-     *         resolution is missing, or the buffer is not at least one second long
+     *         resolution is missing, the buffer is not at least one second long, or
+     *         the angle is outside the 0–359 range
      */
     public FixedCamera(String id, String model, Resolution resolution, int bufferSeconds, int angle) {
         super(id, model, resolution, bufferSeconds);
+        if (angle < 0 || angle > 359) {
+            throw new IllegalArgumentException(
+                    "angle must be between 0 and 359 (inclusive), but was " + angle);
+        }
         this.angle = angle;
     }
 
