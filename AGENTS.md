@@ -44,12 +44,24 @@ src/main/java/br/edu/unipampa/varzinho/
 │   ├── capture/     Camera, FixedCamera, PtzCamera, StreamCamera, CircularBuffer,
 │   │                Frame, ClipAssembler
 │   ├── highlight/   Highlight, VideoClip
-│   └── people/      Person, Athlete, Operator
-├── application/port/  repository contracts, persistence exceptions, StorableHighlights
+│   └── people/      Operator — a staff account, keeping only a password hash
+├── application/     use cases (CaptureHighlight, BrowseArchive, ManageGym,
+│   │                OperatorAccess, ...) and the read models the window displays
+│   └── port/        HighlightRepository, GymRepository, OperatorStore,
+│                    RepositoryException, CorruptedRecordException,
+│                    StorableHighlights, StorableOperators
 ├── infrastructure/
-│   ├── persistence/   CSV, PostgreSQL and in-memory repository implementations
-│   └── stream/        FFmpeg adapter: SegmentLog, SegmentIndex, FfmpegRecorder,
-│                      FfmpegClipAssembler — knows the domain, never the reverse
+│   ├── persistence/   one CSV and one PostgreSQL adapter per port, plus in-memory ones:
+│   │                  CsvHighlightRepository, PostgresHighlightRepository,
+│   │                  InMemoryHighlightRepository; CsvGymRepository,
+│   │                  PostgresGymRepository, InMemoryGymRepository; CsvOperatorStore,
+│   │                  PostgresOperatorStore, InMemoryOperatorStore
+│   ├── stream/        FFmpeg adapter: SegmentLog, SegmentIndex, FfmpegRecorder,
+│   │                  FfmpegClipAssembler — knows the domain, never the reverse
+│   ├── simulation/    LiveFeed, the clock that feeds the simulated cameras
+│   └── spectator/     SpectatorServer, the public spectator view
+├── bootstrap/       Launcher and Storage — the composition root, the one place that
+│                    picks CSV or PostgreSQL and names every concrete adapter
 ├── exception/       domain exceptions
 ├── enums/           CameraStatus, Resolution
 ├── ui/              Swing windows — the only package that imports javax.swing
@@ -68,7 +80,7 @@ not state: prefer `court.triggerCapture()` over `court.getCameras().get(0)...`.
 **No setters, and in this model nothing mutable at all.** A `Highlight`
 receives everything at construction and changes nothing afterwards. Objects are
 built valid and stay that way; the collections a `Gym` or a `Court` owns grow
-through named behaviour (`addCourt`, `installCamera`, `registerPerson`), never
+through named behaviour (`addCourt`, `installCamera`, `moveCamera`), never
 through a setter handing out the list.
 
 **Constructors validate.** If an argument would produce an invalid object,

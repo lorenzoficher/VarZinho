@@ -40,7 +40,6 @@ Stated explicitly so they are not mistaken for omissions:
 |---|---|
 | Video decoding or encoding in Java | No video library on the classpath. Since 2.0 a phone's clips are real files, but FFmpeg — an external program — writes them; see `CONTEXT.md` |
 | A polished or complete interface | Section 2.9 of the brief asks for a minimal one; every rule stays in the domain, never on the screen |
-| User accounts, login, authentication | No identity exists in the capture flow |
 | Sponsors and multi-angle | The public spectator view in #188 covers a single phone court |
 | Automatic play detection | Listed as future work |
 | Classifying the kind of play | Per-sport by nature; the system must serve any sport |
@@ -81,17 +80,24 @@ about who played or who pressed.
 
 Triggering a court with no active camera is an error, not a silent no-op.
 
-### FR-3 — People registered at the gym
+### FR-3 — Operator accounts
 
-A gym keeps a register of the people around it: athletes who play there and
-operators who work there. Registration is independent of capture — no person is
-ever recorded on a highlight, because no identity exists at the moment the
-button is pressed.
+The window opens only after an operator signs in with a username and a
+password. On the first run, with no account stored, it asks for the first
+operator instead. A signed-in operator registers further operators, and a
+forgotten password is reset through a simulated recovery: no e-mail is sent.
+Only a salted hash of each password is stored.
+
+Accounts are independent of capture — no operator is ever recorded on a
+highlight, because no identity exists at the moment the button is pressed.
 
 ### FR-4 — Persistence
 
-Highlights survive between executions. They are written to a CSV file through
-the `HighlightRepository` abstraction. No other class knows the storage format.
+Highlights, the gym's structure and the operator accounts survive between
+executions. Each goes through its own abstraction — `HighlightRepository`,
+`GymRepository` and `OperatorStore` — and is written to CSV files under
+`data/` by default, or to PostgreSQL when `VARZINHO_DATABASE_URL` names a
+database. No other class knows the storage format.
 
 ### FR-5 — Retrieval
 
@@ -132,8 +138,7 @@ The project is done when:
 - [x] `mvn test` passes with every spec's criteria covered
 - [x] `mvn exec:java` opens the interface and demonstrates the full flow:
       load the gym, create courts, install and control cameras, record, trigger,
-      persist, reload and list. People registration is demonstrated by
-      `ConsoleDemo`, because people do not participate in capture.
+      persist, reload and list, after an operator signs in
 - [x] A domain exception raised by the model reaches the user as a readable
       message, never as a stack trace
 - [x] Highlights written in one run are readable in the next
@@ -149,9 +154,6 @@ Deliberately deferred, recorded so the scope boundary is visible:
 
 - Multi-angle capture (many cameras per highlight, N:N)
 - `Match` grouping highlights, with teams and score
-- Database repository implementation — planned for the second assignment:
-  PostgreSQL in Docker through plain JDBC, alongside CSV. See
-  [the decision in `CONTEXT.md`](../CONTEXT.md#a-real-database-alongside-csv)
 - Automatic play detection
 - Sponsor features
 - Advanced archive search and clip playback beyond the delivered court filter

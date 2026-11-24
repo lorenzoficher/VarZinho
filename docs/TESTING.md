@@ -56,7 +56,7 @@ void overwritesOldestFrameWhenBufferIsFull() { }
 void throwsWhenCourtHasNoActiveCamera() { }
 
 @Test
-void rejectsPersonWhoseDocumentIsAlreadyRegistered() { }
+void aDuplicateUsernameInAnotherCaseIsRefusedWithoutReplacingTheFirst() { }
 ```
 
 Never `test1()`, `testBuffer()`, or `shouldWork()`.
