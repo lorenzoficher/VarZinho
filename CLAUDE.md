@@ -56,9 +56,18 @@ is a role in the glossary, not a class. A public spectator view (#188) streams t
 court and sells a clip through a simulated or real Pix payment.
 
 The second assignment ([docs/Trabalho 2.md](docs/Trabalho%202.md)) asks for SOLID and
-Clean Architecture. The target and the work items are in
-[docs/PLAN-CLEAN-ARCHITECTURE.md](docs/PLAN-CLEAN-ARCHITECTURE.md), one issue each;
-until they land, the other documents describe the code as it is today.
+Clean Architecture. The code is now in those layers: `domain/` holds the entities,
+`application/` the use cases (`ManageGym`, `CaptureHighlight`, `BrowseArchive`,
+`OperatorAccess`, ...) and, in `application/port/`, the storage contracts;
+`infrastructure/` the adapters for files, PostgreSQL, FFmpeg and the spectator view;
+`ui/` the window, which reaches the model only through the use cases; and
+`bootstrap/` the composition root, `Launcher` and `Storage`. `ArchitectureTest`
+fails when a layer imports one further out. The work items are in
+[docs/PLAN-CLEAN-ARCHITECTURE.md](docs/PLAN-CLEAN-ARCHITECTURE.md), one issue each,
+and what each merged one changed in
+[docs/CHANGES-CLEAN-ARCHITECTURE.md](docs/CHANGES-CLEAN-ARCHITECTURE.md). The
+README's second-assignment section maps each SOLID principle and each layer to
+the classes that show it.
 
 ## Agent skills
 

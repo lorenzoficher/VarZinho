@@ -39,15 +39,17 @@ This includes identifiers: `Highlight`, not `Lance`. `saveHighlight()`, not
 
 ```
 src/main/java/br/edu/unipampa/varzinho/
-├── domain/          entities and value objects
+├── domain/          entities and value objects — the innermost layer
 │   ├── structure/   Gym, Court
 │   ├── capture/     Camera, FixedCamera, PtzCamera, StreamCamera, CircularBuffer,
-│   │                Frame, ClipAssembler
+│   │                Frame, ClipAssembler, Aimable — the capability PtzCamera implements
 │   ├── highlight/   Highlight, VideoClip
 │   └── people/      Operator — a staff account, keeping only a password hash
-├── application/     use cases (CaptureHighlight, BrowseArchive, ManageGym,
-│   │                OperatorAccess, ...) and the read models the window displays
-│   └── port/        HighlightRepository, GymRepository, OperatorStore,
+├── application/     use cases (ManageGym, CaptureHighlight, BrowseArchive,
+│   │                OperatorAccess, GymSession, ConnectStreamCamera, SignedInOperator),
+│   │                the read models the window displays (CourtView, CameraView,
+│   │                HighlightView, ...) and Feed — the source of the window's seconds
+│   └── port/        HighlightRepository, GymRepository, OperatorStore, RecordingEditor,
 │                    RepositoryException, CorruptedRecordException,
 │                    StorableHighlights, StorableOperators
 ├── infrastructure/
@@ -55,17 +57,21 @@ src/main/java/br/edu/unipampa/varzinho/
 │   │                  CsvHighlightRepository, PostgresHighlightRepository,
 │   │                  InMemoryHighlightRepository; CsvGymRepository,
 │   │                  PostgresGymRepository, InMemoryGymRepository; CsvOperatorStore,
-│   │                  PostgresOperatorStore, InMemoryOperatorStore
+│   │                  PostgresOperatorStore, InMemoryOperatorStore. CameraCsvFormat,
+│   │                  one per camera kind, and StoredRecordingEditor
 │   ├── stream/        FFmpeg adapter: SegmentLog, SegmentIndex, FfmpegRecorder,
-│   │                  FfmpegClipAssembler — knows the domain, never the reverse
+│   │                  FfmpegClipAssembler, PhoneConnection, SegmentFeed — knows the
+│   │                  domain, never the reverse
 │   ├── simulation/    LiveFeed, the clock that feeds the simulated cameras
 │   └── spectator/     SpectatorServer, the public spectator view
-├── bootstrap/       Launcher and Storage — the composition root, the one place that
-│                    picks CSV or PostgreSQL and names every concrete adapter
+├── bootstrap/       Launcher, Storage and SampleGym — the composition root, the one
+│                    place that picks CSV or PostgreSQL and names every concrete adapter
 ├── exception/       domain exceptions
 ├── enums/           CameraStatus, Resolution
-├── ui/              Swing windows — the only package that imports javax.swing
-└── Main.java        entry point, opens the interface
+├── ui/              Swing windows — the only package that imports javax.swing; reaches
+│                    the model only through application/, never domain/ or infrastructure/
+├── Main.java        entry point, opens the interface through bootstrap/Launcher
+└── ConsoleDemo.java the whole flow in text, with no window
 
 src/test/java/br/edu/unipampa/varzinho/   mirrors the same structure
 ```
@@ -130,7 +136,10 @@ exception with an empty `catch`. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md
 The domain must not depend on persistence. `Highlight` never imports anything
 from `application/`, `infrastructure/`, `ui/` or `bootstrap/`, nor Swing or
 AWT. Application ports and infrastructure adapters know the domain; the domain
-does not know them.
+does not know them. `application/` imports no `infrastructure/`, `ui/` or
+`bootstrap/`; `infrastructure/` imports no `ui/` or `bootstrap/`; `ui/`
+imports no `domain/` or `infrastructure/`. `ArchitectureTest` enforces every
+one of these.
 
 Adding a third-party library requires agreement from the team — open an issue
 first. Right now the dependencies are JUnit 5; the PostgreSQL JDBC driver and
