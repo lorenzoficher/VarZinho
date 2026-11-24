@@ -172,6 +172,44 @@ class GymTest {
     }
 
     @Test
+    void aRemovedCourtIsNeitherFoundNorListed() {
+        Gym gym = gymWithTwoCourts();
+
+        gym.removeCourt(2);
+
+        assertNull(gym.findCourt(2));
+        assertEquals(List.of(1), gym.getCourts().stream().map(Court::getNumber).toList());
+    }
+
+    @Test
+    void removingACourtTheGymDoesNotHaveIsRefused() {
+        Gym gym = gymWithTwoCourts();
+
+        assertThrows(IllegalArgumentException.class, () -> gym.removeCourt(3));
+        assertEquals(2, gym.getCourts().size());
+    }
+
+    @Test
+    void aCourtThatStillHoldsACameraIsNotRemoved() {
+        Gym gym = gymWithTwoCourts();
+        FixedCamera camera = new FixedCamera("fixed-1", "Fixed", Resolution.HD, 30, 45);
+        gym.installCamera(2, camera);
+
+        assertThrows(IllegalStateException.class, () -> gym.removeCourt(2));
+        assertEquals(List.of(camera), gym.findCourt(2).getCameras());
+    }
+
+    @Test
+    void aRemovedCourtNumberCanBeAddedAgain() {
+        Gym gym = gymWithTwoCourts();
+        gym.removeCourt(2);
+
+        gym.addCourt(new Court(2));
+
+        assertEquals(2, gym.getCourts().size());
+    }
+
+    @Test
     void courtsAreUnmodifiable() {
         Gym gym = new Gym("Arena", "Rua A");
         gym.addCourt(new Court(1));

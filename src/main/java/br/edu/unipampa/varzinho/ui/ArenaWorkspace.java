@@ -118,6 +118,11 @@ final class ArenaWorkspace extends JPanel {
             archivePanel.refreshCourts();
             dashboard.refresh();
         });
+        // The archive filter keeps a removed court: its highlights stay in the archive.
+        courtPanel.onCourtRemoved(() -> {
+            dashboard.refresh();
+            refreshStatus();
+        });
         courtPanel.onCourtChange(() -> {
             dashboard.refresh();
             refreshStatus();

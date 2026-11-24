@@ -49,6 +49,23 @@ public final class ManageGym {
         return CourtView.from(court);
     }
 
+    /**
+     * Takes an empty court out of the gym and stores the gym. The window always works on
+     * a selected court, so the only court is kept even though a {@link Gym} may be empty.
+     *
+     * @throws IllegalArgumentException if the gym has no court with that number
+     * @throws IllegalStateException if it is the only court or still holds a camera;
+     *     nothing is removed or stored
+     */
+    public void removeCourt(int courtNumber) throws RepositoryException {
+        requireCourt(courtNumber);
+        if (gym.getCourts().size() == 1) {
+            throw new IllegalStateException("court " + courtNumber + " is the only court");
+        }
+        gym.removeCourt(courtNumber);
+        keep();
+    }
+
     public CourtView installCamera(int courtNumber, CameraSpec spec) throws RepositoryException {
         if (spec == null) {
             throw new IllegalArgumentException("installing a camera needs its specification");

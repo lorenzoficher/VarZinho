@@ -90,6 +90,23 @@ public final class Gym {
         to.installCamera(camera);
     }
 
+    /**
+     * Takes an empty court out of the gym. Cameras are equipment that outlives the
+     * court, so a court still holding one is refused rather than emptied: the operator
+     * removes or moves them first. Highlights already captured there are untouched.
+     *
+     * @throws IllegalArgumentException if the gym has no court with that number
+     * @throws IllegalStateException if the court still holds a camera; nothing changes
+     */
+    public void removeCourt(int number) {
+        Court court = courts.get(number);
+        if (court == null) throw new IllegalArgumentException("court " + number + " is not registered");
+        if (!court.getCameras().isEmpty()) {
+            throw new IllegalStateException("court " + number + " still holds cameras");
+        }
+        courts.remove(number);
+    }
+
     public Court findCourt(int number) {
         return courts.get(number);
     }

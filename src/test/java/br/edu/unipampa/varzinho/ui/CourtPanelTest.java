@@ -33,6 +33,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -317,6 +318,53 @@ class CourtPanelTest {
         panel.addCourtButton().doClick();
 
         assertEquals(List.of(4), announced);
+    }
+
+    @Test
+    void removingAnEmptyCourtDropsItFromEverySelectorAndSelectsAnother() {
+        panel.courtNumberField().setText("3");
+        panel.addCourtButton().doClick();
+
+        panel.removeSelectedCourt(number -> true);
+
+        assertNull(gym.findCourt(3));
+        assertFalse(panel.courtNumbers().contains(3));
+        assertFalse(panel.moveTargets().contains(3));
+        assertTrue(gym.findCourt(panel.selectedCourtNumber()) != null);
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    void aDeclinedConfirmationKeepsTheCourt() {
+        panel.courtNumberField().setText("3");
+        panel.addCourtButton().doClick();
+
+        panel.removeSelectedCourt(number -> false);
+
+        assertEquals(3, panel.selectedCourtNumber());
+        assertEquals(3, gym.getCourts().size());
+    }
+
+    @Test
+    void aCourtWithCamerasIsRefusedInPortuguese() {
+        panel.selectCourt(1);
+
+        panel.removeSelectedCourt(number -> true);
+
+        assertEquals(List.of("A quadra 1 ainda tem câmeras. Remova ou mova as câmeras antes de removê-la."), errors);
+        assertEquals(2, gym.getCourts().size());
+    }
+
+    @Test
+    void removingACourtTellsWhoeverListensForCourtChanges() {
+        List<Integer> announced = new ArrayList<>();
+        panel.courtNumberField().setText("4");
+        panel.addCourtButton().doClick();
+        panel.onCourtRemoved(() -> announced.add(gym.getCourts().size()));
+
+        panel.removeSelectedCourt(number -> true);
+
+        assertEquals(List.of(2), announced);
     }
 
     @Test
