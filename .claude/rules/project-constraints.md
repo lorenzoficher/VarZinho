@@ -25,7 +25,11 @@
   library requires an issue and the team's agreement first.
 - **The dependency arrow points inward.** `domain/` never imports from `application/`
   or `infrastructure/`. Persistence knows the domain; the domain knows nothing about
-  persistence.
+  persistence. The layers are `domain/` (entities), `application/` (use cases, with
+  the ports in `application/port/`), `ui/` (presentation, which reaches the model
+  only through `application/`) and `infrastructure/` (adapters); `bootstrap/` is the
+  composition root, the one place that names a concrete adapter. `ArchitectureTest`
+  fails on any import that points outward.
 - **All persistence goes through the ports in `application/port/`:**
   `HighlightRepository`, `GymRepository` and `OperatorStore`. Each has a CSV and a
   PostgreSQL adapter (`CsvHighlightRepository` and `PostgresHighlightRepository`,

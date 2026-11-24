@@ -6,33 +6,48 @@ persistence behind an abstraction, and errors as domain exceptions.
 ## Layers
 
 ```
-bootstrap/                       Launcher and Storage: the composition root
-ui/                              Swing windows; Main starts the launcher
-application/                     use cases and the read models the window displays
-application/port/                repository contracts and persistence failures
+Main, ConsoleDemo                entry points: the window, and the text demonstration
+bootstrap/                       Launcher, Storage and SampleGym: the composition root
+ui/                              Swing windows and panels
+application/                     use cases, the read models the window displays, Feed
+application/port/                storage contracts and persistence failures
 infrastructure/persistence/      CSV, PostgreSQL and in-memory storage adapters
-infrastructure/stream/           FFmpeg adapter behind ClipAssembler
-infrastructure/simulation/       the clock that feeds the simulated cameras
+infrastructure/stream/           FFmpeg adapter behind ClipAssembler, the phone's Feed
+infrastructure/simulation/       LiveFeed, the clock that feeds the simulated cameras
 infrastructure/spectator/        the public spectator view
 domain/                          structure, capture, highlight and the operator account
-exception/                       domain failures, independent of other packages
+enums/, exception/               shared values and domain failures
 ```
 
-**Dependencies point inward.** Repository interfaces live in
-`application/port/`; their implementations live in
-`infrastructure/persistence/`. The FFmpeg adapter lives in
-`infrastructure/stream/` and implements `ClipAssembler`, which remains in
-`domain/capture/`.
+These map onto the circles of Clean Architecture: `domain/` holds the
+entities, `application/` the use cases, `ui/` the presentation and
+`infrastructure/` the external details — files, PostgreSQL, FFmpeg and the
+spectators' web page. `bootstrap/` sits outside all four and wires them
+together.
+
+**Dependencies point inward.** The ports live in `application/port/`:
+`HighlightRepository`, `GymRepository`, `OperatorStore` and `RecordingEditor`.
+Their implementations live in `infrastructure/persistence/`. The FFmpeg
+adapter lives in `infrastructure/stream/` and implements `ClipAssembler`, which
+remains in `domain/capture/` because `StreamCamera`, an entity, depends on it.
+`Feed`, the source of the window's seconds of footage, is declared in
+`application/` and implemented by `LiveFeed` and the phone's `SegmentFeed`.
 
 The domain imports no application, infrastructure, UI or bootstrap package,
 nor Swing or AWT. Application code imports no infrastructure, UI or bootstrap
-package, nor Swing or AWT. Infrastructure imports no UI or bootstrap package.
-Domain exceptions import no other project package.
+package, nor Swing or AWT. Neither of the two imports `java.sql`, `javax.sql`
+or the PostgreSQL driver. Infrastructure imports no UI or bootstrap package.
+The window imports nothing from the domain or infrastructure. Domain
+exceptions import no other project package. `ArchitectureTest` reads the
+`import` lines under `src/main/java` and fails on any of these.
 
 The window constructs no adapter. `bootstrap/Launcher` is the composition
-root: it builds the storage, the use cases and, when there is one, the phone,
-and hands them to the window, which reaches the model only through the use
-cases in `application/`.
+root: it asks `bootstrap/Storage` for the storage, builds the use cases and,
+when there is one, the phone, and hands them to the window, which reaches the
+model only through the use cases in `application/`. The use cases take their
+ports in the constructor — `ManageGym(Gym, GymRepository)`,
+`CaptureHighlight(Gym, HighlightRepository)`, `OperatorAccess(OperatorStore)` —
+so their tests run them on the in-memory adapters, with no window open.
 
 The brief's responsibilities remain distinct: `domain/` models the system,
 application ports define storage contracts, infrastructure implements storage
@@ -271,9 +286,16 @@ can report them to the user or recover from a damaged file.
 
 ### Where they are caught
 
-In `ui/`, and nowhere below it. The domain throws, the repository lets domain
-exceptions through, and the window that started the operation catches the
-specific type and shows the message — typically with `JOptionPane`.
+In the layer that can act on them. The domain throws, the repository lets
+domain exceptions through, and the window that started the operation catches
+the specific type and shows the message — typically with `JOptionPane`.
+
+Three failures are recovered from before they reach a window, each because
+the recovery is a rule of its own: `BrowseArchive` turns a
+`CorruptedRecordException` into an `ArchiveListing` carrying the readable
+highlights and a warning; `GymSession` answers an unreadable saved gym by
+running on the fallback gym without keeping it; and `bootstrap/Launcher`
+refuses to open when `Storage` reports an unreachable database.
 
 Section 2.8 of the brief requires exactly this: domain exceptions handled in
 the layer that talks to the user, reported as a clear message. A stack trace on
@@ -299,7 +321,7 @@ Stream cameras appear as `CameraKind.STREAM` with their actual status. They
 remain outside `CameraKind.installable()`: a manual `CameraSpec` cannot build
 a phone camera without its stream connection and assembler.
 
-`Main` starts the application and hands control to Swing. `GymSession` loads
+`Main` calls `bootstrap/Launcher`, which hands control to Swing. `GymSession` loads
 the saved gym or creates the sample gym on the first run. The court panel
 creates courts, installs and moves cameras, changes camera status and points a
 PTZ camera. The capture panel saves a highlight from the selected court, and

@@ -18,10 +18,19 @@
 | Aggregate | Classes |
 |---|---|
 | Structure | `Gym`, `Court` |
-| Capture | `Camera`, `FixedCamera`, `PtzCamera`, `CircularBuffer`, `Frame` |
+| Capture | `Camera`, `FixedCamera`, `PtzCamera`, `StreamCamera`, `CircularBuffer`, `Frame`, `ClipAssembler`, `Aimable` |
 | Highlight | `Highlight`, `VideoClip` |
 | People | `Operator` |
-| Persistence | `HighlightRepository`, `CsvHighlightRepository` |
+| Persistence | The ports in `application/port/` and their adapters in `infrastructure/persistence/` |
+
+**An aggregate cuts across the layers.** Its entities live in `domain/`, the use
+case that drives them in `application/`, and its adapter in `infrastructure/`: the
+second assignment gave `ManageGym`, `GymSession` and `ConnectStreamCamera` to
+structure, `CaptureHighlight` to highlight, `BrowseArchive` and `CameraCsvFormat`
+to persistence, and `Aimable` to capture (see
+[`docs/PLAN-CLEAN-ARCHITECTURE.md`](../../docs/PLAN-CLEAN-ARCHITECTURE.md)). The
+layers themselves — `ArchitectureTest`, and `bootstrap/` as the composition root —
+are shared code.
 
 **One aggregate per issue. An issue that touches two is already too big — split it
 into two.** The threshold is this tight on purpose: five people work in parallel, each
@@ -29,7 +38,7 @@ owning one aggregate, and the split exists so nobody waits and nobody edits some
 else's files. An issue that spans aggregates hands one person work in files another
 person owns, which is exactly what `docs/WORKFLOW.md` is designed to prevent.
 
-Shared code — enums, exceptions, `Main`, final integration — is the one area with no
+Shared code — enums, exceptions, `Main`, `bootstrap/`, final integration — is the one area with no
 single owner. Work there is picked up by whoever finishes their aggregate first, and
 still follows one issue per pull request.
 
@@ -49,5 +58,5 @@ branch.
 layer, it is sliced by aggregate, and the aggregate boundary is already enforced by
 the work breakdown above. One domain per commit is enough here.
 
-Splitting commits by package (`domain/` against `repository/`) would also fight TDD:
+Splitting commits by package (`domain/` against `infrastructure/`) would also fight TDD:
 a test and the code that makes it pass belong in the same commit.
