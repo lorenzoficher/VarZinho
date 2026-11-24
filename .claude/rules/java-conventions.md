@@ -56,8 +56,8 @@ if a line needs a comment to be read, rename something first.
 - **`final` on the class** unless it is designed to be extended. `Camera` is
   extended by `FixedCamera` and `PtzCamera` — it is not final. `CircularBuffer` is.
 - **`Optional<T>` in return types only.** Never as a field, never as a parameter. A
-  lookup that may find nothing says so in its type — `Optional<Person>
-  findPerson(String)`, `Optional<Highlight> findById(String)` — while the field
+  lookup that may find nothing says so in its type — `Optional<Operator>
+  findByUsername(String)`, `Optional<Highlight> findById(String)` — while the field
   behind it stays a plain reference.
 - **Declare the interface, not the implementation:** `List<Frame>`, never
   `ArrayList<Frame>`; `HighlightRepository`, never `CsvHighlightRepository`.

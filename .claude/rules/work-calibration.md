@@ -20,7 +20,7 @@
 | Structure | `Gym`, `Court` |
 | Capture | `Camera`, `FixedCamera`, `PtzCamera`, `CircularBuffer`, `Frame` |
 | Highlight | `Highlight`, `VideoClip` |
-| People | `Person`, `Athlete`, `Operator` |
+| People | `Operator` |
 | Persistence | `HighlightRepository`, `CsvHighlightRepository` |
 
 **One aggregate per issue. An issue that touches two is already too big — split it

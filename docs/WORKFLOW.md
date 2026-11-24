@@ -55,7 +55,7 @@ classes and works in files nobody else touches.
 | Structure | `Gym`, `Court` | [SPEC-01](specs/SPEC-01-structure.md) |
 | Capture | `Camera`, `FixedCamera`, `PtzCamera`, `CircularBuffer`, `Frame` | [SPEC-02](specs/SPEC-02-capture.md) |
 | Highlight | `Highlight`, `VideoClip` | [SPEC-03](specs/SPEC-03-highlight.md) |
-| People | `Person`, `Athlete`, `Operator` | [SPEC-04](specs/SPEC-04-people.md) |
+| People | `Operator` | [SPEC-04](specs/SPEC-04-people.md) |
 | Persistence | `HighlightRepository`, `CsvHighlightRepository` | [SPEC-05](specs/SPEC-05-persistence.md) |
 
 Splitting by layer was rejected: whoever owned the interface would sit idle
