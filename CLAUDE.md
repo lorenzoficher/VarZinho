@@ -42,7 +42,18 @@ The phone dropping mid-session has not been exercised yet.
 
 Storage follows the same pattern: CSV under `data/` unless `VARZINHO_DATABASE_URL`
 names a PostgreSQL database, in which case an unreachable database stops the
-application instead of falling back to CSV.
+application instead of falling back to CSV. `bootstrap/Storage` makes that choice
+once for the three ports — `HighlightRepository`, `GymRepository` and
+`OperatorStore` — each of which has a CSV and a PostgreSQL adapter. The local
+database runs in Docker (`docker compose up -d`); the database tests use
+Testcontainers and are skipped where Docker is missing.
+
+The window opens only after an operator signs in. `Operator` is a staff account
+that keeps only a password hash; the first run asks for the first operator, a
+signed-in operator registers others, and a forgotten password goes through a
+simulated recovery. Operators are the only people the code models; the athlete
+is a role in the glossary, not a class. A public spectator view (#188) streams the phone
+court and sells a clip through a simulated or real Pix payment.
 
 The second assignment ([docs/Trabalho 2.md](docs/Trabalho%202.md)) asks for SOLID and
 Clean Architecture. The target and the work items are in
