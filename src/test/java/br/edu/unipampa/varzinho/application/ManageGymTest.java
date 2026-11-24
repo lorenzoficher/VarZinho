@@ -103,6 +103,43 @@ class ManageGymTest {
     }
 
     @Test
+    void removesAnEmptyCourtAndSavesTheGym() throws Exception {
+        Gym gym = gymWithCourts(1, 2);
+        InMemoryGymRepository repository = new InMemoryGymRepository();
+        ManageGym management = new ManageGym(gym, repository);
+
+        management.removeCourt(2);
+
+        assertEquals(List.of(1), courtNumbers(management.courts()));
+        assertSame(gym, repository.load().orElseThrow());
+    }
+
+    @Test
+    void theOnlyCourtIsNotRemovedNorSaved() {
+        Gym gym = gymWithCourts(1);
+        InMemoryGymRepository repository = new InMemoryGymRepository();
+        ManageGym management = new ManageGym(gym, repository);
+
+        assertThrows(IllegalStateException.class, () -> management.removeCourt(1));
+
+        assertEquals(List.of(1), courtNumbers(management.courts()));
+        assertTrue(repository.load().isEmpty());
+    }
+
+    @Test
+    void aCourtWithCamerasIsNotRemovedNorSaved() {
+        Gym gym = gymWithCourts(1, 2);
+        gym.installCamera(2, fixedCamera("fixed-1"));
+        InMemoryGymRepository repository = new InMemoryGymRepository();
+        ManageGym management = new ManageGym(gym, repository);
+
+        assertThrows(IllegalStateException.class, () -> management.removeCourt(2));
+
+        assertEquals(List.of(1, 2), courtNumbers(management.courts()));
+        assertTrue(repository.load().isEmpty());
+    }
+
+    @Test
     void changesCameraStateAndRemovesItByCourtNumberAndId() throws Exception {
         Gym gym = gymWithCourts(1);
         FixedCamera camera = fixedCamera("fixed-1");

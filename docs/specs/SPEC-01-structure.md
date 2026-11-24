@@ -14,6 +14,7 @@ public class Gym {
     public void addCourt(Court court);
     public void installCamera(int courtNumber, Camera camera);
     public void moveCamera(Camera camera, int toCourt);
+    public void removeCourt(int number);
     public Court findCourt(int number);
     public List<Court> getCourts();             // unmodifiable
     public void registerPerson(Person person);
@@ -49,6 +50,15 @@ A gym is created with a name and an address, and courts are added to it.
 - **AC-1.3** Looking up a number that does not exist returns no court
 - **AC-1.4** Adding a court whose number is already taken is rejected
 - **AC-1.5** The returned court list cannot be modified from outside
+- **AC-1.6** A removed court is no longer found by its number nor listed
+- **AC-1.7** Removing a court number that is not registered is rejected
+- **AC-1.8** Removing a court that still holds a camera is rejected, and the
+  court keeps its cameras
+- **AC-1.9** A removed court's number can be added again
+
+Only an empty court is removed: its cameras are equipment that outlives it
+(B-2), so the operator removes or moves them first. Highlights captured there
+stay in the archive under the court's number.
 
 ### B-2 — A court has cameras installed and removed
 
@@ -119,6 +129,8 @@ before being registered and after being removed.
 | Moving a camera to an unknown court | `IllegalArgumentException` |
 | Null person passed to `registerPerson` | `IllegalArgumentException` |
 | Removing a camera that is not installed | `IllegalArgumentException` |
+| Removing a court that is not registered | `IllegalArgumentException` |
+| Removing a court that still holds a camera | `IllegalStateException` |
 | Null or blank gym name | `IllegalArgumentException` |
 | Court number not positive | `IllegalArgumentException` |
 
