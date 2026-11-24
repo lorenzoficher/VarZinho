@@ -12,10 +12,25 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Locale;
 
+/**
+ * Renames and deletes recordings on disk, keeping the archive and the video files in step.
+ *
+ * <p>Deleting removes both the catalog entry and the {@code .mp4} it points to, but only a
+ * file this application manages: a regular video directly inside the managed directory,
+ * shared with no other recording. If any step fails, the video and its entry are put back,
+ * so a failed delete never leaves an entry without its file or a file without its entry.
+ */
 public final class StoredRecordingEditor implements RecordingEditor {
     private final HighlightRepository repository;
     private final Path directory;
 
+    /**
+     * Edits the recordings kept by {@code repository} whose videos live in {@code directory}.
+     *
+     * @param repository the archive the entries are renamed in and deleted from
+     * @param directory the only folder whose videos this editor may delete
+     * @throws NullPointerException if the repository or the directory is missing
+     */
     public StoredRecordingEditor(HighlightRepository repository, Path directory) {
         this.repository = java.util.Objects.requireNonNull(repository);
         this.directory = directory.toAbsolutePath().normalize();

@@ -14,6 +14,9 @@ public final class InMemoryGymRepository implements GymRepository {
 
     private Gym stored;
 
+    /** Starts with no gym stored, as on a first run. */
+    public InMemoryGymRepository() { }
+
     @Override
     public void save(Gym gym) {
         if (gym == null) {

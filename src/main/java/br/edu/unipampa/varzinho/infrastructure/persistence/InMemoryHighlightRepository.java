@@ -21,6 +21,9 @@ public final class InMemoryHighlightRepository implements HighlightRepository {
 
     private final Map<String, Highlight> highlightsById = new LinkedHashMap<>();
 
+    /** Starts with an empty archive. */
+    public InMemoryHighlightRepository() { }
+
     @Override
     public void save(Highlight highlight) {
         StorableHighlights.requireStorable(highlight);

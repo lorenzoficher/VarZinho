@@ -74,6 +74,10 @@ public final class PostgresHighlightRepository implements HighlightRepository {
      * Connects to the database and creates the highlight table when it is missing. A table
      * that already exists is left as it is, highlights included.
      *
+     * @param url the JDBC url of the PostgreSQL database
+     * @param user the database user
+     * @param password the user's password, which may be empty for a local database
+     * @return a repository whose table is ready
      * @throws IllegalArgumentException if the url or the user is missing
      * @throws RepositoryException if the database cannot be reached or the table cannot be created
      */

@@ -6,6 +6,11 @@ import java.util.List;
 public final class CameraCsvFormats {
     private CameraCsvFormats() { }
 
+    /**
+     * The formats for every camera class the domain ships with.
+     *
+     * @return the fixed and PTZ formats, in an unmodifiable list
+     */
     public static List<CameraCsvFormat<?>> standard() {
         return List.of(new FixedCameraCsvFormat(), new PtzCameraCsvFormat());
     }

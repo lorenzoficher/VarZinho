@@ -7,6 +7,9 @@ import java.util.List;
 
 /** Rebuilds the aim through moveTo so stored values obey the camera's own rules. */
 public final class PtzCameraCsvFormat implements CameraCsvFormat<PtzCamera> {
+    /** Creates the format; it keeps no state, so one instance serves every gym. */
+    public PtzCameraCsvFormat() { }
+
     @Override
     public String kind() { return "ptz"; }
 
