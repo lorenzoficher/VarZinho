@@ -34,6 +34,19 @@ public final class VarZinhoWindow extends JFrame {
     private final ArenaWorkspace workspace;
     private boolean phoneDropReported;
 
+    /**
+     * Creates the window and starts the feed timers.
+     *
+     * @param gymName       the gym's display name, shown in the title bar
+     * @param operator      the signed-in operator; used by the arena workspace
+     * @param management    use case for adding courts and managing cameras
+     * @param capture       use case for triggering a capture
+     * @param archive       use case for browsing saved highlights
+     * @param feed          the clock that drives buffer and camera-status updates;
+     *                      must not be {@code null}
+     * @param bufferSeconds how many seconds of footage the circular buffer keeps
+     * @throws IllegalArgumentException if {@code feed} is {@code null}
+     */
     public VarZinhoWindow(String gymName, SignedInOperator operator, ManageGym management,
                           CaptureHighlight capture, BrowseArchive archive, Feed feed, int bufferSeconds) {
         super("VarZinho Arena — " + gymName);
