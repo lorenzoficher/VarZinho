@@ -216,38 +216,42 @@ Por padrão tudo fica nos arquivos CSV de `data/`. Para usar o PostgreSQL você
 precisa do Docker (Docker Desktop no Windows e no macOS) aberto. A partir de um
 clone novo, na raiz do repositório:
 
-1. Suba o banco. O [docker-compose.yml](docker-compose.yml) usa a imagem
-   `postgres:16.15-alpine`:
-
-   ```bash
-   docker compose up -d
-   docker compose ps     # espere o serviço postgres aparecer como "healthy"
-   ```
-
-   Isso sobe um PostgreSQL em `127.0.0.1:5432`, com banco, usuário e senha
-   `varzinho`. Os dados ficam no volume `varzinho-data` e sobrevivem a reiniciar
-   ou recriar o container; só `docker compose down -v` os apaga
-   (`docker compose down` para o banco e mantém os dados).
-
-2. Indique o banco à aplicação e abra a janela. No PowerShell:
-
-   ```powershell
-   $env:VARZINHO_DATABASE_URL = "jdbc:postgresql://localhost:5432/varzinho"
-   $env:VARZINHO_DATABASE_USER = "varzinho"
-   $env:VARZINHO_DATABASE_PASSWORD = "varzinho"
-   mvn compile exec:java
-   ```
+1. Copie e cole o bloco do seu terminal. Ele sobe o banco, espera ficar pronto,
+   indica o banco à aplicação e abre a janela.
 
    No bash (Linux, macOS ou Git Bash):
 
    ```bash
+   docker compose up -d --wait
    export VARZINHO_DATABASE_URL=jdbc:postgresql://localhost:5432/varzinho
    export VARZINHO_DATABASE_USER=varzinho
    export VARZINHO_DATABASE_PASSWORD=varzinho
    mvn compile exec:java
    ```
 
-3. As tabelas são criadas sozinhas na primeira conexão — não há script para
+   No PowerShell (Windows):
+
+   ```powershell
+   docker compose up -d --wait
+   $env:VARZINHO_DATABASE_URL = "jdbc:postgresql://localhost:5432/varzinho"
+   $env:VARZINHO_DATABASE_USER = "varzinho"
+   $env:VARZINHO_DATABASE_PASSWORD = "varzinho"
+   mvn compile exec:java
+   ```
+
+   O [docker-compose.yml](docker-compose.yml) sobe um PostgreSQL
+   (`postgres:16.15-alpine`) em `127.0.0.1:5432`, com banco, usuário e senha
+   `varzinho`. O `--wait` só devolve o terminal quando o banco responde; num
+   Docker Compose anterior à 2.17, que não o conhece, rode `docker compose up -d`
+   e espere `docker compose ps` mostrar o serviço como `healthy`.
+
+   As variáveis valem só naquele terminal. Para reabrir a aplicação, cole o
+   bloco inteiro de novo: com o banco já de pé, o `docker compose up` não muda
+   nada. Os dados ficam no volume `varzinho-data` e sobrevivem a reiniciar ou
+   recriar o container; só `docker compose down -v` os apaga
+   (`docker compose down` para o banco e mantém os dados).
+
+2. As tabelas são criadas sozinhas na primeira conexão — não há script para
    rodar. Como o banco começa vazio, a primeira tela é a de criar o primeiro
    operador, e a janela abre sobre o ginásio de exemplo. Daí em diante, as
    quadras, as câmeras, os lances e os operadores ficam no banco.
@@ -275,6 +279,33 @@ banco. A mensagem mostra o endereço do banco, nunca a senha.
 
 Com o Docker instalado, `mvn test` também testa contra um PostgreSQL de verdade;
 sem ele, esses testes são pulados.
+
+#### Como conferir que os dados sobrevivem ao reinício
+
+Com a janela aberta pelo bloco acima, sobre um banco novo:
+
+1. Crie o primeiro operador na tela inicial. Em **Operadores**, use
+   **Cadastrar operador** para criar um segundo.
+2. Em **Quadras**, use **Adicionar quadra**. Em **Câmeras**, escolha a quadra
+   nova, clique em **+ Adicionar câmera** e confirme em **Cadastrar câmera**.
+3. Em **Melhores momentos**, salve um lance (**F2**). Em **Arquivos**, selecione
+   o lance, clique em **Renomear gravação**, dê um nome e **Salvar nome**.
+4. Feche a janela e reinicie também o banco:
+
+   ```bash
+   docker compose restart
+   ```
+
+5. Cole o bloco do passo 1 de novo; o `--wait` dele espera o banco voltar. A tela inicial agora pede a entrada, não o
+   primeiro operador: entre com o segundo operador. A quadra nova, a câmera
+   dela e o lance com o nome novo continuam lá.
+
+Para ver que tudo isso está no PostgreSQL, e não nos CSV de `data/`, consulte o
+banco direto:
+
+```bash
+docker compose exec postgres psql -U varzinho -d varzinho -c "SELECT username FROM operator_account" -c "SELECT court_number, id, kind FROM camera" -c "SELECT title, court_number FROM highlight"
+```
 
 ### O que a interface faz
 
