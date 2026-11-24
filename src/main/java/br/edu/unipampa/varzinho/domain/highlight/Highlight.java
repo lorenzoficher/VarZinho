@@ -62,30 +62,14 @@ public final class Highlight {
     public String getTitle() { return title; }
 
     /**
-     * Checks a name before it goes on a highlight. Public so that a repository can
-     * refuse a bad name before it writes anything.
-     *
-     * @param title the name as someone typed it
-     * @return the name without leading or trailing spaces
-     * @throws IllegalArgumentException if the name is missing, blank, or contains a
-     *         line break or another control character
-     */
-    public static String requireTitle(String title) {
-        if (title == null || title.isBlank() || title.chars().anyMatch(Character::isISOControl)) {
-            throw new IllegalArgumentException("a recording needs a name on one line");
-        }
-        return title.strip();
-    }
-
-    /**
      * Gives the highlight a name. This highlight stays as it was.
      *
-     * @param title the name, checked by {@link #requireTitle(String)}
+     * @param title the name, checked by {@link HighlightTitle}
      * @return a new highlight with the same capture and the name applied
-     * @throws IllegalArgumentException if {@link #requireTitle(String)} rejects the name
+     * @throws IllegalArgumentException if {@link HighlightTitle} rejects the name
      */
     public Highlight named(String title) {
-        return new Highlight(id, capturedAt, courtNumber, cameraId, clip, requireTitle(title));
+        return new Highlight(id, capturedAt, courtNumber, cameraId, clip, new HighlightTitle(title).text());
     }
 
     /** {@return the instant the button was pressed} */

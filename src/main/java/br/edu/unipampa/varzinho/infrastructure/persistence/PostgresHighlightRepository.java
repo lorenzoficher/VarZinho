@@ -4,6 +4,7 @@ import br.edu.unipampa.varzinho.application.port.HighlightRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.application.port.StorableHighlights;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
+import br.edu.unipampa.varzinho.domain.highlight.HighlightTitle;
 import br.edu.unipampa.varzinho.domain.highlight.VideoClip;
 import br.edu.unipampa.varzinho.enums.Resolution;
 
@@ -115,7 +116,7 @@ public final class PostgresHighlightRepository implements HighlightRepository {
 
     @Override
     public void rename(String id, String title) throws RepositoryException {
-        String name = Highlight.requireTitle(title);
+        String name = new HighlightTitle(title).text();
         try (Connection connection = connect();
                 PreparedStatement statement = connection.prepareStatement("UPDATE highlight SET title = ? WHERE id = ?")) {
             statement.setString(1, name);
