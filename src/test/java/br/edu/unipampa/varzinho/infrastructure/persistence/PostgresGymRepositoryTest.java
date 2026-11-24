@@ -156,6 +156,18 @@ class PostgresGymRepositoryTest extends GymRepositoryContractTest {
     }
 
     @Test
+    void aStoredFixedCameraAimedOutsideTheCircleIsReportedAsDamage() throws RepositoryException {
+        GymRepository repository = createRepository();
+        Gym gym = new Gym("Arena", "Rua A");
+        gym.addCourt(new Court(1));
+        gym.installCamera(1, new FixedCamera("fixed-1", "Bullet", Resolution.HD, 30, 0));
+        repository.save(gym);
+        execute("UPDATE camera SET angle = 400");
+
+        assertThrows(RepositoryException.class, repository::load);
+    }
+
+    @Test
     void aFailingQueryRaisesRepositoryExceptionWithTheSqlCause() throws RepositoryException {
         GymRepository repository = createRepository();
         repository.save(new Gym("Arena", "Rua A"));

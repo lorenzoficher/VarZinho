@@ -17,6 +17,24 @@ import org.junit.jupiter.api.Test;
 class FixedCameraTest {
 
     @Test
+    void refusesAnAngleBelowZero() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new FixedCamera("fixed-1", "Bullet", Resolution.HD, 30, -1));
+    }
+
+    @Test
+    void refusesAnAngleBeyondThreeHundredFiftyNine() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new FixedCamera("fixed-1", "Bullet", Resolution.HD, 30, 360));
+    }
+
+    @Test
+    void acceptsBothEndsOfTheCircle() {
+        assertEquals(0, new FixedCamera("fixed-1", "Bullet", Resolution.HD, 30, 0).getAngle());
+        assertEquals(359, new FixedCamera("fixed-2", "Bullet", Resolution.HD, 30, 359).getAngle());
+    }
+
+    @Test
     void twoCapturesOfTheSameWindowNeverShareAClipFile() {
         FixedCamera camera = recordingCamera(30);
         feed(camera, 10);
