@@ -11,14 +11,11 @@ classDiagram
         -String name
         -String address
         -List~Court~ courts
-        -List~Person~ people
         +addCourt(Court)
         +installCamera(int, Camera)
         +moveCamera(Camera, int)
         +findCourt(int) Court
         +getCourts() List~Court~
-        +registerPerson(Person)
-        +findPerson(String) Optional~Person~
     }
 
     class Court {
@@ -63,6 +60,13 @@ classDiagram
         +describe() String
     }
 
+    class StreamCamera {
+        -String streamUrl
+        -ClipAssembler assembler
+        +captureLastSeconds(int) VideoClip
+        +describe() String
+    }
+
     class CircularBuffer {
         -Frame[] frames
         -int writePosition
@@ -94,17 +98,13 @@ classDiagram
         -double sizeMb
     }
 
-    class Person {
-        <<abstract>>
+    class Operator {
         -String name
-        -String document
-        -LocalDate birthDate
-        +age() int
-        +identify() String*
+        -String username
+        -String passwordHash
+        +restore(String, String, String)$ Operator
+        +checksPassword(String) boolean
     }
-
-    class Athlete
-    class Operator
 
     class HighlightRepository {
         <<interface>>
@@ -120,27 +120,44 @@ classDiagram
         +load() Optional~Gym~
     }
 
+    class OperatorStore {
+        <<interface>>
+        +save(Operator)
+        +replace(Operator)
+        +findByUsername(String) Optional~Operator~
+        +hasAny() boolean
+    }
+
     class CsvHighlightRepository
+    class PostgresHighlightRepository
     class InMemoryHighlightRepository
     class CsvGymRepository
+    class PostgresGymRepository
     class InMemoryGymRepository
+    class CsvOperatorStore
+    class PostgresOperatorStore
+    class InMemoryOperatorStore
 
     Gym "1" *-- "0..*" Court
-    Gym "1" o-- "0..*" Person
     Court "1" o-- "0..*" Camera
     Camera "1" *-- "1" CircularBuffer
     CircularBuffer "1" *-- "0..*" Frame
     Camera <|-- FixedCamera
     Camera <|-- PtzCamera
+    Camera <|-- StreamCamera
     Highlight "1" *-- "1" VideoClip
-    Person <|-- Athlete
-    Person <|-- Operator
     HighlightRepository <|.. CsvHighlightRepository
+    HighlightRepository <|.. PostgresHighlightRepository
     HighlightRepository <|.. InMemoryHighlightRepository
     GymRepository <|.. CsvGymRepository
+    GymRepository <|.. PostgresGymRepository
     GymRepository <|.. InMemoryGymRepository
+    OperatorStore <|.. CsvOperatorStore
+    OperatorStore <|.. PostgresOperatorStore
+    OperatorStore <|.. InMemoryOperatorStore
     HighlightRepository ..> Highlight
     GymRepository ..> Gym
+    OperatorStore ..> Operator
 ```
 
 ## Relationships
@@ -148,7 +165,6 @@ classDiagram
 | Relationship | Cardinality | Type | Reason |
 |---|---:|---|---|
 | Gym → Court | 1 : 0..* | Composition | Courts belong to one gym; a new gym may start empty. |
-| Gym → Person | 1 : 0..* | Aggregation | Athletes and operators exist independently of registration. |
 | Court → Camera | 1 : 0..* | Aggregation | Cameras can be removed and moved between courts. |
 | Camera → CircularBuffer | 1 : 1 | Composition | The buffer is private memory owned by one camera. |
 | CircularBuffer → Frame | 1 : 0..* | Composition | Frames exist only as entries in a buffer. |
@@ -163,16 +179,29 @@ A highlight stores the court number and camera identifier as values, rather
 than keeping mutable references. It can therefore outlive both objects and be
 rebuilt from CSV without reconstructing the capture equipment.
 
+`Operator` is a staff account — name, username and password hash — and has no
+association with any other class. A gym does not hold its operators, and a
+highlight never names one: the account opens the window, while the capture
+button carries no identity. The plain password is checked by the constructor
+(at least 8 characters, with an uppercase and a lowercase letter, a digit and a
+symbol), hashed with PBKDF2 and never retained. `Operator.restore` rebuilds an
+account from a stored hash without hashing it again, and `checksPassword`
+compares a candidate against it. Two operators are equal when their usernames
+are, which are stored in lowercase.
+
 ## Object-oriented concepts
 
 - **Encapsulation:** every field is private. Collections are returned as
   unmodifiable copies, and `CircularBuffer` never exposes its frame array.
-- **Inheritance:** `FixedCamera` and `PtzCamera` extend `Camera`;
-  `Athlete` and `Operator` extend `Person`.
+- **Inheritance:** `FixedCamera`, `PtzCamera` and `StreamCamera` extend
+  `Camera`; `NoActiveCameraException`, `EmptyBufferException`,
+  `DuplicateCameraException` and `ClipAssemblyException` extend the abstract
+  `DomainException`.
 - **Polymorphism:** cameras implement `captureLastSeconds()` and
-  `describe()` differently; people implement `identify()` differently.
-- **Abstraction:** `HighlightRepository` and `GymRepository` are contracts
-  with CSV and in-memory implementations.
+  `describe()` differently, and `Court.triggerCapture()` calls
+  `captureLastSeconds()` through the `Camera` type.
+- **Abstraction:** `HighlightRepository`, `GymRepository` and `OperatorStore`
+  are contracts with CSV, PostgreSQL and in-memory implementations.
 - **Domain independence:** no class under `domain/` imports `application/` or `infrastructure/`
   or Swing.
 
@@ -180,7 +209,8 @@ rebuilt from CSV without reconstructing the capture equipment.
 
 `HighlightRepository` stores the permanent highlight archive.
 `GymRepository` stores the gym, courts, cameras, their status and PTZ
-position. `CsvHighlightRepository` can recover valid highlights around a
+position. `OperatorStore` stores the operator accounts, never a plain
+password. `CsvHighlightRepository` can recover valid highlights around a
 damaged line; `CsvGymRepository` rejects a damaged structure as a whole so
 the application never runs with half a gym.
 
@@ -188,5 +218,6 @@ the application never runs with half a gym.
 
 There is no play type, sport, match or highlight author. The physical capture
 button carries no identity, so the saved highlight contains only the instant,
-court, camera and clip. Real video processing, authentication, scheduling and
-a database are outside the project scope.
+court, camera and clip. Operators sign in to open the window, but that account
+never reaches a highlight. Decoding video in Java and scheduling are outside
+the project scope.
