@@ -27,6 +27,18 @@ public final class Operator {
     private final String username;
     private final String passwordHash;
 
+    /**
+     * Registers a new account. The password is hashed with a fresh random salt and then
+     * dropped; only the hash is kept.
+     *
+     * @param name the person's name, as shown in the window
+     * @param username what the operator signs in with; stored in lowercase, so sign-in
+     *        ignores case
+     * @param password at least 8 characters, with an uppercase letter, a lowercase
+     *        letter, a digit and a symbol
+     * @throws IllegalArgumentException if the name or username is missing or blank, the
+     *         username contains whitespace, or the password breaks any of those rules
+     */
     public Operator(String name, String username, String password) {
         this(validateName(name), normalizeUsername(username), hash(validatePassword(password)));
     }
@@ -37,11 +49,28 @@ public final class Operator {
         this.passwordHash = passwordHash.value();
     }
 
-    /** Rebuilds an account exactly as a repository stored it. */
+    /**
+     * Rebuilds an account exactly as a repository stored it. The hash is checked for
+     * format only; the password rules applied when the account was registered.
+     *
+     * @param name the person's name
+     * @param username the stored username, lowercased as on registration
+     * @param passwordHash the stored hash, as {@link #getPasswordHash()} returned it
+     * @return the account
+     * @throws IllegalArgumentException if the name or username is invalid, or the hash
+     *         is not in the format this class writes
+     */
     public static Operator restore(String name, String username, String passwordHash) {
         return new Operator(validateName(name), normalizeUsername(username), validateStoredHash(passwordHash));
     }
 
+    /**
+     * Tells whether a typed password is this account's. The comparison takes the same
+     * time whichever byte differs, so the answer's timing gives nothing away.
+     *
+     * @param password the password as typed; null is simply wrong
+     * @return whether it matches the stored hash
+     */
     public boolean checksPassword(String password) {
         if (password == null) return false;
         StoredHash stored = parse(passwordHash);
@@ -49,14 +78,17 @@ public final class Operator {
         return MessageDigest.isEqual(stored.hash(), candidate);
     }
 
+    /** {@return the person's name, never blank} */
     public String getName() {
         return name;
     }
 
+    /** {@return what the operator signs in with, lowercase and without whitespace} */
     public String getUsername() {
         return username;
     }
 
+    /** {@return the salted hash, for a repository to store; never the password itself} */
     public String getPasswordHash() {
         return passwordHash;
     }
