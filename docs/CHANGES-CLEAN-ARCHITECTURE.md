@@ -257,6 +257,7 @@ database and the operator accounts is in `CONTEXT.md`.
 | Interface | #158, #159, #161, #162, #163, #188, #191, #193, #197 | Own light and dark theme; a sidebar by subject; court cards with camera states; F2 capture; archive search by court and day; the arena dashboard and spectator view; removing an empty court |
 | Responsiveness | #205 | Every repository call from the window — gym changes, archive reads, rename and delete, sign-in and registration — runs on a worker through `RepositoryTask`; its button stays disabled and the message bar shows progress until it ends. A gym change borrows the model through `CaptureActivity`, as a capture does |
 | Keyboard and focus | #206 | Every README flow runs from the keyboard alone, with a focus ring of at least 3:1 in both themes. Esc closes every dialog through `EscapeKey`; Enter submits each form from its own fields through `EnterKey`, so one page's Enter never fires another's form; ↑ and ↓ walk the sidebar; Tab leaves the tables through `TabKey`; a recovery step and the rename prompt put the focus on the control to type into |
+| Window sizes | #207 | The window opens at up to 1460×900 and never shrinks below 1024×640; `SupportedWindowSizesTest` lays every page out at the minimum, 1366×768 and 1920×1080 in both themes and fails on clipped text, a component cut off at its parent's edge, overlapping siblings or sideways scrolling. The sidebar's rows give back height so the operator stays in view, settings and operators scroll and sit in a card like the other pages, the PTZ card grows to its controls, and the archive filters stack in two groups instead of hiding what wrapped |
 | Capture | #113, #194 | A phone capture completes its file before it is archived; the live view plays from a phone app that serves one client |
 | Tests | #167 | JUnit 4 imports are refused in test sources |
 | Documentation | #156 | The documents state that a database and operator sign-in are in scope |
@@ -274,7 +275,6 @@ Where each one lands in the rubric is in
 | #164 | The documentation and screenshots show the new interface |
 | #200 | `mvn javadoc:javadoc` generates navigable HTML |
 | #201–#204 | JavaDoc with its contract on the domain, use cases and ports, adapters, and the window |
-| #207 | No screen is cut off or overlapping at any supported window size |
 | #208 | Buttons, fields and headings look the same on every screen |
 | #209 | The README's first-assignment checklist names only code that exists |
 | #210 | The archive page is split by responsibility |
