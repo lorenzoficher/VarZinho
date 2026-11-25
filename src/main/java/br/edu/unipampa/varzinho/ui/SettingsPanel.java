@@ -36,6 +36,7 @@ final class SettingsPanel extends JPanel {
             refresh.run();
             messages.accept("Nome de exibição atualizado.");
         });
+        EnterKey.submits(apply, name);
         add(apply, "w 150!, h 36!");
         JLabel capture = new JLabel("Gravação com celular");
         VarZinhoTheme.styleTitle(capture);

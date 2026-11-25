@@ -51,6 +51,7 @@ final class CourtSelectionPanel extends JPanel {
         courtSelector.setPreferredSize(new java.awt.Dimension(240, 38));
         addCourt.setPreferredSize(new java.awt.Dimension(150, 38));
         addCourt.addActionListener(event -> addCourt());
+        EnterKey.submits(addCourt, courtNumberField);
         removeCourt.setPreferredSize(new java.awt.Dimension(150, 38));
         removeCourt.addActionListener(event -> removeSelectedCourt(this::confirmRemoval));
     }

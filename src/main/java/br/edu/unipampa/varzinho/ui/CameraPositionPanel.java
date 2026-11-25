@@ -123,6 +123,7 @@ final class CameraPositionPanel extends JPanel {
         row.add(new JLabel("Panorâmica")); row.add(panSpinner);
         row.add(new JLabel("Inclinação")); row.add(tiltSpinner);
         row.add(new JLabel("Zoom")); row.add(zoomSpinner); row.add(aim, "h 38!");
+        EnterKey.submits(aim, panSpinner, tiltSpinner, zoomSpinner);
         aim.addActionListener(event -> {
             int court = selectedCourt.getAsInt();
             int pan = (Integer) panSpinner.getValue();

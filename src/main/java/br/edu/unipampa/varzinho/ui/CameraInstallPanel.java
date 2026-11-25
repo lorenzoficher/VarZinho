@@ -85,6 +85,7 @@ final class CameraInstallPanel extends JPanel {
         typeSelector.addActionListener(
                 event -> angleSpinner.setEnabled(typeSelector.getSelectedItem() == CameraKind.FIXED));
         install.addActionListener(event -> install());
+        EnterKey.submits(install, idField, modelField, angleSpinner);
     }
 
     JTextField idField() { return idField; }

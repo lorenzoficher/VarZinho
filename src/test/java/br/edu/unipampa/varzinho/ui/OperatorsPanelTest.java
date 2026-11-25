@@ -45,6 +45,16 @@ class OperatorsPanelTest {
     }
 
     @Test
+    void enterInTheLastFieldRegistersTheOperator() {
+        fill("Bruno Souza", "bruno", "Other1!pass", "Other1!pass");
+
+        panel.confirmationField().postActionEvent();
+        awaitRepositoryWork();
+
+        assertEquals(List.of("Operador @bruno cadastrado."), messages);
+    }
+
+    @Test
     void aRegisteredOperatorLeavesTheFormEmptyForTheNext() {
         fill("Bruno Souza", "bruno", "Other1!pass", "Other1!pass");
 

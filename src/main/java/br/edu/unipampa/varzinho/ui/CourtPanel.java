@@ -1,11 +1,13 @@
 package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.application.CameraKind;
+import br.edu.unipampa.varzinho.application.CameraView;
 import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.enums.Resolution;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.JPanel;
@@ -17,6 +19,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 
@@ -37,6 +40,8 @@ final class CourtPanel extends JPanel {
     private final java.util.Map<Integer, String> names = new java.util.HashMap<>();
     private final List<Runnable> identityListeners = new ArrayList<>();
     private final GymChanges changes;
+    private final int bufferSeconds;
+    private final Consumer<String> errorSink;
 
     CourtPanel(ManageGym management, int bufferSeconds, Consumer<String> errorSink) {
         this(management, bufferSeconds, errorSink, new CaptureActivity());
@@ -46,6 +51,8 @@ final class CourtPanel extends JPanel {
     CourtPanel(ManageGym management, int bufferSeconds, Consumer<String> errorSink, CaptureActivity activity) {
         super(new BorderLayout(12, 12));
         this.management = management;
+        this.bufferSeconds = bufferSeconds;
+        this.errorSink = errorSink;
         changes = new GymChanges(activity, this::pauseChanges, this::resumeChanges);
         courtSelection = new CourtSelectionPanel(management, changes, errorSink);
         cameraList = new CameraListPanel(management, changes, courtSelection::selectedCourtNumber, errorSink);
@@ -60,39 +67,9 @@ final class CourtPanel extends JPanel {
         cameraList.onPosition(() -> cameraPosition.moveTargetSelector().requestFocusInWindow());
         courtOverview = new CourtOverviewPanel(this::selectCourt, this::sportOf, this::nameOf, null);
         refreshCourtOverview();
-        cameraList.onConfigure(() -> cameraList.selectedCamera().ifPresent(camera -> {
-            javax.swing.JDialog dialog = new javax.swing.JDialog(javax.swing.SwingUtilities.getWindowAncestor(cameraList),
-                    "Configurar câmera · " + camera.getId(), java.awt.Dialog.ModalityType.DOCUMENT_MODAL);
-            dialog.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-            javax.swing.JLabel feedback = new javax.swing.JLabel(" ");
-            CameraPositionPanel controls = new CameraPositionPanel(management, changes, this::selectedCourtNumber,
-                    cameraList::selectedCamera, message -> { feedback.setText(message); errorSink.accept(message); },
-                    () -> { cameraList.refreshKeepingSelection(); dialog.dispose(); });
-            dialog.add(controls);
-            dialog.add(feedback, BorderLayout.SOUTH);
-            dialog.pack();
-            dialog.setLocationRelativeTo(cameraList);
-            dialog.setVisible(true);
-        }));
-        cameraList.onAdd(() -> {
-            javax.swing.JDialog dialog = new javax.swing.JDialog(javax.swing.SwingUtilities.getWindowAncestor(cameraList),
-                    "Adicionar câmera", java.awt.Dialog.ModalityType.DOCUMENT_MODAL);
-            dialog.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-            CameraInstallPanel form = new CameraInstallPanel(management, changes, this::selectedCourtNumber, bufferSeconds,
-                    errorSink,
-                    () -> { cameraList.refresh(); dialog.dispose(); });
-            JButton cancel = new JButton("Cancelar");
-            cancel.addActionListener(event -> dialog.dispose());
-            JPanel footer = new JPanel(new BorderLayout());
-            footer.add(cancel, BorderLayout.EAST);
-            dialog.add(form);
-            dialog.add(footer, BorderLayout.SOUTH);
-            dialog.getRootPane().setDefaultButton(form.installButton());
-            EscapeKey.closes(dialog);
-            dialog.pack();
-            dialog.setLocationRelativeTo(cameraList);
-            dialog.setVisible(true);
-        });
+        cameraList.onConfigure(() -> cameraList.selectedCamera()
+                .ifPresent(camera -> configureDialog(camera).setVisible(true)));
+        cameraList.onAdd(() -> installDialog().setVisible(true));
 
         courtSelection.onCourtChange(() -> {
             cameraList.refresh();
@@ -209,6 +186,45 @@ final class CourtPanel extends JPanel {
         installedTitle.setText("Câmeras da quadra " + number + " (" + cameras.size() + ")");
     }
     String sportOf(int number) { return sports.get(number); }
+    Optional<CameraView> selectedCamera() { return cameraList.selectedCamera(); }
+
+    JDialog configureDialog(CameraView camera) {
+        JDialog dialog = cameraDialog("Configurar câmera · " + camera.getId());
+        JLabel feedback = new JLabel(" ");
+        CameraPositionPanel controls = new CameraPositionPanel(management, changes, this::selectedCourtNumber,
+                cameraList::selectedCamera, message -> { feedback.setText(message); errorSink.accept(message); },
+                () -> { cameraList.refreshKeepingSelection(); dialog.dispose(); });
+        dialog.add(controls);
+        dialog.add(feedback, BorderLayout.SOUTH);
+        dialog.pack();
+        dialog.setLocationRelativeTo(cameraList);
+        return dialog;
+    }
+
+    JDialog installDialog() {
+        JDialog dialog = cameraDialog("Adicionar câmera");
+        CameraInstallPanel form = new CameraInstallPanel(management, changes, this::selectedCourtNumber, bufferSeconds,
+                errorSink, () -> { cameraList.refresh(); dialog.dispose(); });
+        JButton cancel = new JButton("Cancelar");
+        cancel.addActionListener(event -> dialog.dispose());
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.add(cancel, BorderLayout.EAST);
+        dialog.add(form);
+        dialog.add(footer, BorderLayout.SOUTH);
+        dialog.getRootPane().setDefaultButton(form.installButton());
+        dialog.pack();
+        dialog.setLocationRelativeTo(cameraList);
+        return dialog;
+    }
+
+    private JDialog cameraDialog(String title) {
+        JDialog dialog = new JDialog(javax.swing.SwingUtilities.getWindowAncestor(cameraList), title,
+                java.awt.Dialog.ModalityType.DOCUMENT_MODAL);
+        dialog.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        EscapeKey.closes(dialog);
+        return dialog;
+    }
+
     String nameOf(int number) { return names.getOrDefault(number, "Quadra " + number); }
     void onIdentityChange(Runnable action) { identityListeners.add(action); }
 
