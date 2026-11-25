@@ -27,8 +27,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The Save highlight button, also on F2. The whole capture runs on a worker, while the Swing
- * thread pauses feeds and camera changes until the model is returned to it.
+ * The Save highlight button, also on F2. The whole capture runs on a worker, from assembling
+ * the clip to writing it to the archive, while the Swing thread pauses feeds and camera changes
+ * until the model is returned to it.
  */
 final class CapturePanel extends JPanel {
     private static final Logger LOGGER = Logger.getLogger(CapturePanel.class.getName());
@@ -114,15 +115,7 @@ final class CapturePanel extends JPanel {
         new Capture(courtNumber).execute();
     }
 
-    private void archive(PendingCapture capture) {
-        HighlightView archived;
-        try {
-            archived = capture.archive();
-        } catch (RepositoryException failure) {
-            LOGGER.log(Level.WARNING, "Could not archive the captured highlight", failure);
-            refuse("Não foi possível salvar o lance no acervo.");
-            return;
-        }
+    private void showSaved(HighlightView archived) {
         confirmation.setText("Salvo: quadra " + archived.getCourtNumber()
                 + " · câmera " + archived.getCameraId()
                 + " · " + timeFormat.format(archived.getCapturedAt())
@@ -136,7 +129,10 @@ final class CapturePanel extends JPanel {
     }
 
     private void captureFailed(Throwable cause) {
-        if (cause instanceof NoActiveCameraException || cause instanceof EmptyBufferException
+        if (cause instanceof RepositoryException) {
+            LOGGER.log(Level.WARNING, "Could not archive the captured highlight", cause);
+            refuse("Não foi possível salvar o lance no acervo.");
+        } else if (cause instanceof NoActiveCameraException || cause instanceof EmptyBufferException
                 || cause instanceof ClipAssemblyException) {
             if (cause instanceof ClipAssemblyException) {
                 LOGGER.log(Level.WARNING, "Could not assemble the clip", cause);
@@ -148,7 +144,7 @@ final class CapturePanel extends JPanel {
         }
     }
 
-    private final class Capture extends SwingWorker<PendingCapture, Void> {
+    private final class Capture extends SwingWorker<HighlightView, Void> {
         private final int courtNumber;
 
         Capture(int courtNumber) {
@@ -156,14 +152,15 @@ final class CapturePanel extends JPanel {
         }
 
         @Override
-        protected PendingCapture doInBackground() {
-            return captureHighlight.capture(courtNumber);
+        protected HighlightView doInBackground() throws RepositoryException {
+            PendingCapture capture = captureHighlight.capture(courtNumber);
+            return capture.archive();
         }
 
         @Override
         protected void done() {
             try {
-                archive(get());
+                showSaved(get());
             } catch (ExecutionException failure) {
                 captureFailed(failure.getCause());
             } catch (InterruptedException interrupted) {

@@ -4,13 +4,13 @@ import br.edu.unipampa.varzinho.application.ArchiveSummary;
 import br.edu.unipampa.varzinho.application.BrowseArchive;
 import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.ManageGym;
-import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,7 +18,8 @@ import java.util.logging.Logger;
 /**
  * The two cards above the court page, answering what an operator actually asks of the
  * selected court: can a highlight be saved now, and how many were saved today. It follows
- * the court panel by itself; a save elsewhere calls {@link #refresh()}.
+ * the court panel by itself; a save elsewhere calls {@link #refresh()}. Today's count is read
+ * from the archive on a worker, so a slow database never holds the window.
  */
 final class CourtSummaryPanel extends JPanel {
     private static final Logger LOGGER = Logger.getLogger(CourtSummaryPanel.class.getName());
@@ -64,18 +65,29 @@ final class CourtSummaryPanel extends JPanel {
     }
 
     private void refreshToday() {
-        ArchiveSummary summary;
-        try {
-            summary = archive.todaySummary(courts.selectedCourtNumber());
-        } catch (RepositoryException unreadable) {
-            LOGGER.log(Level.WARNING, "Could not count today's highlights", unreadable);
-            today.setText("—");
-            errorSink.accept("Não foi possível contar os lances de hoje.");
-            return;
-        }
+        int courtNumber = courts.selectedCourtNumber();
+        RepositoryTask.run(List.of(), null, () -> archive.todaySummary(courtNumber),
+                summary -> showToday(courtNumber, summary),
+                cause -> todayUnreadable(courtNumber, cause));
+    }
+
+    // A count started before the operator switched courts belongs to a court no longer shown.
+    private boolean stillSelected(int courtNumber) {
+        return courtNumber == courts.selectedCourtNumber();
+    }
+
+    private void showToday(int courtNumber, ArchiveSummary summary) {
+        if (!stillSelected(courtNumber)) return;
         today.setText(summary.getLastCapturedAt()
                 .map(last -> summary.getCount() + ", último às " + hourFormat.format(last))
                 .orElse(String.valueOf(summary.getCount())));
+    }
+
+    private void todayUnreadable(int courtNumber, Throwable cause) {
+        LOGGER.log(Level.WARNING, "Could not count today's highlights", cause);
+        if (!stillSelected(courtNumber)) return;
+        today.setText("—");
+        errorSink.accept("Não foi possível contar os lances de hoje.");
     }
 
     private static JPanel card(String title, JLabel value) {
