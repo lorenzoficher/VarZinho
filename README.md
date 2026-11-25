@@ -358,14 +358,15 @@ O **Dashboard** abre após o login. Escolha a quadra no cabeçalho ou em **Suas 
 #### Tamanhos de janela suportados
 
 A janela abre com até 1460×900 e não pode ser reduzida abaixo de **1024×640**,
-tamanho que ainda cabe numa tela de 1366×768 com a barra de tarefas. Foram
-verificados o mínimo, **1366×768** e **1920×1080**, nos temas claro e escuro: em
-todos, nenhuma página corta texto, sobrepõe componentes ou mostra rolagem
-horizontal. Quando falta altura, a página rola na vertical. Quando falta largura,
-seções lado a lado passam a ficar uma sobre a outra. Os tamanhos são em pixels
-lógicos, antes da escala de tela do sistema.
+tamanho que ainda cabe numa tela de 1366×768 com a barra de tarefas. Todo tamanho
+a partir desse mínimo é suportado: nenhuma página corta texto, sobrepõe
+componentes ou mostra rolagem horizontal. Quando falta altura, a página rola na
+vertical. Quando falta largura, seções lado a lado passam a ficar uma sobre a
+outra, assim que deixam de caber. Os tamanhos são em pixels lógicos, antes da
+escala de tela do sistema.
 [SupportedWindowSizesTest](src/test/java/br/edu/unipampa/varzinho/ui/SupportedWindowSizesTest.java)
-confere as sete páginas nesses três tamanhos e nos dois temas.
+confere as sete páginas no mínimo, em **1366×768** e em **1920×1080**, nos temas
+claro e escuro, e ainda a cada 32 pixels de largura entre o mínimo e 1920.
 
 ## Principais classes
 
