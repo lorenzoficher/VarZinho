@@ -22,6 +22,7 @@ import java.util.function.IntSupplier;
 /** Collects a camera specification and installs it on the selected court. */
 final class CameraInstallPanel extends JPanel {
     private final ManageGym management;
+    private final GymChanges changes;
     private final IntSupplier selectedCourt;
     private final int bufferSeconds;
     private final Consumer<String> errorSink;
@@ -36,15 +37,17 @@ final class CameraInstallPanel extends JPanel {
     private final JLabel destination = new JLabel();
     private final JLabel feedback = new JLabel("A câmera será cadastrada como parada.");
 
-    CameraInstallPanel(ManageGym management, IntSupplier selectedCourt, int bufferSeconds,
+    CameraInstallPanel(ManageGym management, GymChanges changes, IntSupplier selectedCourt, int bufferSeconds,
                        Consumer<String> errorSink, Runnable onInstalled) {
         super(new MigLayout("insets 16, fillx, wrap 2", "[180:220,grow,fill]12[180:220,grow,fill]"));
         if (management == null) throw new IllegalArgumentException("camera installation needs gym management");
+        if (changes == null) throw new IllegalArgumentException("camera installation needs a way to change the gym");
         if (selectedCourt == null) throw new IllegalArgumentException("camera installation needs a selected court");
         if (bufferSeconds <= 0) throw new IllegalArgumentException("a buffer holds at least one second");
         if (errorSink == null) throw new IllegalArgumentException("camera installation needs an error destination");
         if (onInstalled == null) throw new IllegalArgumentException("camera installation needs a refresh action");
         this.management = management;
+        this.changes = changes;
         this.selectedCourt = selectedCourt;
         this.bufferSeconds = bufferSeconds;
         this.errorSink = errorSink;
@@ -101,15 +104,19 @@ final class CameraInstallPanel extends JPanel {
         CameraSpec specification = new CameraSpec(idField.getText(), modelField.getText(),
                 (CameraKind) typeSelector.getSelectedItem(), (Resolution) resolutionSelector.getSelectedItem(),
                 bufferSeconds, (Integer) angleSpinner.getValue());
-        var result = GymChangeReporter.apply(() -> management.installCamera(number, specification),
-                message -> { feedback.setText(message); errorSink.accept(message); });
-        if (result == GymChangeReporter.Result.SAVED) {
-            feedback.setText(specification.getKind() == CameraKind.PTZ
+        changes.apply(install, () -> management.installCamera(number, specification),
+                message -> { feedback.setText(message); errorSink.accept(message); },
+                result -> installed(specification.getKind(), result));
+    }
+
+    private void installed(CameraKind kind, GymChanges.Result result) {
+        if (result == GymChanges.Result.SAVED) {
+            feedback.setText(kind == CameraKind.PTZ
                     ? "PTZ cadastrada. Teste o movimento no Dashboard."
                     : "Câmera cadastrada. Informe outro ID para adicionar mais uma.");
             idField.setText("");
             idField.requestFocusInWindow();
         }
-        if (result != GymChangeReporter.Result.REFUSED) onInstalled.run();
+        if (result != GymChanges.Result.REFUSED) onInstalled.run();
     }
 }

@@ -47,7 +47,7 @@ final class ArenaWorkspace extends JPanel {
         var operator = session.getOperator();
         this.management = management;
         this.bufferSeconds = bufferSeconds;
-        this.courtPanel = new CourtPanel(management, bufferSeconds, messages::show);
+        this.courtPanel = new CourtPanel(management, bufferSeconds, messages::show, captureActivity);
         this.archivePanel = new ArchivePanel(management::courts, archive, ZoneId.systemDefault(), messages::show);
         CourtSummaryPanel summary = new CourtSummaryPanel(courtPanel, management, archive, ZoneId.systemDefault(), messages::show);
         CapturePanel capturePanel = new CapturePanel(courtPanel, captureHighlight, ZoneId.systemDefault(),

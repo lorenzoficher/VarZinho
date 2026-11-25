@@ -53,12 +53,18 @@ final class SwingWork {
      * Swing thread. While open it lets every call straight through.
      */
     static final class Gate {
-        private final CountDownLatch started = new CountDownLatch(1);
-        private final CountDownLatch released = new CountDownLatch(1);
+        private volatile CountDownLatch started = new CountDownLatch(1);
+        private volatile CountDownLatch released = new CountDownLatch(1);
         private final AtomicBoolean ranOnSwing = new AtomicBoolean();
         private volatile boolean closed;
 
-        void close() { closed = true; }
+        /** Holds the next call; a gate opened before can be closed again for another one. */
+        void close() {
+            started = new CountDownLatch(1);
+            released = new CountDownLatch(1);
+            ranOnSwing.set(false);
+            closed = true;
+        }
 
         void open() {
             closed = false;
@@ -68,10 +74,11 @@ final class SwingWork {
         /** Called by the test double from inside the storage call. */
         void pass() {
             if (!closed) return;
+            CountDownLatch release = released;
             ranOnSwing.set(SwingUtilities.isEventDispatchThread());
             started.countDown();
             try {
-                released.await(PATIENCE.toSeconds(), TimeUnit.SECONDS);
+                release.await(PATIENCE.toSeconds(), TimeUnit.SECONDS);
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
             }

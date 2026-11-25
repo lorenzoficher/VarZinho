@@ -47,7 +47,7 @@ final class DashboardPanel extends JPanel {
         if (messages == null) throw new IllegalArgumentException("a dashboard needs message feedback");
         this.management = management;
         this.courtPanel = courtPanel;
-        this.quickPtz = new QuickPtzPanel(management, courtPanel::selectedCourtNumber, messages,
+        this.quickPtz = new QuickPtzPanel(management, courtPanel.gymChanges(), courtPanel::selectedCourtNumber, messages,
                 courtPanel.devices()::refresh);
 
         JPanel strip = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 0));

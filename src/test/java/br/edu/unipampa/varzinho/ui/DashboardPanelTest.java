@@ -21,22 +21,25 @@ class DashboardPanelTest {
         var archive = new InMemoryHighlightRepository();
         var operator = new OperatorAccess(new br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryOperatorStore())
                 .createFirst("Operadora", "operadora", "Senha123!");
-        SwingUtilities.invokeAndWait(() -> {
+        var found = new java.util.concurrent.atomic.AtomicReference<QuickPtzPanel>();
+        SwingWork.onSwing(() -> {
             var workspace = new ArenaWorkspace("Arena", operator, management, new CaptureHighlight(gym, archive),
                     new BrowseArchive(archive), 30, new CaptureActivity(), new MessageBar());
             workspace.selectCourt(2);
-            var panel = descendants(workspace).filter(QuickPtzPanel.class::isInstance)
-                    .map(QuickPtzPanel.class::cast).findFirst().orElseThrow();
-            assertTrue(button(panel, "←").isEnabled());
-            button(panel, "←").doClick(0);
-            button(panel, "↑").doClick(0);
-            button(panel, "+").doClick(0);
+            found.set(descendants(workspace).filter(QuickPtzPanel.class::isInstance)
+                    .map(QuickPtzPanel.class::cast).findFirst().orElseThrow());
+            assertTrue(button(found.get(), "←").isEnabled());
+            button(found.get(), "←").doClick(0);
+            button(found.get(), "↑").doClick(0);
+            button(found.get(), "+").doClick(0);
             assertEquals(1, management.court(2).getCameraCount());
-            panel.refresh();
-            button(panel, "Salvar posição").doClick(0);
-            button(panel, "Salvar posição").doClick(0);
-            assertEquals(2, management.court(2).getCameraCount());
+            found.get().refresh();
+            button(found.get(), "Salvar posição").doClick(0);
         });
+        SwingWork.awaitRepositoryWork();
+        SwingWork.onSwing(() -> button(found.get(), "Salvar posição").doClick(0));
+        SwingWork.awaitRepositoryWork();
+        SwingWork.onSwing(() -> assertEquals(2, management.court(2).getCameraCount()));
         var saved = new ManageGym(store.load().orElseThrow(), store).court(2).getCameras().stream()
                 .filter(CameraView::isAimable).findFirst().orElseThrow();
         assertEquals(355, saved.getPan().orElseThrow());
@@ -109,55 +112,92 @@ class DashboardPanelTest {
 
     @Test
     void cameraActionsTargetTheCameraWhoseMenuWasUsed() throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            var gym = new ManageGym(SampleGym.build(), new InMemoryGymRepository());
-            var courts = new CourtPanel(gym, 30, message -> fail(message));
-            var devices = courts.devices();
+        var gym = new ManageGym(SampleGym.build(), new InMemoryGymRepository());
+        var courts = new java.util.concurrent.atomic.AtomicReference<CourtPanel>();
+        var firstMenu = new java.util.concurrent.atomic.AtomicReference<javax.swing.JPopupMenu>();
+        SwingWork.onSwing(() -> {
+            courts.set(new CourtPanel(gym, 30, message -> fail(message)));
+            var devices = courts.get().devices();
             var menus = descendants(devices).filter(javax.swing.JButton.class::isInstance)
                     .map(javax.swing.JButton.class::cast).filter(b -> "Ações".equals(b.getText())).toList();
             assertEquals(2, menus.size());
             var service = java.util.Arrays.stream(menus.get(1).getComponentPopupMenu().getComponents())
                     .filter(javax.swing.JMenuItem.class::isInstance).map(javax.swing.JMenuItem.class::cast)
                     .filter(item -> "Enviar para manutenção".equals(item.getText())).findFirst().orElseThrow();
+            firstMenu.set(menus.get(0).getComponentPopupMenu());
             service.doClick(0);
+        });
+        SwingWork.awaitRepositoryWork();
+        SwingWork.onSwing(() -> {
             var cameras = gym.court(1).getCameras();
             assertTrue(cameras.get(0).isRecording());
             assertTrue(cameras.get(1).isUnderMaintenance());
-            var firstMenu = menus.get(0).getComponentPopupMenu();
-            courts.selectCourt(2);
-            java.util.Arrays.stream(firstMenu.getComponents()).filter(javax.swing.JMenuItem.class::isInstance)
+            courts.get().selectCourt(2);
+            java.util.Arrays.stream(firstMenu.get().getComponents()).filter(javax.swing.JMenuItem.class::isInstance)
                     .map(javax.swing.JMenuItem.class::cast).filter(item -> "Remover câmera".equals(item.getText()))
                     .findFirst().orElseThrow().doClick(0);
-            assertEquals(1, gym.court(2).getCameraCount());
         });
+        SwingWork.awaitRepositoryWork();
+        SwingWork.onSwing(() -> assertEquals(1, gym.court(2).getCameraCount()));
     }
 
     @Test
-    void quickAimChangesTheSelectedPtzAndPreviewsOnAFixedOnlyCourt() throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            var gym = SampleGym.build();
-            var management = new ManageGym(gym, new InMemoryGymRepository());
-            var number = new java.util.concurrent.atomic.AtomicInteger(1);
-            var panel = new QuickPtzPanel(management, number::get, message -> { }, () -> fail("unexpected registration"));
-            var right = button(panel, "→");
-            var zoomIn = button(panel, "+");
-            right.doClick(0);
-            zoomIn.doClick(0);
+    void quickAimChangesTheSelectedPtzAndPreviewsOnAFixedOnlyCourt() {
+        var gym = SampleGym.build();
+        var management = new ManageGym(gym, new InMemoryGymRepository());
+        var number = new java.util.concurrent.atomic.AtomicInteger(1);
+        var changes = new GymChanges(new CaptureActivity(), () -> { }, () -> { });
+        var panel = new java.util.concurrent.atomic.AtomicReference<QuickPtzPanel>();
+        SwingWork.onSwing(() -> panel.set(new QuickPtzPanel(management, changes, number::get, message -> { },
+                () -> fail("unexpected registration"))));
+        var right = button(panel.get(), "→");
+        var zoomIn = button(panel.get(), "+");
+
+        SwingWork.onSwing(() -> right.doClick(0));
+        SwingWork.awaitRepositoryWork();
+        SwingWork.onSwing(() -> zoomIn.doClick(0));
+        SwingWork.awaitRepositoryWork();
+
+        SwingWork.onSwing(() -> {
             var ptz = management.court(1).getCameras().stream().filter(CameraView::isAimable)
                     .findFirst().orElseThrow();
             assertEquals(5, ptz.getPan().orElseThrow());
             assertEquals(2, ptz.getZoom().orElseThrow());
             number.set(2);
-            panel.refresh();
+            panel.get().refresh();
             assertTrue(right.isEnabled());
             assertTrue(zoomIn.isEnabled());
             zoomIn.doClick(0);
             number.set(1);
-            panel.refresh();
+            panel.get().refresh();
             assertTrue(right.isEnabled());
             assertEquals(2, management.court(1).getCameras().stream().filter(CameraView::isAimable)
                     .findFirst().orElseThrow().getZoom().orElseThrow());
         });
+    }
+
+    @Test
+    void quickAimStoresOffTheSwingThreadWithItsArrowDisabled() throws Exception {
+        var repository = new GatedGymRepository();
+        var management = new ManageGym(SampleGym.build(), repository);
+        var changes = new GymChanges(new CaptureActivity(), () -> { }, () -> { });
+        var panel = new java.util.concurrent.atomic.AtomicReference<QuickPtzPanel>();
+        SwingWork.onSwing(() -> panel.set(new QuickPtzPanel(management, changes, () -> 1, message -> { }, () -> { })));
+        var right = button(panel.get(), "→");
+        repository.gate.close();
+
+        SwingWork.onSwing(() -> right.doClick(0));
+        try {
+            repository.gate.awaitBlocked();
+            assertFalse(repository.gate.ranOnSwing());
+            assertTrue(SwingWork.swingResponds());
+            SwingWork.onSwing(() -> assertFalse(right.isEnabled()));
+        } finally {
+            repository.gate.open();
+        }
+        SwingWork.awaitRepositoryWork();
+
+        SwingWork.onSwing(() -> assertTrue(right.isEnabled()));
     }
 
     private static javax.swing.JButton button(java.awt.Container parent, String text) {

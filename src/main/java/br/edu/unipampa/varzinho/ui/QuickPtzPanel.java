@@ -17,6 +17,7 @@ import java.util.function.IntSupplier;
 /** Compact PTZ control for the dashboard, backed by the same gym use case as the full page. */
 final class QuickPtzPanel extends JPanel {
     private final ManageGym management;
+    private final GymChanges changes;
     private final IntSupplier selectedCourt;
     private final Consumer<String> messages;
     private final JComboBox<String> cameras = new JComboBox<>();
@@ -29,14 +30,17 @@ final class QuickPtzPanel extends JPanel {
     private final JLabel position = new JLabel();
     private final JSpinner zoom = new JSpinner(new SpinnerNumberModel(1, 1, 10, 1));
 
-    QuickPtzPanel(ManageGym management, IntSupplier selectedCourt, Consumer<String> messages, Runnable onInstalled) {
+    QuickPtzPanel(ManageGym management, GymChanges changes, IntSupplier selectedCourt, Consumer<String> messages,
+                  Runnable onInstalled) {
         super(new MigLayout("insets 6, fillx, hidemode 3", "[grow,fill][pref]", "[][]6[]2[]"));
         if (management == null) throw new IllegalArgumentException("quick PTZ needs gym management");
+        if (changes == null) throw new IllegalArgumentException("quick PTZ needs a way to change the gym");
         if (selectedCourt == null) throw new IllegalArgumentException("quick PTZ needs a selected court");
         if (messages == null) throw new IllegalArgumentException("quick PTZ needs a message destination");
         if (onInstalled == null) throw new IllegalArgumentException("quick PTZ needs an installation listener");
         this.onInstalled = onInstalled;
         this.management = management;
+        this.changes = changes;
         this.selectedCourt = selectedCourt;
         this.messages = messages;
         VarZinhoTheme.styleCard(this);
@@ -56,7 +60,7 @@ final class QuickPtzPanel extends JPanel {
         JButton center = new JButton("●");
         center.setToolTipText("Centralizar câmera");
         center.getAccessibleContext().setAccessibleName(center.getToolTipText());
-        center.addActionListener(e -> { pan.setValue(0); tilt.setValue(0); move(); });
+        center.addActionListener(e -> { pan.setValue(0); tilt.setValue(0); move(center); });
         pad.add(center, "cell 1 1");
         pad.add(step("→", pan, 5), "cell 2 1");
         pad.add(step("↓", tilt, -5), "cell 1 2");
@@ -68,7 +72,7 @@ final class QuickPtzPanel extends JPanel {
         zoomPad.add(step("+", zoom, 1));
         pad.add(zoomPad, "cell 3 1, growx");
         zoom.addChangeListener(e -> zoomValue.setText(zoom.getValue() + "×"));
-        savePosition.addActionListener(event -> save());
+        savePosition.addActionListener(event -> save(savePosition));
         pad.add(savePosition, "cell 3 2");
         add(pad, "cell 0 2, span 2");
         add(position, "cell 0 3, span 2");
@@ -133,33 +137,42 @@ final class QuickPtzPanel extends JPanel {
             int next = value == pan ? Math.floorMod(current + amount, 360)
                     : Math.max((Integer) model.getMinimum(), Math.min((Integer) model.getMaximum(), current + amount));
             value.setValue(next);
-            move();
+            move(button);
         });
         return button;
     }
 
-    private void move() {
+    private void move(JButton trigger) {
         if (previewCourt != null) syncAim();
-        else save();
+        else save(trigger);
     }
 
-    private void save() {
+    private void save(JButton trigger) {
+        int panning = (Integer) pan.getValue();
+        int tilting = (Integer) tilt.getValue();
+        int zooming = (Integer) zoom.getValue();
         if (previewCourt != null) {
-            var result = GymChangeReporter.apply(() -> management.installSimulatedPtz(previewCourt,
-                    (Integer) pan.getValue(), (Integer) tilt.getValue(), (Integer) zoom.getValue()), messages);
-            if (result != GymChangeReporter.Result.REFUSED) {
-                refresh();
-                onInstalled.run();
-            }
-            if (result == GymChangeReporter.Result.SAVED) messages.accept("PTZ simulada cadastrada com a posição escolhida.");
+            int court = previewCourt;
+            changes.apply(trigger, () -> management.installSimulatedPtz(court, panning, tilting, zooming), messages,
+                    result -> {
+                        if (result != GymChanges.Result.REFUSED) {
+                            refresh();
+                            onInstalled.run();
+                        }
+                        if (result == GymChanges.Result.SAVED) {
+                            messages.accept("PTZ simulada cadastrada com a posição escolhida.");
+                        }
+                    });
             return;
         }
+        int court = selectedCourt.getAsInt();
         String camera = (String) cameras.getSelectedItem();
-        var result = GymChangeReporter.apply(() -> management.aimCamera(selectedCourt.getAsInt(), camera,
-                (Integer) pan.getValue(), (Integer) tilt.getValue(), (Integer) zoom.getValue()), messages);
-        if (result == GymChangeReporter.Result.SAVED) {
-            messages.accept("Posição da câmera " + camera + " atualizada.");
-        }
-        syncAim();
+        changes.apply(trigger, () -> management.aimCamera(court, camera, panning, tilting, zooming), messages,
+                result -> {
+                    if (result == GymChanges.Result.SAVED) {
+                        messages.accept("Posição da câmera " + camera + " atualizada.");
+                    }
+                    syncAim();
+                });
     }
 }

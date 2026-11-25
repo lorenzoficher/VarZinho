@@ -35,11 +35,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static br.edu.unipampa.varzinho.ui.SwingWork.awaitRepositoryWork;
 
 class CourtPanelTest {
     private final Gym gym = SampleGym.build();
     private final List<String> errors = new ArrayList<>();
-    private final CountingGymRepository gymRepository = new CountingGymRepository();
+    private final GatedGymRepository gymRepository = new GatedGymRepository();
     private final CourtPanel panel = new CourtPanel(new ManageGym(gym, gymRepository), 30, errors::add);
 
     @Test
@@ -93,15 +94,15 @@ class CourtPanelTest {
     @Test
     void eachStatusShowsItsOwnBadge() {
         panel.selectCamera(1);
-        panel.stopButton().doClick();
+        press(panel.stopButton());
         assertEquals(List.of(StatusBadge.RECORDING, StatusBadge.STOPPED), panel.statusBadges());
 
         panel.selectCamera(0);
-        panel.maintenanceButton().doClick();
+        press(panel.maintenanceButton());
         assertEquals(List.of(StatusBadge.MAINTENANCE, StatusBadge.STOPPED), panel.statusBadges());
 
         panel.selectCamera(1);
-        panel.startButton().doClick();
+        press(panel.startButton());
         assertEquals(List.of(StatusBadge.MAINTENANCE, StatusBadge.RECORDING), panel.statusBadges());
     }
 
@@ -128,9 +129,9 @@ class CourtPanelTest {
         panel.onCamerasChanged(() -> changes.add("changed"));
 
         panel.selectCamera(0);
-        panel.stopButton().doClick();
-        panel.startButton().doClick();
-        panel.maintenanceButton().doClick();
+        press(panel.stopButton());
+        press(panel.startButton());
+        press(panel.maintenanceButton());
 
         assertEquals(3, changes.size());
     }
@@ -140,7 +141,7 @@ class CourtPanelTest {
         Camera camera = gym.findCourt(1).orElseThrow().getCameras().get(1);
 
         panel.selectCamera(1);
-        panel.stopButton().doClick();
+        press(panel.stopButton());
 
         assertEquals(CameraStatus.INACTIVE, camera.getStatus());
         assertEquals("ptz-1 · PTZ · HD (1280x720) · Parada · panorâmica 0 inclinação 0 zoom 1", panel.cameraLines().get(1));
@@ -151,9 +152,9 @@ class CourtPanelTest {
     void startingACameraInMaintenanceReportsTheDomainRefusal() {
         Camera camera = gym.findCourt(1).orElseThrow().getCameras().get(0);
         panel.selectCamera(0);
-        panel.maintenanceButton().doClick();
+        press(panel.maintenanceButton());
 
-        panel.startButton().doClick();
+        press(panel.startButton());
 
         assertEquals(CameraStatus.MAINTENANCE, camera.getStatus());
         assertEquals(List.of("A câmera " + camera.getId() + " está em manutenção e não pode gravar."), errors);
@@ -168,19 +169,19 @@ class CourtPanelTest {
         courts.cameraPage();
         assertTrue(javax.swing.SwingUtilities.isDescendingFrom(courts.installButton(), page));
         courts.courtNumberField().setText("3");
-        courts.addCourtButton().doClick(0);
+        press(courts.addCourtButton());
         courts.idField().setText("gol-norte");
         courts.modelField().setText("Modelo A");
-        courts.installButton().doClick(0);
+        press(courts.installButton());
         assertEquals("", courts.idField().getText());
         assertEquals("Modelo A", courts.modelField().getText());
         courts.idField().setText("gol-norte");
-        courts.installButton().doClick(0);
+        press(courts.installButton());
         assertEquals("gol-norte", courts.idField().getText());
         assertEquals(1, errors.size());
         courts.idField().setText("gol-sul");
         courts.typeSelector().setSelectedItem(CameraKind.PTZ);
-        courts.installButton().doClick(0);
+        press(courts.installButton());
         var saved = new CsvGymRepository(store).load().orElseThrow();
         assertEquals(List.of("gol-norte", "gol-sul"),
                 saved.findCourt(3).orElseThrow().getCameras().stream().map(Camera::getId).toList());
@@ -196,7 +197,7 @@ class CourtPanelTest {
         panel.typeSelector().setSelectedItem(CameraKind.FIXED);
         panel.resolutionSelector().setSelectedItem(Resolution.HD);
 
-        panel.installButton().doClick();
+        press(panel.installButton());
 
         List<Camera> cameras = gym.findCourt(2).orElseThrow().getCameras();
         assertEquals(2, cameras.size());
@@ -214,7 +215,7 @@ class CourtPanelTest {
         panel.modelField().setText("PTZ Lite");
         panel.typeSelector().setSelectedItem(CameraKind.PTZ);
 
-        panel.installButton().doClick();
+        press(panel.installButton());
 
         List<Camera> cameras = gym.findCourt(1).orElseThrow().getCameras();
         assertEquals(3, cameras.size());
@@ -227,7 +228,7 @@ class CourtPanelTest {
         panel.idField().setText(" ");
         panel.modelField().setText("Fixed Lite");
 
-        panel.installButton().doClick();
+        press(panel.installButton());
 
         assertEquals(List.of("A câmera precisa de um identificador."), errors);
         assertEquals(2, gym.findCourt(1).orElseThrow().getCameras().size());
@@ -240,7 +241,7 @@ class CourtPanelTest {
         panel.idField().setText("fixed-1");
         panel.modelField().setText("Fixed Lite");
 
-        panel.installButton().doClick();
+        press(panel.installButton());
 
         assertEquals(List.of("A câmera fixed-1 já está instalada na quadra 1."), errors);
         assertEquals(1, gym.findCourt(2).orElseThrow().getCameras().size());
@@ -250,12 +251,12 @@ class CourtPanelTest {
     void aCameraInstalledFromTheWindowRecordsAndIsCreditedWithTheHighlight() {
         panel.selectCourt(2);
         panel.selectCamera(0);
-        panel.stopButton().doClick();
+        press(panel.stopButton());
         panel.idField().setText("fixed-3");
         panel.modelField().setText("Fixed Lite");
-        panel.installButton().doClick();
+        press(panel.installButton());
         panel.selectCamera(1);
-        panel.startButton().doClick();
+        press(panel.startButton());
 
         LiveFeed feed = new LiveFeed(gym);
         Instant start = Instant.parse("2026-09-30T12:00:00Z");
@@ -271,7 +272,7 @@ class CourtPanelTest {
     void addingACourtListsItAndSelectsIt() {
         panel.courtNumberField().setText("3");
 
-        panel.addCourtButton().doClick();
+        press(panel.addCourtButton());
 
         assertEquals(3, panel.selectedCourtNumber());
         assertTrue(panel.cameraLines().isEmpty());
@@ -283,7 +284,7 @@ class CourtPanelTest {
     void aRepeatedCourtNumberIsRefusedWithTheDomainMessage() {
         panel.courtNumberField().setText("2");
 
-        panel.addCourtButton().doClick();
+        press(panel.addCourtButton());
 
         assertEquals(List.of("O número da quadra já está cadastrado."), errors);
         assertEquals(2, gym.getCourts().size());
@@ -293,7 +294,7 @@ class CourtPanelTest {
     void aCourtNumberBelowOneIsRefusedWithTheDomainMessage() {
         panel.courtNumberField().setText("0");
 
-        panel.addCourtButton().doClick();
+        press(panel.addCourtButton());
 
         assertEquals(List.of("O número da quadra deve ser positivo."), errors);
     }
@@ -302,7 +303,7 @@ class CourtPanelTest {
     void textThatIsNotANumberAsksForOne() {
         panel.courtNumberField().setText("three");
 
-        panel.addCourtButton().doClick();
+        press(panel.addCourtButton());
 
         assertEquals(List.of("Digite o número da quadra usando algarismos."), errors);
         assertEquals(2, gym.getCourts().size());
@@ -314,7 +315,7 @@ class CourtPanelTest {
         panel.onCourtAdded(() -> announced.add(panel.selectedCourtNumber()));
         panel.courtNumberField().setText("4");
 
-        panel.addCourtButton().doClick();
+        press(panel.addCourtButton());
 
         assertEquals(List.of(4), announced);
     }
@@ -322,9 +323,10 @@ class CourtPanelTest {
     @Test
     void removingAnEmptyCourtDropsItFromEverySelectorAndSelectsAnother() {
         panel.courtNumberField().setText("3");
-        panel.addCourtButton().doClick();
+        press(panel.addCourtButton());
 
         panel.removeSelectedCourt(number -> true);
+        awaitRepositoryWork();
 
         assertTrue(gym.findCourt(3).isEmpty());
         assertFalse(panel.courtNumbers().contains(3));
@@ -336,9 +338,10 @@ class CourtPanelTest {
     @Test
     void aDeclinedConfirmationKeepsTheCourt() {
         panel.courtNumberField().setText("3");
-        panel.addCourtButton().doClick();
+        press(panel.addCourtButton());
 
         panel.removeSelectedCourt(number -> false);
+        awaitRepositoryWork();
 
         assertEquals(3, panel.selectedCourtNumber());
         assertEquals(3, gym.getCourts().size());
@@ -349,6 +352,7 @@ class CourtPanelTest {
         panel.selectCourt(1);
 
         panel.removeSelectedCourt(number -> true);
+        awaitRepositoryWork();
 
         assertEquals(List.of("A quadra 1 ainda tem câmeras. Remova ou mova as câmeras antes de removê-la."), errors);
         assertEquals(2, gym.getCourts().size());
@@ -358,10 +362,11 @@ class CourtPanelTest {
     void removingACourtTellsWhoeverListensForCourtChanges() {
         List<Integer> announced = new ArrayList<>();
         panel.courtNumberField().setText("4");
-        panel.addCourtButton().doClick();
+        press(panel.addCourtButton());
         panel.onCourtRemoved(() -> announced.add(gym.getCourts().size()));
 
         panel.removeSelectedCourt(number -> true);
+        awaitRepositoryWork();
 
         assertEquals(List.of(2), announced);
     }
@@ -371,7 +376,7 @@ class CourtPanelTest {
         Camera kept = gym.findCourt(1).orElseThrow().getCameras().get(0);
 
         panel.selectCamera(1);
-        panel.removeCameraButton().doClick();
+        press(panel.removeCameraButton());
 
         assertEquals(List.of(kept), gym.findCourt(1).orElseThrow().getCameras());
         assertEquals(List.of("fixed-1 · Fixa · Full HD (1920x1080) · Ativa"), panel.cameraLines());
@@ -379,7 +384,7 @@ class CourtPanelTest {
 
     @Test
     void removingWithNoCameraSelectedAsksForOneAndRemovesNothing() {
-        panel.removeCameraButton().doClick();
+        press(panel.removeCameraButton());
 
         assertEquals(List.of("Selecione uma câmera primeiro."), errors);
         assertEquals(2, gym.findCourt(1).orElseThrow().getCameras().size());
@@ -393,7 +398,7 @@ class CourtPanelTest {
         panel.tiltSpinner().setValue(-10);
         panel.zoomSpinner().setValue(3);
 
-        panel.moveButton().doClick();
+        press(panel.moveButton());
 
         assertEquals(90, ptz.getPan());
         assertEquals(-10, ptz.getTilt());
@@ -407,7 +412,7 @@ class CourtPanelTest {
         panel.selectCamera(1);
         panel.panSpinner().setValue(400);
 
-        panel.moveButton().doClick();
+        press(panel.moveButton());
 
         assertEquals(List.of("A panorâmica deve estar entre 0 e 359. Valor informado: 400."), errors);
         assertEquals(0, ptz.getPan());
@@ -422,13 +427,13 @@ class CourtPanelTest {
         // The disabled button is the screen's guarantee; this checks the one behind it.
         panel.moveButton().setEnabled(true);
 
-        panel.moveButton().doClick();
+        press(panel.moveButton());
 
         assertEquals(List.of("A câmera " + fixed.getId() + " não pode ser apontada."), errors);
         assertSame(fixed, gym.findCourt(1).orElseThrow().getCameras().get(0));
         assertEquals(statusBefore, fixed.getStatus());
         assertEquals(angleBefore, fixed.getAngle());
-        assertEquals(0, gymRepository.saves);
+        assertEquals(0, gymRepository.saves());
         assertFalse(panel.moveButton().isEnabled());
     }
 
@@ -444,27 +449,27 @@ class CourtPanelTest {
     @Test
     void everyChangeTheGymAcceptsIsSaved() {
         panel.courtNumberField().setText("3");
-        panel.addCourtButton().doClick();
+        press(panel.addCourtButton());
         panel.idField().setText("fixed-3");
         panel.modelField().setText("Fixed Lite");
-        panel.installButton().doClick();
+        press(panel.installButton());
         panel.selectCamera(0);
-        panel.startButton().doClick();
-        panel.removeCameraButton().doClick();
+        press(panel.startButton());
+        press(panel.removeCameraButton());
 
-        assertEquals(4, gymRepository.saves);
+        assertEquals(4, gymRepository.saves());
     }
 
     @Test
     void aRefusedChangeIsNotSaved() {
         panel.courtNumberField().setText("1");
-        panel.addCourtButton().doClick();
-        panel.installButton().doClick();
+        press(panel.addCourtButton());
+        press(panel.installButton());
         panel.selectCamera(0);
-        panel.maintenanceButton().doClick();
-        panel.startButton().doClick();
+        press(panel.maintenanceButton());
+        press(panel.startButton());
 
-        assertEquals(1, gymRepository.saves);
+        assertEquals(1, gymRepository.saves());
         assertEquals(3, errors.size());
     }
 
@@ -474,12 +479,12 @@ class CourtPanelTest {
 
         panel.selectCamera(1);
         panel.moveTargetSelector().setSelectedItem(2);
-        panel.moveToCourtButton().doClick();
+        press(panel.moveToCourtButton());
 
         assertEquals(1, panel.cameraLines().size());
         assertTrue(gym.findCourt(2).orElseThrow().getCameras().contains(ptz));
         assertEquals(CameraStatus.INACTIVE, ptz.getStatus());
-        assertEquals(1, gymRepository.saves);
+        assertEquals(1, gymRepository.saves());
     }
 
     @Test
@@ -487,7 +492,7 @@ class CourtPanelTest {
         panel.selectCamera(0);
         panel.moveTargetSelector().setSelectedItem(1);
 
-        panel.moveToCourtButton().doClick();
+        press(panel.moveToCourtButton());
 
         assertEquals(List.of("A câmera fixed-1 já está na quadra 1."), errors);
     }
@@ -495,22 +500,22 @@ class CourtPanelTest {
     @Test
     void aCourtAddedLaterCanReceiveACamera() {
         panel.courtNumberField().setText("5");
-        panel.addCourtButton().doClick();
+        press(panel.addCourtButton());
         panel.selectCourt(1);
 
         panel.selectCamera(0);
         panel.moveTargetSelector().setSelectedItem(5);
-        panel.moveToCourtButton().doClick();
+        press(panel.moveToCourtButton());
 
         assertEquals(1, gym.findCourt(5).orElseThrow().getCameras().size());
     }
 
     @Test
     void aSaveTheStorageRefusesIsReportedWhileTheChangeStays() {
-        gymRepository.failing = true;
+        gymRepository.failFromNowOn();
         panel.courtNumberField().setText("3");
 
-        panel.addCourtButton().doClick();
+        press(panel.addCourtButton());
 
         assertEquals(List.of("Não foi possível salvar a academia. Verifique o armazenamento."), errors);
         assertEquals(3, panel.selectedCourtNumber());
@@ -527,9 +532,9 @@ class CourtPanelTest {
         csvPanel.typeSelector().setSelectedItem(CameraKind.FIXED);
         csvPanel.resolutionSelector().setSelectedItem(Resolution.HD);
 
-        csvPanel.installButton().doClick();
+        press(csvPanel.installButton());
         csvPanel.courtNumberField().setText("3");
-        csvPanel.addCourtButton().doClick();
+        press(csvPanel.addCourtButton());
 
         assertEquals(2, errors.size());
         assertTrue(errors.get(0).startsWith("Não foi possível salvar a academia."), errors.get(0));
@@ -558,19 +563,104 @@ class CourtPanelTest {
         return matches;
     }
 
-    private static final class CountingGymRepository implements GymRepository {
-        private int saves;
-        private boolean failing;
+    @Test
+    void installingACameraStoresTheGymOffTheSwingThread() throws Exception {
+        panel.idField().setText("gol-leste");
+        panel.modelField().setText("Modelo A");
 
-        @Override
-        public void save(Gym gym) throws RepositoryException {
-            if (failing) throw new RepositoryException("disk unplugged");
-            saves++;
-        }
+        assertStoresOffSwingWhileDisabled(panel.installButton(), panel.installButton()::doClick);
 
-        @Override
-        public Optional<Gym> load() {
-            return Optional.empty();
+        assertEquals(3, gym.findCourt(1).orElseThrow().getCameras().size());
+    }
+
+    @Test
+    void addingACourtStoresTheGymOffTheSwingThread() throws Exception {
+        panel.courtNumberField().setText("7");
+
+        assertStoresOffSwingWhileDisabled(panel.addCourtButton(), panel.addCourtButton()::doClick);
+
+        assertEquals(7, panel.selectedCourtNumber());
+    }
+
+    @Test
+    void removingACourtStoresTheGymOffTheSwingThread() throws Exception {
+        panel.courtNumberField().setText("7");
+        press(panel.addCourtButton());
+
+        assertStoresOffSwingWhileDisabled(panel.removeCourtButton(), () -> panel.removeSelectedCourt(number -> true));
+
+        assertFalse(panel.courtNumbers().contains(7));
+    }
+
+    @Test
+    void everyCameraStateButtonStoresTheGymOffTheSwingThread() throws Exception {
+        panel.selectCamera(1);
+        assertStoresOffSwingWhileDisabled(panel.stopButton(), panel.stopButton()::doClick);
+        assertStoresOffSwingWhileDisabled(panel.startButton(), panel.startButton()::doClick);
+        assertStoresOffSwingWhileDisabled(panel.maintenanceButton(), panel.maintenanceButton()::doClick);
+        assertStoresOffSwingWhileDisabled(panel.removeCameraButton(), panel.removeCameraButton()::doClick);
+
+        assertEquals(1, gym.findCourt(1).orElseThrow().getCameras().size());
+    }
+
+    @Test
+    void movingAndAimingStoreTheGymOffTheSwingThread() throws Exception {
+        panel.selectCamera(1);
+        panel.panSpinner().setValue(90);
+        assertStoresOffSwingWhileDisabled(panel.moveButton(), panel.moveButton()::doClick);
+
+        panel.moveTargetSelector().setSelectedItem(2);
+        assertStoresOffSwingWhileDisabled(panel.moveToCourtButton(), panel.moveToCourtButton()::doClick);
+
+        assertEquals(2, gym.findCourt(2).orElseThrow().getCameras().size());
+    }
+
+    @Test
+    void aFailedSaveGivesTheButtonBackWithTheSameMessage() {
+        gymRepository.failFromNowOn();
+        panel.selectCamera(1);
+
+        press(panel.stopButton());
+
+        assertTrue(panel.stopButton().isEnabled());
+        assertEquals(List.of("Não foi possível salvar a academia. Verifique o armazenamento."), errors);
+    }
+
+    @Test
+    void aChangeAskedForWhileACaptureHoldsTheModelIsIgnored() {
+        CaptureActivity activity = new CaptureActivity();
+        GatedGymRepository repository = new GatedGymRepository();
+        CourtPanel court = new CourtPanel(new ManageGym(SampleGym.build(), repository), 30, errors::add, activity);
+        activity.begin();
+        court.courtNumberField().setText("7");
+
+        press(court.addCourtButton());
+
+        assertEquals(0, repository.saves());
+        assertFalse(court.courtNumbers().contains(7));
+    }
+
+    private void assertStoresOffSwingWhileDisabled(javax.swing.AbstractButton trigger, Runnable action)
+            throws InterruptedException {
+        gymRepository.gate.close();
+        int before = gymRepository.saves();
+        action.run();
+        try {
+            gymRepository.gate.awaitBlocked();
+            assertFalse(gymRepository.gate.ranOnSwing());
+            assertTrue(SwingWork.swingResponds());
+            SwingWork.onSwing(() -> assertFalse(trigger.isEnabled()));
+        } finally {
+            gymRepository.gate.open();
         }
+        awaitRepositoryWork();
+        assertEquals(before + 1, gymRepository.saves());
+        assertEquals(List.of(), errors);
+        SwingWork.onSwing(() -> assertTrue(trigger.isEnabled()));
+    }
+
+    private static void press(javax.swing.AbstractButton button) {
+        button.doClick();
+        awaitRepositoryWork();
     }
 }
