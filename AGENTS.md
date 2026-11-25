@@ -50,7 +50,8 @@ src/main/java/br/edu/unipampa/varzinho/
 │   ├── highlight/   Highlight, VideoClip
 │   └── people/      Operator — a staff account, keeping only a password hash
 ├── application/     use cases (ManageGym, CaptureHighlight, BrowseArchive,
-│   │                OperatorAccess, GymSession, ConnectStreamCamera, SignedInOperator),
+│   │                ManageRecordings, OperatorAccess, GymSession, ConnectStreamCamera,
+│   │                SignedInOperator),
 │   │                the read models the window displays (CourtView, CameraView,
 │   │                HighlightView, ...) and Feed — the source of the window's seconds
 │   └── port/        HighlightRepository, GymRepository, OperatorStore, RecordingEditor,
