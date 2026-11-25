@@ -22,6 +22,10 @@ class ArchitectureTest {
     private static final List<String> DATABASE_ACCESS = List.of("java.sql", "javax.sql", "org.postgresql");
     private static final Pattern IMPORT = Pattern.compile(
             "(?m)^\\h*import\\s+(?:static\\s+)?([\\w.*]+)\\s*;");
+    private static final Pattern PORT_REFERENCE = Pattern.compile(
+            Pattern.quote(PROJECT_PACKAGE + ".application.port.") + "(\\w+|\\*)");
+    private static final List<String> UI_REACHABLE_PORT_TYPES =
+            List.of("RepositoryException", "CorruptedRecordException");
 
     @Test
     void domainDoesNotImportOuterLayersOrDesktopLibraries() throws IOException {
@@ -56,6 +60,27 @@ class ArchitectureTest {
     void uiDoesNotImportTheDomainOrAdapters() throws IOException {
         assertNoForbiddenImports("ui", List.of(PROJECT_PACKAGE + ".domain",
                 PROJECT_PACKAGE + ".infrastructure"));
+    }
+
+    // The window reaches storage only through use cases; it may still catch what they
+    // throw. Fully qualified names count too, since a violation once hid behind them.
+    @Test
+    void uiReachesApplicationPortsOnlyForTheirExceptions() throws IOException {
+        List<String> violations = new ArrayList<>();
+        try (Stream<Path> sources = Files.walk(SOURCES.resolve("ui"))) {
+            for (Path source : sources.filter(path -> path.toString().endsWith(".java"))
+                    .sorted().toList()) {
+                String code = Files.readString(source).replaceAll("(?s)/\\*.*?\\*/", "");
+                Matcher references = PORT_REFERENCE.matcher(code);
+                while (references.find()) {
+                    if (!UI_REACHABLE_PORT_TYPES.contains(references.group(1))) {
+                        violations.add(SOURCES.relativize(source) + " uses port " + references.group(1));
+                    }
+                }
+            }
+        }
+        assertTrue(violations.isEmpty(), () -> "ui must go through a use case, not a port:\n"
+                + String.join("\n", violations));
     }
 
     @Test
