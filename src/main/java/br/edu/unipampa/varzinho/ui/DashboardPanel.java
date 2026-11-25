@@ -57,7 +57,7 @@ final class DashboardPanel extends JPanel {
             javax.swing.JToggleButton button = new javax.swing.JToggleButton(sport);
             button.setIcon(sportIcon(sport, VarZinhoTheme.EMERALD));
             button.setSelectedIcon(sportIcon(sport, VarZinhoTheme.ACCENT));
-            button.putClientProperty("FlatLaf.style", "arc: 14; margin: 7,12,7,12; selectedBackground: $VarZinho.sidebarBackground; selectedForeground: $VarZinho.sidebarForeground");
+            VarZinhoTheme.styleChoice(button);
             sportButtons.put(sport, button);
             modalities.add(button);
             strip.add(button);
@@ -69,6 +69,8 @@ final class DashboardPanel extends JPanel {
         add(strip);
 
         save = capturePanel.additionalSaveButton();
+        VarZinhoTheme.styleButton(liveView, ButtonRole.SECONDARY);
+        VarZinhoTheme.styleButton(share, ButtonRole.SECONDARY);
         liveView.setEnabled(false);
         share.setEnabled(false);
         share.setToolTipText("Disponível quando o endereço HTTPS dos espectadores estiver configurado.");
@@ -155,16 +157,15 @@ final class DashboardPanel extends JPanel {
     private JPanel hero(JButton save) {
         JPanel hero = new PitchPanel(new MigLayout("insets 18 24, fill", "[grow,fill]10[pref,fill]", "push[]5[]4[]10[]4[]push"));
         hero.setBackground(VarZinhoTheme.SIDEBAR);
-        VarZinhoTheme.styleEyebrow(status);
-        status.putClientProperty("FlatLaf.style", "foreground: $VarZinho.accent");
-        status.setFont(status.getFont().deriveFont(java.awt.Font.BOLD, 14f));
-        courtName.setForeground(Color.WHITE);
+        VarZinhoTheme.styleStrong(status);
+        status.setForeground(VarZinhoTheme.ACCENT);
+        courtName.setForeground(VarZinhoTheme.ON_DARK);
         courtDetails.setForeground(VarZinhoTheme.SIDEBAR_MUTED);
-        recording.setForeground(Color.WHITE);
+        recording.setForeground(VarZinhoTheme.ON_DARK);
         buffer.setForeground(VarZinhoTheme.ACCENT);
         buffer.setBackground(VarZinhoTheme.SIDEBAR);
         buffer.getAccessibleContext().setAccessibleName("Preenchimento do buffer de captura");
-        courtName.setFont(courtName.getFont().deriveFont(java.awt.Font.BOLD, 26f));
+        VarZinhoTheme.styleDisplay(courtName);
         hero.add(status, "cell 0 0");
         hero.add(courtName, "cell 0 1");
         hero.add(courtDetails, "cell 0 2");
@@ -173,7 +174,6 @@ final class DashboardPanel extends JPanel {
         save.setText("Salvar Melhor Momento");
         save.setToolTipText("Salvar o trecho mais recente do buffer da quadra selecionada");
         save.setIcon(VarZinhoIcons.arena("replay", 40, VarZinhoTheme.EMERALD));
-        save.setFont(save.getFont().deriveFont(java.awt.Font.BOLD, 16f));
         save.setIconTextGap(12);
         JPanel actions = new JPanel(new MigLayout("insets 0, fillx, wrap 2", "[grow,fill][grow,fill]", "[]6[]"));
         actions.setOpaque(false);

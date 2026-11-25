@@ -53,8 +53,9 @@ final class RecordingActions {
         this.errorSink = errorSink;
         this.refresh = refresh;
         this.recount = recount;
+        VarZinhoTheme.styleButton(openClip, ButtonRole.PRIMARY);
         openClip.setToolTipText("Abrir o lance selecionado (Ctrl+Enter na tabela)");
-        openClip.setIcon(VarZinhoIcons.openClip());
+        openClip.setIcon(VarZinhoIcons.openClip(VarZinhoTheme.ON_ACCENT));
         openClip.addActionListener(event -> openSelectedClip());
         table.getSelectionModel().addListSelectionListener(event -> updateOpenClip());
         recordings.onPreview(this::previewSelectedClip);
@@ -65,6 +66,8 @@ final class RecordingActions {
     void enableEditing(RecordingEditor editor) {
         JButton rename = new JButton("Renomear gravação");
         JButton delete = new JButton("Excluir gravação");
+        VarZinhoTheme.styleButton(rename, ButtonRole.SECONDARY);
+        VarZinhoTheme.styleButton(delete, ButtonRole.DESTRUCTIVE);
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.TRAILING));
         actions.setOpaque(false);
         actions.add(rename);

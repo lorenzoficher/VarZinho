@@ -38,11 +38,11 @@ final class PitchPanel extends JPanel {
         try {
             int w = getWidth(), h = getHeight();
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g.setPaint(new GradientPaint(0, 0, VarZinhoTheme.SIDEBAR, w, h, new Color(15, 77, 66)));
+            g.setPaint(new GradientPaint(0, 0, VarZinhoTheme.SIDEBAR, w, h, VarZinhoTheme.PITCH));
             g.fillRoundRect(0, 0, w, h, 24, 24);
             Rectangle field = fieldBounds();
             int x = field.x, y = field.y, width = field.width, height = field.height;
-            g.setColor(new Color(255, 255, 255, 38));
+            g.setColor(VarZinhoTheme.PITCH_MARKINGS);
             g.drawRoundRect(x, y, width, height, 8, 8);
             int middle = x + width / 2;
             g.drawLine(middle, y, middle, y + height);

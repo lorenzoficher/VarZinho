@@ -25,8 +25,9 @@ final class VarZinhoIcons {
     static Icon record() { return icon("player-record"); }
     static Icon stop() { return icon("player-stop"); }
     static Icon maintenance() { return icon("tool"); }
-    static Icon aim() { return icon("focus-2"); }
+    static Icon aim(Color ink) { return icon("focus-2", SIZE, ink); }
     static Icon openClip() { return icon("external-link"); }
+    static Icon openClip(Color ink) { return icon("external-link", SIZE, ink); }
     static Icon theme(Color ink) { return icon("sun-moon", SIZE, ink); }
     static Icon theme() { return icon("sun-moon"); }
 

@@ -7,12 +7,8 @@ import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import net.miginfocom.swing.MigLayout;
 
-import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
-import java.awt.Color;
-import java.awt.Font;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.function.Consumer;
@@ -83,11 +79,10 @@ final class CourtSummaryPanel extends JPanel {
     }
 
     private static JPanel card(String title, JLabel value) {
-        JPanel card = new JPanel(new MigLayout("insets 10 14 10 14, wrap 1", "[grow,fill]", "[]2[]"));
-        Color border = UIManager.getColor("Component.borderColor");
-        card.setBorder(BorderFactory.createLineBorder(border == null ? Color.LIGHT_GRAY : border));
+        JPanel card = new JPanel(new MigLayout("insets 0, wrap 1", "[grow,fill]", "[]2[]"));
+        VarZinhoTheme.styleCard(card);
         card.add(new JLabel(title));
-        value.setFont(value.getFont().deriveFont(Font.BOLD, VarZinhoTheme.TITLE_FONT_SIZE));
+        VarZinhoTheme.styleTitle(value);
         card.add(value);
         return card;
     }

@@ -41,4 +41,10 @@ enum StatusBadge {
         Color themed = UIManager.getColor(colorKey);
         return themed == null ? fallback : themed;
     }
+
+    /** The dark theme lightens the badge colours, so their text turns dark with it. */
+    Color textColor() {
+        Color themed = UIManager.getColor("VarZinho.onStatus");
+        return themed == null ? VarZinhoTheme.ON_DARK : themed;
+    }
 }

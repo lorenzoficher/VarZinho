@@ -31,8 +31,7 @@ final class ClipDialog {
         JPanel pitch = PitchPanel.clipCover();
         JButton play = new JButton("Reproduzir vídeo",
                 VarZinhoIcons.arena("play-video", 32, VarZinhoTheme.ON_ACCENT));
-        VarZinhoTheme.styleProminentAction(play);
-        play.setMargin(new Insets(9, 16, 9, 18));
+        VarZinhoTheme.styleButton(play, ButtonRole.PRIMARY);
         play.setIconTextGap(10);
         play.setToolTipText("Abrir no reprodutor do computador");
         pitch.add(play);
@@ -45,6 +44,7 @@ final class ClipDialog {
         VarZinhoTheme.styleTitle(title);
         info.add(title, "cell 0 0");
         JButton download = new JButton("Baixar vídeo");
+        VarZinhoTheme.styleButton(download, ButtonRole.SECONDARY);
         info.add(download, "cell 1 0 1 2, aligny center");
         info.add(new JLabel(format.format(item.getCapturedAt()) + " · " + item.getDurationSeconds()
                 + " s · " + item.getCameraId()), "cell 0 1");

@@ -32,7 +32,7 @@ final class OperatorsPanel extends JPanel {
     private final JButton register = new JButton("Cadastrar operador");
 
     OperatorsPanel(SignedInOperator signedIn, Consumer<String> messages) {
-        super(new MigLayout("insets 24, wrap 2", "[right][240:420,fill]", "[]16[][][][][]"));
+        super(new MigLayout("insets 24, wrap 1", VarZinhoTheme.FORM_COLUMN));
         if (signedIn == null) throw new IllegalArgumentException("registering an operator needs a signed-in operator");
         if (messages == null) throw new IllegalArgumentException("registering an operator needs a message destination");
         this.signedIn = signedIn;
@@ -40,12 +40,13 @@ final class OperatorsPanel extends JPanel {
         VarZinhoTheme.styleCard(this);
         JLabel title = new JLabel("Operadores");
         VarZinhoTheme.styleTitle(title);
-        add(title, "span 2, left");
-        add(new JLabel("Nome")); add(nameField);
-        add(new JLabel("Usuário")); add(usernameField);
-        add(new JLabel("Senha")); add(passwordField);
-        add(new JLabel("Confirmar senha")); add(confirmationField);
-        add(register, "skip, growx 0, left");
+        add(title, "gapbottom 12");
+        add(new JLabel("Nome")); add(nameField, VarZinhoTheme.CONTROL_SIZE);
+        add(new JLabel("Usuário")); add(usernameField, VarZinhoTheme.CONTROL_SIZE);
+        add(new JLabel("Senha")); add(passwordField, VarZinhoTheme.CONTROL_SIZE);
+        add(new JLabel("Confirmar senha")); add(confirmationField, VarZinhoTheme.CONTROL_SIZE);
+        VarZinhoTheme.styleButton(register, ButtonRole.PRIMARY);
+        add(register, VarZinhoTheme.CONTROL_SIZE + ", gaptop 12");
         register.addActionListener(event -> register());
         EnterKey.submits(register, nameField, usernameField, passwordField, confirmationField);
     }

@@ -14,7 +14,7 @@ class VarZinhoIconsTest {
     void everyInterfaceIconLoadsFromTheBundledTablerResources() {
         List<Icon> icons = List.of(VarZinhoIcons.courts(), VarZinhoIcons.archive(),
                 VarZinhoIcons.operators(), VarZinhoIcons.record(), VarZinhoIcons.stop(),
-                VarZinhoIcons.maintenance(), VarZinhoIcons.aim(), VarZinhoIcons.openClip(),
+                VarZinhoIcons.maintenance(), VarZinhoIcons.aim(VarZinhoTheme.ON_ACCENT), VarZinhoIcons.openClip(),
                 VarZinhoIcons.theme());
 
         for (Icon icon : icons) {
