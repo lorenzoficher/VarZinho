@@ -283,7 +283,7 @@ answers it, and the open issues that finish it.
 | 5 | Clean Code | exceptions chained with their cause, no empty `catch` | #211, #210 |
 | 6 | Interface: visual identity | own theme in light and dark (#158), sidebar (#187) | #208 |
 | 7 | Interface: layout | pages by subject (#161), court cards (#188) | #207 |
-| 8 | Interface: usability | F2 capture (#162, #191), archive search (#163), capture on a worker (#113) | #205, #206 |
+| 8 | Interface: usability | F2 capture (#162, #191), archive search (#163), capture on a worker (#113), keyboard use with visible focus (#206) | #205 |
 | 9 | Database and persistence | PostgreSQL adapters (#145–#152), storage choice (#150), contract test (#144), restart walk-through in the README (#212) | — |
 | 10 | JavaDoc | class Javadoc on most public types | #200–#204 |
 
