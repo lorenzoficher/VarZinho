@@ -12,6 +12,7 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import java.awt.CardLayout;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -134,16 +135,16 @@ final class PasswordRecoveryPanel extends JPanel {
     private void requestLink() {
         String typedUsername = usernameField.getText().strip();
         String email = emailField.getText().strip();
-        try {
-            access.requestPasswordReset(typedUsername, email);
-        } catch (IllegalArgumentException refused) {
-            messages.accept(PortugueseText.message(refused.getMessage()));
-            return;
-        } catch (RepositoryException unreadable) {
-            LOGGER.log(Level.WARNING, "Could not read the operators for a password reset", unreadable);
-            messages.accept(UNREADABLE);
-            return;
-        }
+        RepositoryTask.run(List.of(sendLink), "Procurando o operador…",
+                () -> {
+                    access.requestPasswordReset(typedUsername, email);
+                    return null;
+                },
+                sent -> linkSent(typedUsername, email),
+                failure -> refused(failure, "Could not read the operators for a password reset", UNREADABLE));
+    }
+
+    private void linkSent(String typedUsername, String email) {
         username = typedUsername.toLowerCase(Locale.ROOT);
         sentNotice.setText("Enviamos um link de recuperação para " + email + ".");
         show(SENT_STEP);
@@ -152,24 +153,33 @@ final class PasswordRecoveryPanel extends JPanel {
     private void saveNewPassword() {
         char[] password = passwordField.getPassword();
         char[] confirmation = confirmationField.getPassword();
-        try {
-            if (!Arrays.equals(password, confirmation)) {
-                messages.accept("A confirmação não confere com a senha.");
-                return;
-            }
-            access.resetPassword(username, new String(password));
-            onReset.accept(username);
-        } catch (IllegalArgumentException refused) {
-            messages.accept(PortugueseText.message(refused.getMessage()));
-        } catch (RepositoryException unwritable) {
-            LOGGER.log(Level.WARNING, "Could not save a new operator password", unwritable);
-            messages.accept(UNWRITABLE);
-        } finally {
-            Arrays.fill(password, '\0');
-            Arrays.fill(confirmation, '\0');
-            passwordField.setText("");
-            confirmationField.setText("");
+        boolean confirmed = Arrays.equals(password, confirmation);
+        String chosen = new String(password);
+        Arrays.fill(password, '\0');
+        Arrays.fill(confirmation, '\0');
+        passwordField.setText("");
+        confirmationField.setText("");
+        if (!confirmed) {
+            messages.accept("A confirmação não confere com a senha.");
+            return;
         }
+        String resetting = username;
+        RepositoryTask.run(List.of(save), "Salvando a nova senha…",
+                () -> {
+                    access.resetPassword(resetting, chosen);
+                    return null;
+                },
+                saved -> onReset.accept(resetting),
+                failure -> refused(failure, "Could not save a new operator password", UNWRITABLE));
+    }
+
+    private void refused(Throwable failure, String logMessage, String storageMessage) {
+        if (failure instanceof IllegalArgumentException) {
+            messages.accept(PortugueseText.message(failure.getMessage()));
+            return;
+        }
+        LOGGER.log(failure instanceof RepositoryException ? Level.WARNING : Level.SEVERE, logMessage, failure);
+        messages.accept(storageMessage);
     }
 
     private void show(String next) {
