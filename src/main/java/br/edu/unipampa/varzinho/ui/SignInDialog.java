@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 public final class SignInDialog extends JDialog {
     private transient SignedInOperator signedIn;
 
-    private SignInDialog(OperatorAccess access) throws RepositoryException {
+    SignInDialog(OperatorAccess access) throws RepositoryException {
         // Owned by no window at all: a null Frame owner would hang it on Swing's hidden
         // shared frame, and the window manager would then leave it off the taskbar, where
         // it is lost the moment another window takes focus.
@@ -43,6 +43,7 @@ public final class SignInDialog extends JDialog {
         feedback.setBorder(BorderFactory.createEmptyBorder(0, 10, 8, 10));
         add(feedback, BorderLayout.SOUTH);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        EscapeKey.closes(this);
         pack();
         setResizable(false);
         setLocationRelativeTo(null);

@@ -12,16 +12,21 @@ final class ClipDialog {
     private ClipDialog() { }
 
     static void open(Component owner, HighlightView item, DateTimeFormatter format) {
+        build(owner, item, format).setVisible(true);
+    }
+
+    static JDialog build(Component owner, HighlightView item, DateTimeFormatter format) {
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(owner), "Melhor momento",
                 Dialog.ModalityType.DOCUMENT_MODAL);
         dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        dialog.setContentPane(content(item, format));
+        dialog.setContentPane(content(item, format, dialog.getRootPane()));
+        EscapeKey.closes(dialog);
         dialog.pack();
         dialog.setLocationRelativeTo(dialog.getOwner());
-        dialog.setVisible(true);
+        return dialog;
     }
 
-    static JPanel content(HighlightView item, DateTimeFormatter format) {
+    private static JPanel content(HighlightView item, DateTimeFormatter format, JRootPane root) {
         JPanel body = new JPanel(new MigLayout("insets 0, fill, gap 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
         JPanel pitch = PitchPanel.clipCover();
         JButton play = new JButton("Reproduzir vídeo",
@@ -31,6 +36,7 @@ final class ClipDialog {
         play.setIconTextGap(10);
         play.setToolTipText("Abrir no reprodutor do computador");
         pitch.add(play);
+        root.setDefaultButton(play);
         body.add(pitch, "w 200:580, h 120:260");
         JPanel info = new JPanel(new MigLayout("insets 18, fillx", "[grow][]"));
         String name = item.getTitle().isEmpty() ? "Melhor momento" : item.getTitle();

@@ -14,7 +14,7 @@ import java.util.Optional;
 final class PasswordRecoveryDialog extends JDialog {
     private String resetUsername;
 
-    private PasswordRecoveryDialog(Component parent, OperatorAccess access) {
+    PasswordRecoveryDialog(Component parent, OperatorAccess access) {
         super(SwingUtilities.getWindowAncestor(parent), "Recuperar senha", ModalityType.APPLICATION_MODAL);
         JLabel feedback = new JLabel(" ");
         feedback.getAccessibleContext().setAccessibleName("Mensagem de recuperação");
@@ -31,6 +31,7 @@ final class PasswordRecoveryDialog extends JDialog {
         add(feedback, BorderLayout.SOUTH);
         pressEnterOn(recovery);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        EscapeKey.closes(this);
         pack();
         setResizable(false);
         setLocationRelativeTo(parent);

@@ -88,9 +88,7 @@ final class CourtPanel extends JPanel {
             dialog.add(form);
             dialog.add(footer, BorderLayout.SOUTH);
             dialog.getRootPane().setDefaultButton(form.installButton());
-            dialog.getRootPane().registerKeyboardAction(event -> dialog.dispose(),
-                    javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
-                    javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW);
+            EscapeKey.closes(dialog);
             dialog.pack();
             dialog.setLocationRelativeTo(cameraList);
             dialog.setVisible(true);
