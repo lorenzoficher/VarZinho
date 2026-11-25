@@ -46,6 +46,7 @@ final class OperatorsPanel extends JPanel {
         add(new JLabel("Confirmar senha")); add(confirmationField);
         add(register, "skip, growx 0, left");
         register.addActionListener(event -> register());
+        EnterKey.submits(register, nameField, usernameField, passwordField, confirmationField);
     }
 
     JTextField nameField() { return nameField; }

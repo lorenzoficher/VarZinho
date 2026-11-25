@@ -256,6 +256,7 @@ database and the operator accounts is in `CONTEXT.md`.
 | Operators and sign-in | #146, #149, #151, #153, #154, #155, #195 | People leave the gym; an operator is an account with a hashed password, signs in before the window opens, registers others, and recovers a forgotten password through a simulated link |
 | Interface | #158, #159, #161, #162, #163, #188, #191, #193, #197 | Own light and dark theme; a sidebar by subject; court cards with camera states; F2 capture; archive search by court and day; the arena dashboard and spectator view; removing an empty court |
 | Responsiveness | #205 | Every repository call from the window — gym changes, archive reads, rename and delete, sign-in and registration — runs on a worker through `RepositoryTask`; its button stays disabled and the message bar shows progress until it ends. A gym change borrows the model through `CaptureActivity`, as a capture does |
+| Keyboard and focus | #206 | Every README flow runs from the keyboard alone, with a focus ring of at least 3:1 in both themes. Esc closes every dialog through `EscapeKey`; Enter submits each form from its own fields through `EnterKey`, so one page's Enter never fires another's form; ↑ and ↓ walk the sidebar; Tab leaves the tables through `TabKey`; a recovery step and the rename prompt put the focus on the control to type into |
 | Capture | #113, #194 | A phone capture completes its file before it is archived; the live view plays from a phone app that serves one client |
 | Tests | #167 | JUnit 4 imports are refused in test sources |
 | Documentation | #156 | The documents state that a database and operator sign-in are in scope |
@@ -273,7 +274,6 @@ Where each one lands in the rubric is in
 | #164 | The documentation and screenshots show the new interface |
 | #200 | `mvn javadoc:javadoc` generates navigable HTML |
 | #201–#204 | JavaDoc with its contract on the domain, use cases and ports, adapters, and the window |
-| #206 | Every screen can be used from the keyboard with visible focus |
 | #207 | No screen is cut off or overlapping at any supported window size |
 | #208 | Buttons, fields and headings look the same on every screen |
 | #209 | The README's first-assignment checklist names only code that exists |

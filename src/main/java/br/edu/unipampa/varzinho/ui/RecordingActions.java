@@ -3,7 +3,10 @@ package br.edu.unipampa.varzinho.ui;
 import br.edu.unipampa.varzinho.application.HighlightView;
 import br.edu.unipampa.varzinho.application.port.RecordingEditor;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
+import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -19,15 +22,18 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 /** Opens, renames and deletes the selected archive recording. */
 final class RecordingActions {
     private static final Logger LOGGER = Logger.getLogger(RecordingActions.class.getName());
     private static final String NO_PLAYER = "Nenhum reprodutor de vídeo disponível para abrir o clipe.";
+    private static final String SAVE_NAME = "Salvar nome";
     private final ArchiveTable recordings;
     private final JTable table;
     private final DateTimeFormatter timeFormat;
@@ -79,11 +85,41 @@ final class RecordingActions {
 
     private Optional<String> askName(HighlightView item) {
         JTextField name = new JTextField(item.getTitle(), 26);
+        JDialog prompt = renameDialog(table, name);
+        prompt.setVisible(true);
+        prompt.dispose();
+        return chosenName(name);
+    }
+
+    /** @return the name typed in the rename prompt, or empty unless the prompt was saved */
+    static Optional<String> chosenName(JTextField name) {
+        JOptionPane pane = (JOptionPane) SwingUtilities.getAncestorOfClass(JOptionPane.class, name);
+        return pane != null && SAVE_NAME.equals(pane.getValue()) ? Optional.of(name.getText()) : Optional.empty();
+    }
+
+    /**
+     * Builds the prompt that asks for a recording's new name. It opens with the name field
+     * focused and its text selected, so typing replaces the name and Enter saves it; the
+     * option pane alone would focus the save button and leave the typing nowhere.
+     */
+    static JDialog renameDialog(Component parent, JTextField name) {
         name.getAccessibleContext().setAccessibleName("Nome da gravação");
-        Object[] options = {"Salvar nome", "Cancelar"};
-        int answer = JOptionPane.showOptionDialog(table, new Object[]{"Nome da gravação", name}, "Renomear gravação",
-                JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
-        return answer == 0 ? Optional.of(name.getText()) : Optional.empty();
+        Object[] options = {SAVE_NAME, "Cancelar"};
+        JOptionPane pane = new JOptionPane(new Object[]{"Nome da gravação", name}, JOptionPane.PLAIN_MESSAGE,
+                JOptionPane.DEFAULT_OPTION, null, options, options[0]);
+        JDialog dialog = pane.createDialog(parent, "Renomear gravação");
+        // Registered after the pane's own listener, which focuses the save button once the
+        // dialog first gains focus; this one runs next and hands the focus to the field.
+        dialog.addWindowFocusListener(new WindowAdapter() {
+            @Override
+            public void windowGainedFocus(WindowEvent event) {
+                dialog.removeWindowFocusListener(this);
+                name.requestFocusInWindow();
+                // The caret settles its own position when focus arrives, so select after it.
+                SwingUtilities.invokeLater(name::selectAll);
+            }
+        });
+        return dialog;
     }
 
     /** Renames the selected recording to the name {@code askName} returns; empty means the operator gave up. */

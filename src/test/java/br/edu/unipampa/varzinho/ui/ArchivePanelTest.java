@@ -30,12 +30,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.swing.JButton;
+import java.util.concurrent.atomic.AtomicReference;
+import java.awt.GraphicsEnvironment;
+import javax.swing.SwingUtilities;
+import javax.swing.JTextField;
+import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 import java.util.function.Supplier;
 
 import static br.edu.unipampa.varzinho.ui.SwingWork.awaitRepositoryWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 class ArchivePanelTest {
     private static final ZoneId BRASILIA = ZoneId.of("America/Sao_Paulo");
@@ -196,6 +204,56 @@ class ArchivePanelTest {
         assertEquals("Todas as quadras", panel.filter().getItemAt(0));
         assertEquals(gym.getCourts().size() + 1, panel.filter().getItemCount());
         assertEquals("Quadra " + gym.getCourts().get(0).getNumber(), panel.filter().getItemAt(1));
+    }
+
+    @Test
+    void theRenamePromptOpensWithTheNameSelectedForTyping() throws Exception {
+        assumeFalse(GraphicsEnvironment.isHeadless(), "focus needs a window on screen");
+        JTextField name = new JTextField("Lance antigo");
+        AtomicReference<JDialog> prompt = new AtomicReference<>();
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                prompt.set(RecordingActions.renameDialog(null, name));
+                prompt.get().setModal(false);
+                prompt.get().setVisible(true);
+            });
+            long deadline = System.currentTimeMillis() + 3000;
+            while ((prompt.get().getMostRecentFocusOwner() != name || name.getSelectedText() == null)
+                    && System.currentTimeMillis() < deadline) {
+                Thread.sleep(50);
+            }
+
+            assertSame(name, prompt.get().getMostRecentFocusOwner());
+            assertEquals("Lance antigo", name.getSelectedText());
+            assertEquals("Salvar nome", prompt.get().getRootPane().getDefaultButton().getText());
+        } finally {
+            SwingUtilities.invokeAndWait(() -> { if (prompt.get() != null) prompt.get().dispose(); });
+        }
+    }
+
+    @Test
+    void theRenamePromptGivesBackTheTypedNameOnlyWhenSaved() throws Exception {
+        assumeFalse(GraphicsEnvironment.isHeadless(), "the prompt is a dialog");
+        JTextField name = new JTextField("Lance antigo");
+        JDialog prompt = RecordingActions.renameDialog(null, name);
+        try {
+            JOptionPane pane = (JOptionPane) SwingUtilities.getAncestorOfClass(JOptionPane.class, name);
+            name.setText("Golaço");
+
+            pane.setValue("Cancelar");
+            assertEquals(Optional.empty(), RecordingActions.chosenName(name));
+            pane.setValue("Salvar nome");
+            assertEquals(Optional.of("Golaço"), RecordingActions.chosenName(name));
+        } finally {
+            prompt.dispose();
+        }
+    }
+
+    @Test
+    void tabLeavesTheArchiveTableInsteadOfWalkingItsCells() {
+        CourtPanelTest.assertTabLeaves(new ArchivePanel(courts(),
+                new BrowseArchive(new InMemoryHighlightRepository()), BRASILIA, errors::add).table());
+        awaitRepositoryWork();
     }
 
     @Test

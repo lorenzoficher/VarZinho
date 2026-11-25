@@ -40,6 +40,7 @@ final class ArchiveTable extends JPanel {
         super(new BorderLayout());
         rows = new HighlightTableModel(format);
         this.table = new JTable(rows);
+        TabKey.leaves(table);
         sorter = new TableRowSorter<>(rows);
         sorter.setSortsOnUpdates(true);
         for (int column = 0; column < rows.getColumnCount(); column++) sorter.setSortable(column, false);

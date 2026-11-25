@@ -19,11 +19,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import java.awt.Component;
 import java.awt.event.KeyEvent;
 import java.awt.Container;
+import java.awt.GraphicsEnvironment;
+import java.awt.KeyboardFocusManager;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -35,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static br.edu.unipampa.varzinho.ui.SwingWork.awaitRepositoryWork;
 
 class CourtPanelTest {
@@ -124,6 +129,19 @@ class CourtPanelTest {
     }
 
     @Test
+    void tabLeavesTheCameraTableInsteadOfWalkingItsCells() {
+        assertTabLeaves(descendantOfType(panel.courtPage(), JTable.class));
+    }
+
+    static void assertTabLeaves(JTable table) {
+        assertTrue(table.getFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS)
+                .contains(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0)), "Tab stays inside the table");
+        assertTrue(table.getFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS)
+                .contains(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, KeyEvent.SHIFT_DOWN_MASK)),
+                "Shift+Tab stays inside the table");
+    }
+
+    @Test
     void changingACameraTellsWhoeverFollowsTheCameras() {
         List<String> changes = new ArrayList<>();
         panel.onCamerasChanged(() -> changes.add("changed"));
@@ -210,6 +228,19 @@ class CourtPanelTest {
     }
 
     @Test
+    void enterInTheAngleInstallsTheCamera() {
+        panel.selectCourt(2);
+        panel.idField().setText("fixed-3");
+        panel.modelField().setText("Fixed Lite");
+        panel.typeSelector().setSelectedItem(CameraKind.FIXED);
+
+        ((JSpinner.DefaultEditor) panel.angleSpinner().getEditor()).getTextField().postActionEvent();
+        awaitRepositoryWork();
+
+        assertEquals("fixed-3", gym.findCourt(2).orElseThrow().getCameras().get(1).getId());
+    }
+
+    @Test
     void installingAPtzCameraGivesTheCourtOneMoreCamera() {
         panel.idField().setText("ptz-2");
         panel.modelField().setText("PTZ Lite");
@@ -277,6 +308,17 @@ class CourtPanelTest {
         assertEquals(3, panel.selectedCourtNumber());
         assertTrue(panel.cameraLines().isEmpty());
         assertEquals(3, gym.getCourts().size());
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    void enterInTheCourtNumberAddsTheCourt() {
+        panel.courtNumberField().setText("3");
+
+        panel.courtNumberField().postActionEvent();
+        awaitRepositoryWork();
+
+        assertEquals(3, panel.selectedCourtNumber());
         assertTrue(errors.isEmpty());
     }
 
@@ -404,6 +446,34 @@ class CourtPanelTest {
         assertEquals(-10, ptz.getTilt());
         assertEquals(3, ptz.getZoom());
         assertEquals("ptz-1 · PTZ · HD (1280x720) · Ativa · panorâmica 90 inclinação -10 zoom 3", panel.cameraLines().get(1));
+    }
+
+    @Test
+    void enterInAnAimValueMovesTheSelectedPtz() {
+        PtzCamera ptz = (PtzCamera) gym.findCourt(1).orElseThrow().getCameras().get(1);
+        panel.selectCamera(1);
+        panel.panSpinner().setValue(90);
+
+        ((JSpinner.DefaultEditor) panel.panSpinner().getEditor()).getTextField().postActionEvent();
+        awaitRepositoryWork();
+
+        assertEquals(90, ptz.getPan());
+    }
+
+    @Test
+    void theCameraDialogsCloseWithEscape() {
+        assumeFalse(GraphicsEnvironment.isHeadless(), "a dialog needs a window system");
+        panel.selectCamera(1);
+        JDialog configure = panel.configureDialog(panel.selectedCamera().orElseThrow());
+        JDialog install = panel.installDialog();
+
+        assertEquals(null, configure.getRootPane().getDefaultButton(),
+                "two forms share this dialog, so Enter must stay with each form's own fields");
+        assertEquals("Cadastrar câmera", install.getRootPane().getDefaultButton().getText());
+        EscapeKeyTest.pressEscape(configure);
+        EscapeKeyTest.pressEscape(install);
+        assertFalse(configure.isDisplayable());
+        assertFalse(install.isDisplayable());
     }
 
     @Test
