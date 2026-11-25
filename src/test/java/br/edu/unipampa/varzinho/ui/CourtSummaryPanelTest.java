@@ -11,6 +11,8 @@ import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryGymRepository
 import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryHighlightRepository;
 import org.junit.jupiter.api.Test;
 
+import javax.swing.SwingUtilities;
+
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -18,8 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static br.edu.unipampa.varzinho.ui.SwingWork.awaitRepositoryWork;
+import static br.edu.unipampa.varzinho.ui.SwingWork.onSwing;
 
 class CourtSummaryPanelTest {
     private static final ZoneId BRASILIA = ZoneId.of("America/Sao_Paulo");
@@ -92,7 +96,52 @@ class CourtSummaryPanelTest {
 
     @Test
     void theTodayCardSaysWhenNothingHasBeenSavedYet() {
+        awaitRepositoryWork();
+
         assertEquals("0", summary.todayText());
+    }
+
+    @Test
+    void todaysCountIsReadOffSwingWhileTheWindowKeepsResponding() throws Exception {
+        GatedHighlightRepository slow = new GatedHighlightRepository();
+        slow.save(highlightAt(1, "2026-11-20T00:07:00Z"));   // 21:07 local
+        CourtSummaryPanel slowSummary = summaryOf(slow);
+        awaitRepositoryWork();
+        slow.gate.close();
+
+        try {
+            SwingUtilities.invokeLater(slowSummary::refresh);
+            slow.gate.awaitBlocked();
+            assertFalse(slow.gate.ranOnSwing());
+            assertTrue(SwingWork.swingResponds());
+        } finally {
+            slow.gate.open();
+        }
+        awaitRepositoryWork();
+
+        assertEquals("1, último às 21:07", slowSummary.todayText());
+    }
+
+    @Test
+    void aCountForACourtNoLongerSelectedNeverOverwritesTheCard() throws Exception {
+        GatedHighlightRepository slow = new GatedHighlightRepository();
+        slow.save(highlightAt(1, "2026-11-20T00:07:00Z"));
+        CourtSummaryPanel slowSummary = summaryOf(slow);
+        awaitRepositoryWork();
+        slow.gateOnlyReadsOf(1);
+        slow.gate.close();
+
+        try {
+            SwingUtilities.invokeLater(slowSummary::refresh);
+            slow.gate.awaitBlocked();
+            onSwing(() -> courts.selectCourt(2));
+            SwingWork.awaitOnSwing(() -> "0".equals(slowSummary.todayText()));
+        } finally {
+            slow.gate.open();
+        }
+        awaitRepositoryWork();
+
+        assertEquals("0", slowSummary.todayText());
     }
 
     @Test
@@ -103,9 +152,15 @@ class CourtSummaryPanelTest {
         repository.save(highlightAt(2, "2026-11-20T00:20:00Z"));   // another court
 
         summary.refresh();
+        awaitRepositoryWork();
 
         assertEquals("2, último às 21:07", summary.todayText());
         assertTrue(errors.isEmpty(), errors.toString());
+    }
+
+    private CourtSummaryPanel summaryOf(GatedHighlightRepository archive) {
+        return new CourtSummaryPanel(courts, new ManageGym(gym, new InMemoryGymRepository()),
+                new BrowseArchive(archive, Clock.fixed(NOW, BRASILIA), BRASILIA), BRASILIA, errors::add);
     }
 
     private static Highlight highlightAt(int court, String instant) {
