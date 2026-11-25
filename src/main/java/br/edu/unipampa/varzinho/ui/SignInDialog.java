@@ -19,7 +19,7 @@ import java.util.function.Consumer;
  * window is what ends a session.
  */
 public final class SignInDialog extends JDialog {
-    private SignedInOperator signedIn;
+    private transient SignedInOperator signedIn;
 
     private SignInDialog(OperatorAccess access) throws RepositoryException {
         // Owned by no window at all: a null Frame owner would hang it on Swing's hidden
