@@ -10,10 +10,21 @@ package br.edu.unipampa.varzinho.exception;
  */
 public final class ClipAssemblyException extends DomainException {
 
+    /**
+     * Builds an exception describing why the clip could not be assembled.
+     *
+     * @param message what failed and which camera was involved
+     */
     public ClipAssemblyException(String message) {
         super(message);
     }
 
+    /**
+     * Builds an exception that wraps the tool or I/O failure that caused it.
+     *
+     * @param message what failed and which camera was involved
+     * @param cause the underlying failure; carried for diagnostics
+     */
     public ClipAssemblyException(String message, Throwable cause) {
         super(message, cause);
     }

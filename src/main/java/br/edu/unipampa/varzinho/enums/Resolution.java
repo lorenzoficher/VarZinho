@@ -8,8 +8,11 @@ package br.edu.unipampa.varzinho.enums;
  */
 public enum Resolution {
 
+    /** 720p — 1280×720 pixels. */
     HD("HD", 1280, 720),
+    /** 1080p — 1920×1080 pixels. */
     FULL_HD("Full HD", 1920, 1080),
+    /** 4K — 3840×2160 pixels. */
     ULTRA_HD("Ultra HD", 3840, 2160);
 
     private final String displayName;
@@ -22,10 +25,12 @@ public enum Resolution {
         this.height = height;
     }
 
+    /** {@return the horizontal pixel count for this resolution} */
     public int width() {
         return width;
     }
 
+    /** {@return the vertical pixel count for this resolution} */
     public int height() {
         return height;
     }

@@ -16,13 +16,36 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * Smoke-test that exercises the domain and CSV persistence without opening the window.
+ *
+ * <p>It builds a gym, records a full buffer, triggers a capture, persists the highlight,
+ * reloads it, and prints enough output to confirm everything worked. It also shows the
+ * expected {@link NoActiveCameraException} when a court without active cameras
+ * is asked to capture.
+ *
+ * <p>Run with {@code mvn exec:java -Dexec.mainClass=br.edu.unipampa.varzinho.ConsoleDemo}
+ * or directly from an IDE.
+ */
 public final class ConsoleDemo {
     private ConsoleDemo() { }
 
+    /**
+     * Runs the smoke-test writing to the default archive path.
+     *
+     * @param args command-line arguments; none are used
+     */
     public static void main(String[] args) {
         run(Path.of("data", "highlights.csv"));
     }
 
+    /**
+     * Runs the smoke-test, writing the highlight to the given archive file and
+     * reading it back.
+     *
+     * @param archive the CSV file to write the highlight to and then read back
+     * @throws IllegalArgumentException if {@code archive} is {@code null}
+     */
     public static void run(Path archive) {
         if (archive == null) throw new IllegalArgumentException("a console demo needs an archive path");
 

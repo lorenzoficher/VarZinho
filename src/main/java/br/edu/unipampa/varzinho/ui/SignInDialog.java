@@ -51,6 +51,7 @@ public final class SignInDialog extends JDialog {
     /**
      * Shows the gate and waits until it closes.
      *
+     * @param access the operator store used to sign in and to create the first operator
      * @return the operator who signed in, or empty when the gate was closed without one
      * @throws RepositoryException if the operator store cannot tell whether any operator
      *         exists yet

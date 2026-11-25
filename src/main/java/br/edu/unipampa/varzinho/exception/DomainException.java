@@ -12,10 +12,21 @@ package br.edu.unipampa.varzinho.exception;
  */
 public abstract class DomainException extends RuntimeException {
 
+    /**
+     * Builds an exception with the given human-readable description.
+     *
+     * @param message what went wrong, in terms the operator can act on
+     */
     protected DomainException(String message) {
         super(message);
     }
 
+    /**
+     * Builds an exception that wraps the lower-level failure that caused it.
+     *
+     * @param message what went wrong, in terms the operator can act on
+     * @param cause the original failure; carried for diagnostics
+     */
     protected DomainException(String message, Throwable cause) {
         super(message, cause);
     }

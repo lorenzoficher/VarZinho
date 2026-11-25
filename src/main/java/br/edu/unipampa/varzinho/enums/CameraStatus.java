@@ -9,8 +9,11 @@ package br.edu.unipampa.varzinho.enums;
  */
 public enum CameraStatus {
 
+    /** Records and accepts frames. */
     ACTIVE,
+    /** Switched off; does not record. */
     INACTIVE,
+    /** Under repair; does not record and cannot be activated until cleared. */
     MAINTENANCE;
 
     /**
