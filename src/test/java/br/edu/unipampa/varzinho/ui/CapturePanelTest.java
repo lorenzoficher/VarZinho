@@ -235,6 +235,49 @@ class CapturePanelTest {
     }
 
     @Test
+    void archivingRunsOffSwingWhileTheWindowKeepsResponding() throws Exception {
+        GatedHighlightRepository slow = new GatedHighlightRepository();
+        CapturePanel slowPanel = panelArchivingTo(slow);
+        onSwing(() -> fillBuffers(gym));
+        slow.gate.close();
+
+        try {
+            press(slowPanel);
+            slow.gate.awaitBlocked();
+            assertFalse(slow.gate.ranOnSwing());
+            assertTrue(SwingWork.swingResponds());
+            onSwing(() -> {
+                assertEquals("Salvando: quadra 1…", slowPanel.confirmation());
+                assertFalse(slowPanel.saveButton().isEnabled());
+                assertTrue(saved.isEmpty());
+            });
+        } finally {
+            slow.gate.open();
+        }
+        awaitFinished(slowPanel);
+
+        assertEquals(1, saved.size());
+        assertEquals(1, slow.findByCourt(1).size());
+        onSwing(() -> assertTrue(slowPanel.confirmation().startsWith("Salvo: quadra 1"),
+                slowPanel.confirmation()));
+    }
+
+    @Test
+    void anArchiveThatCannotBeWrittenReportsItAndRestoresControls() throws Exception {
+        GatedHighlightRepository unplugged = new GatedHighlightRepository();
+        unplugged.failSavesFromNowOn();
+        CapturePanel unpluggedPanel = panelArchivingTo(unplugged);
+        onSwing(() -> fillBuffers(gym));
+
+        press(unpluggedPanel);
+        awaitFinished(unpluggedPanel);
+
+        assertEquals(List.of("Não foi possível salvar o lance no acervo."), errors);
+        assertTrue(saved.isEmpty());
+        onSwing(() -> assertEquals("", unpluggedPanel.confirmation()));
+    }
+
+    @Test
     void phoneClipIsArchivedOnlyAfterTheAssemblerReturnsAndCallbacksRunOnSwing() throws Exception {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
@@ -368,6 +411,13 @@ class CapturePanelTest {
 
     private CourtPanel courtsFor(Gym model) {
         return new CourtPanel(new ManageGym(model, new InMemoryGymRepository()), 30, errors::add);
+    }
+
+    private CapturePanel panelArchivingTo(GatedHighlightRepository archive) throws Exception {
+        AtomicReference<CapturePanel> result = new AtomicReference<>();
+        onSwing(() -> result.set(new CapturePanel(courtsFor(gym), new CaptureHighlight(gym, archive),
+                BRASILIA, errors::add, saved::add)));
+        return result.get();
     }
 
     private Phone phoneWritingWith(ClipAssembler writer) throws Exception {
