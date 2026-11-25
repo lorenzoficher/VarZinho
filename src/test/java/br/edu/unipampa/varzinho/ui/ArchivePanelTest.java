@@ -199,6 +199,13 @@ class ArchivePanelTest {
     }
 
     @Test
+    void tabLeavesTheArchiveTableInsteadOfWalkingItsCells() {
+        CourtPanelTest.assertTabLeaves(new ArchivePanel(courts(),
+                new BrowseArchive(new InMemoryHighlightRepository()), BRASILIA, errors::add).table());
+        awaitRepositoryWork();
+    }
+
+    @Test
     void rowShowsCaptureTimeInTheGivenZoneAndTheClipDetails() throws RepositoryException {
         InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
         repository.save(highlight("h-1", LATE, 1));

@@ -27,6 +27,7 @@ import java.awt.Component;
 import java.awt.event.KeyEvent;
 import java.awt.Container;
 import java.awt.GraphicsEnvironment;
+import java.awt.KeyboardFocusManager;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -125,6 +126,19 @@ class CourtPanelTest {
                 .get(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0));
 
         assertTrue(binding == null || "none".equals(binding), String.valueOf(binding));
+    }
+
+    @Test
+    void tabLeavesTheCameraTableInsteadOfWalkingItsCells() {
+        assertTabLeaves(descendantOfType(panel.courtPage(), JTable.class));
+    }
+
+    static void assertTabLeaves(JTable table) {
+        assertTrue(table.getFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS)
+                .contains(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0)), "Tab stays inside the table");
+        assertTrue(table.getFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS)
+                .contains(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, KeyEvent.SHIFT_DOWN_MASK)),
+                "Shift+Tab stays inside the table");
     }
 
     @Test

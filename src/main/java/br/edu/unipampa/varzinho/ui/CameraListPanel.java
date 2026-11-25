@@ -73,6 +73,7 @@ final class CameraListPanel extends JPanel {
         this.errorSink = errorSink;
         cameraTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         cameraTable.getTableHeader().setReorderingAllowed(false);
+        TabKey.leaves(cameraTable);
         // JTable claims F2 to edit a cell; these cells are not editable, and F2 saves a highlight.
         cameraTable.getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
                 .put(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0), "none");
