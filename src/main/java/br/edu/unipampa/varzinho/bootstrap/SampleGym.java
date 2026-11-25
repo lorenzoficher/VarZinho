@@ -18,6 +18,8 @@ public final class SampleGym {
     /**
      * Builds a gym with two courts: court 1 holds a fixed and a PTZ camera, court 2 a
      * single fixed camera. Every camera is already recording.
+     *
+     * @return a gym ready for the window, every camera recording
      */
     public static Gym build() {
         Gym gym = new Gym("VarZinho Arena", "100 Sports Avenue");
