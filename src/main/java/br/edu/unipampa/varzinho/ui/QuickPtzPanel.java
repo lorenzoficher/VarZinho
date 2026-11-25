@@ -58,6 +58,7 @@ final class QuickPtzPanel extends JPanel {
         pad.add(step("↑", tilt, 5), "cell 1 0");
         pad.add(step("←", pan, -5), "cell 0 1");
         JButton center = new JButton("●");
+        VarZinhoTheme.styleButton(center, ButtonRole.SECONDARY);
         center.setToolTipText("Centralizar câmera");
         center.getAccessibleContext().setAccessibleName(center.getToolTipText());
         center.addActionListener(e -> { pan.setValue(0); tilt.setValue(0); move(center); });
@@ -72,6 +73,7 @@ final class QuickPtzPanel extends JPanel {
         zoomPad.add(step("+", zoom, 1));
         pad.add(zoomPad, "cell 3 1, growx");
         zoom.addChangeListener(e -> zoomValue.setText(zoom.getValue() + "×"));
+        VarZinhoTheme.styleButton(savePosition, ButtonRole.PRIMARY);
         savePosition.addActionListener(event -> save(savePosition));
         pad.add(savePosition, "cell 3 2");
         add(pad, "cell 0 2, span 2");
@@ -121,6 +123,7 @@ final class QuickPtzPanel extends JPanel {
 
     private JButton step(String text, JSpinner value, int amount) {
         JButton button = new JButton(text);
+        VarZinhoTheme.styleButton(button, ButtonRole.SECONDARY);
         button.setToolTipText(switch (text) {
             case "↑" -> "Inclinar para cima";
             case "↓" -> "Inclinar para baixo";

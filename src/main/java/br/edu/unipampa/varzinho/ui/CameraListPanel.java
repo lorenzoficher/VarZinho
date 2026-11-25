@@ -24,7 +24,6 @@ import java.awt.Component;
 import java.awt.event.KeyEvent;
 import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,11 +88,12 @@ final class CameraListPanel extends JPanel {
         heading.add(title, "cell 0 1");
         heading.add(summary, "cell 0 2");
         heading.add(addCamera, "cell 1 0, spany 3");
-        addCamera.setBackground(VarZinhoTheme.EMERALD);
-        addCamera.setForeground(Color.WHITE);
+        VarZinhoTheme.styleButton(addCamera, ButtonRole.PRIMARY);
+        VarZinhoTheme.styleButton(start, ButtonRole.SECONDARY);
+        VarZinhoTheme.styleButton(stop, ButtonRole.SECONDARY);
+        VarZinhoTheme.styleButton(maintenance, ButtonRole.SECONDARY);
+        VarZinhoTheme.styleButton(remove, ButtonRole.DESTRUCTIVE);
         add(heading, BorderLayout.NORTH);
-        addCamera.putClientProperty("FlatLaf.style", "arc: 14; margin: 8,14,8,14; "
-                + VarZinhoTheme.FILLED_FOCUS_RING);
 
         rows.setOpaque(false);
         JScrollPane scroll = ScrollablePage.around(rows);
@@ -211,7 +211,7 @@ final class CameraListPanel extends JPanel {
         id.getAccessibleContext().setAccessibleName("Selecionar câmera " + camera.getId());
         choices.add(id);
         id.addActionListener(event -> selectCamera(index));
-        id.setFont(id.getFont().deriveFont(java.awt.Font.BOLD));
+        VarZinhoTheme.styleStrong(id);
         JLabel details = new JLabel(camera.getModel() + "   ·   " + PortugueseText.cameraKind(camera.getKind())
                 + "   ·   " + camera.getResolution().label());
         details.setToolTipText(details.getText());
@@ -222,7 +222,7 @@ final class CameraListPanel extends JPanel {
         row.add(VarZinhoTheme.tile(icon.getIcon()), "cell 0 0, span 1 2, growx, h 46!");
         row.add(id, "cell 1 0");
         JLabel badge = new JLabel("● " + state);
-        badge.setFont(badge.getFont().deriveFont(java.awt.Font.BOLD, 12f));
+        VarZinhoTheme.styleStatus(badge);
         badge.putClientProperty("FlatLaf.style", "foreground: $VarZinho."
                 + (camera.isRecording() ? "emerald" : camera.isUnderMaintenance() ? "maintenance" : "stopped"));
         row.add(badge, "cell 1 0, gapleft 8");
@@ -253,10 +253,10 @@ final class CameraListPanel extends JPanel {
             else if (camera.isRecording()) stop.doClick(0);
             else start.doClick(0);
         });
-        record.putClientProperty("FlatLaf.style", camera.isRecording()
-                ? "foreground: $VarZinho.recording; borderColor: $VarZinho.recording" : "foreground: $VarZinho.emerald; borderColor: $VarZinho.emerald");
-        actions.add(record, "h 36!");
+        VarZinhoTheme.styleButton(record, ButtonRole.SECONDARY);
+        actions.add(record, VarZinhoTheme.CONTROL_SIZE);
         JButton more = new JButton("Ações");
+        VarZinhoTheme.styleButton(more, ButtonRole.SECONDARY);
         more.setToolTipText("Ações da câmera " + camera.getId());
         more.getAccessibleContext().setAccessibleName(more.getToolTipText());
         JPopupMenu menu = new JPopupMenu();
@@ -269,7 +269,7 @@ final class CameraListPanel extends JPanel {
         menu.add(menuItem("Remover câmera", more, index, () -> remove.doClick(0)));
         more.setComponentPopupMenu(menu);
         more.addActionListener(event -> menu.show(more, 0, more.getHeight()));
-        actions.add(more, "h 36!");
+        actions.add(more, VarZinhoTheme.CONTROL_SIZE);
         return actions;
     }
 
@@ -333,7 +333,7 @@ final class CameraListPanel extends JPanel {
             cell.setHorizontalAlignment(SwingConstants.CENTER);
             cell.setOpaque(true);
             cell.setBackground(badge.color());
-            cell.setForeground(Color.WHITE);
+            cell.setForeground(badge.textColor());
             return cell;
         }
     }

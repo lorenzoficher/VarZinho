@@ -53,6 +53,7 @@ final class CameraInstallPanel extends JPanel {
         this.errorSink = errorSink;
         this.onInstalled = onInstalled;
         VarZinhoTheme.styleCard(this);
+        VarZinhoTheme.styleButton(install, ButtonRole.PRIMARY);
         typeSelector.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value,
@@ -76,12 +77,12 @@ final class CameraInstallPanel extends JPanel {
         add(destination, "span");
         add(title, "span, gapbottom 14");
         add(new JLabel("ID da câmera")); add(new JLabel("Modelo"));
-        add(idField, "h 34!"); add(modelField, "h 34!");
+        add(idField, VarZinhoTheme.CONTROL_SIZE); add(modelField, VarZinhoTheme.CONTROL_SIZE);
         add(new JLabel("Tipo")); add(new JLabel("Resolução"));
-        add(typeSelector); add(resolutionSelector);
-        add(new JLabel("Ângulo de visão (graus)"), "span"); add(angleSpinner, "span, growx");
+        add(typeSelector, VarZinhoTheme.CONTROL_SIZE); add(resolutionSelector, VarZinhoTheme.CONTROL_SIZE);
+        add(new JLabel("Ângulo de visão (graus)"), "span"); add(angleSpinner, "span, growx, " + VarZinhoTheme.CONTROL_SIZE);
         add(feedback, "span, gapy 12");
-        add(install, "skip 1, h 38!");
+        add(install, "skip 1, " + VarZinhoTheme.CONTROL_SIZE);
         typeSelector.addActionListener(
                 event -> angleSpinner.setEnabled(typeSelector.getSelectedItem() == CameraKind.FIXED));
         install.addActionListener(event -> install());

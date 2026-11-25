@@ -14,7 +14,9 @@ final class SettingsPanel extends JPanel {
         VarZinhoTheme.styleTitle(title);
         add(title);
         add(new JLabel("Escolha o tema mais confortável para operar durante a partida."));
-        add(SidebarPanel.buildThemeButton(), "w 220!, h 44!");
+        javax.swing.JButton theme = SidebarPanel.buildThemeButton();
+        VarZinhoTheme.styleButton(theme, ButtonRole.SECONDARY);
+        add(theme, "growx 0, " + VarZinhoTheme.CONTROL_SIZE);
         JLabel identity = new JLabel("Identificação da quadra");
         VarZinhoTheme.styleTitle(identity);
         add(identity, "gaptop 18");
@@ -29,7 +31,7 @@ final class SettingsPanel extends JPanel {
         courts.onCourtChange(refresh);
         refresh.run();
         add(label);
-        add(name, "w 300!, h 36!");
+        add(name, "growx 0, w 360!, " + VarZinhoTheme.CONTROL_SIZE);
         javax.swing.JButton apply = new javax.swing.JButton("Salvar nome");
         apply.addActionListener(event -> {
             courts.renameSelected(name.getText());
@@ -37,13 +39,15 @@ final class SettingsPanel extends JPanel {
             messages.accept("Nome de exibição atualizado.");
         });
         EnterKey.submits(apply, name);
-        add(apply, "w 150!, h 36!");
+        VarZinhoTheme.styleButton(apply, ButtonRole.PRIMARY);
+        add(apply, "growx 0, " + VarZinhoTheme.CONTROL_SIZE);
         JLabel capture = new JLabel("Gravação com celular");
         VarZinhoTheme.styleTitle(capture);
         add(capture, "gaptop 18");
         javax.swing.JButton guide = new javax.swing.JButton("Como conectar a câmera");
         guide.addActionListener(event -> showConnectionGuide());
-        add(guide, "w 220!, h 40!");
+        VarZinhoTheme.styleButton(guide, ButtonRole.SECONDARY);
+        add(guide, "growx 0, " + VarZinhoTheme.CONTROL_SIZE);
     }
 
     private void showConnectionGuide() {

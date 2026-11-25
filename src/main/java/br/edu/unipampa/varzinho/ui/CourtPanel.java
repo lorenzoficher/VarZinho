@@ -206,6 +206,7 @@ final class CourtPanel extends JPanel {
         CameraInstallPanel form = new CameraInstallPanel(management, changes, this::selectedCourtNumber, bufferSeconds,
                 errorSink, () -> { cameraList.refresh(); dialog.dispose(); });
         JButton cancel = new JButton("Cancelar");
+        VarZinhoTheme.styleButton(cancel, ButtonRole.SECONDARY);
         cancel.addActionListener(event -> dialog.dispose());
         JPanel footer = new JPanel(new BorderLayout());
         footer.add(cancel, BorderLayout.EAST);

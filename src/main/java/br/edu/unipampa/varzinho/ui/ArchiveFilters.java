@@ -102,7 +102,7 @@ final class ArchiveFilters extends JPanel {
     private static JPanel filterGroup(Component... controls) {
         JPanel group = new JPanel(new MigLayout("insets 0, gap 6, nogrid"));
         group.setOpaque(false);
-        for (Component control : controls) group.add(control);
+        for (Component control : controls) group.add(control, VarZinhoTheme.CONTROL_SIZE);
         return group;
     }
 

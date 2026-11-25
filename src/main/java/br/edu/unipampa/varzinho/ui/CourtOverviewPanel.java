@@ -32,8 +32,7 @@ final class CourtOverviewPanel extends JPanel {
         add(title);
         if (browse != null) {
             JButton all = new JButton("Ver todas   ›");
-            all.putClientProperty("JButton.buttonType", "borderless");
-            all.putClientProperty("FlatLaf.style", "foreground: $VarZinho.emerald");
+            VarZinhoTheme.styleButton(all, ButtonRole.LINK);
             all.addActionListener(event -> browse.run());
             add(all);
         }
@@ -69,22 +68,22 @@ final class CourtOverviewPanel extends JPanel {
         JButton button = new JButton();
         button.setLayout(new MigLayout("insets 10 14, fill", "[44!]12[grow,fill]6[right]8[]", "[]2[]"));
         button.setPreferredSize(new Dimension(300, 80));
-        button.putClientProperty("FlatLaf.style", "arc: 24; borderWidth: 1; background: $VarZinho.cardBackground"
-                + (selected ? "; borderColor: $VarZinho.emerald; background: $VarZinho.selectedSurface" : "; borderColor: $VarZinho.divider"));
+        VarZinhoTheme.styleButton(button, ButtonRole.TILE);
+        VarZinhoTheme.selectTile(button, selected);
         button.add(VarZinhoTheme.tile(sport == null ? VarZinhoIcons.court(VarZinhoTheme.EMERALD)
                 : DashboardPanel.sportIcon(sport, VarZinhoTheme.EMERALD)), "cell 0 0, spany 2, h 44!, growx");
         JLabel name = new JLabel(title);
-        name.setFont(name.getFont().deriveFont(Font.BOLD));
+        VarZinhoTheme.styleStrong(name);
         button.add(name, "cell 1 0, aligny bottom");
         button.add(new JLabel(sport == null ? "Modalidade a definir" : sport), "cell 1 1, aligny top");
         JLabel state = new JLabel(selected ? "Selecionada" : "Disponível");
         state.putClientProperty("FlatLaf.style", "foreground: $VarZinho.emerald");
-        state.setFont(state.getFont().deriveFont(Font.BOLD, 12f));
+        VarZinhoTheme.styleStatus(state);
         button.add(state, "cell 2 0, aligny bottom");
         int total = court.getCameraCount();
         String counts = total == 0 ? "Sem câmeras" : court.getRecordingCameraCount() + " de " + total + " gravando";
         JLabel stat = new JLabel(counts);
-        stat.setFont(stat.getFont().deriveFont(12f));
+        VarZinhoTheme.styleCaption(stat);
         button.add(stat, "cell 2 1, aligny top");
         button.add(new JLabel("›"), "cell 3 0, spany 2");
         button.setToolTipText("Quadra " + number + " · " + state.getText());

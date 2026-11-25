@@ -51,6 +51,8 @@ final class CameraPositionPanel extends JPanel {
         this.errorSink = errorSink;
         this.onChanged = onChanged;
         aim.setIcon(VarZinhoIcons.aim());
+        VarZinhoTheme.styleButton(aim, ButtonRole.PRIMARY);
+        VarZinhoTheme.styleButton(moveToCourt, ButtonRole.PRIMARY);
         for (CourtView court : management.courts()) moveTargetSelector.addItem(court.getNumber());
         AdaptivePair controls = new AdaptivePair(920, "[0:pref,grow,fill][0:pref,grow,fill]");
         controls.add(buildMoveRow(), "growy");
@@ -105,7 +107,7 @@ final class CameraPositionPanel extends JPanel {
         JLabel title = new JLabel("Mover câmera");
         VarZinhoTheme.styleTitle(title);
         row.add(title, "span 3, wrap");
-        row.add(new JLabel("Quadra de destino")); row.add(moveTargetSelector); row.add(moveToCourt, "h 38!");
+        row.add(new JLabel("Quadra de destino")); row.add(moveTargetSelector, VarZinhoTheme.CONTROL_SIZE); row.add(moveToCourt, VarZinhoTheme.CONTROL_SIZE);
         moveToCourt.addActionListener(event -> {
             int from = selectedCourt.getAsInt();
             Integer to = (Integer) moveTargetSelector.getSelectedItem();
@@ -120,9 +122,9 @@ final class CameraPositionPanel extends JPanel {
         JLabel title = new JLabel("Controle PTZ");
         VarZinhoTheme.styleTitle(title);
         row.add(title, "span 7, wrap");
-        row.add(new JLabel("Panorâmica")); row.add(panSpinner);
-        row.add(new JLabel("Inclinação")); row.add(tiltSpinner);
-        row.add(new JLabel("Zoom")); row.add(zoomSpinner); row.add(aim, "h 38!");
+        row.add(new JLabel("Panorâmica")); row.add(panSpinner, VarZinhoTheme.CONTROL_SIZE);
+        row.add(new JLabel("Inclinação")); row.add(tiltSpinner, VarZinhoTheme.CONTROL_SIZE);
+        row.add(new JLabel("Zoom")); row.add(zoomSpinner, VarZinhoTheme.CONTROL_SIZE); row.add(aim, VarZinhoTheme.CONTROL_SIZE);
         EnterKey.submits(aim, panSpinner, tiltSpinner, zoomSpinner);
         aim.addActionListener(event -> {
             int court = selectedCourt.getAsInt();

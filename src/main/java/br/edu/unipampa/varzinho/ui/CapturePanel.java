@@ -64,7 +64,7 @@ final class CapturePanel extends JPanel {
         this.errorSink = errorSink;
         this.onSaved = onSaved;
         setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 0, 4, 0));
-        VarZinhoTheme.styleProminentAction(save);
+        VarZinhoTheme.styleButton(save, ButtonRole.PROMINENT);
         save.setPreferredSize(new java.awt.Dimension(0, 58));
         save.addActionListener(event -> saveHighlight());
         bindShortcut(this);
@@ -91,7 +91,7 @@ final class CapturePanel extends JPanel {
 
     JButton additionalSaveButton() {
         JButton action = new JButton();
-        VarZinhoTheme.styleProminentAction(action);
+        VarZinhoTheme.styleButton(action, ButtonRole.PROMINENT);
         action.setIcon(VarZinhoIcons.record());
         action.addActionListener(event -> saveHighlight());
         action.setText("Salvar Melhor Momento");

@@ -60,6 +60,7 @@ final class ArchiveTable extends JPanel {
             boolean available = rows.hasVideo(table.convertRowIndexToModel(row));
             JButton play = new JButton(available ? "Assistir" : "Sem MP4");
             if (available) play.setIcon(VarZinhoIcons.arena("play-video", 18, VarZinhoTheme.ON_ACCENT));
+            VarZinhoTheme.styleButton(play, ButtonRole.SECONDARY);
             play.setEnabled(available);
             play.setToolTipText(String.valueOf(value));
             return play;

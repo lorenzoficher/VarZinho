@@ -12,7 +12,6 @@ import javax.swing.JToggleButton;
 import javax.swing.UIManager;
 import javax.swing.JProgressBar;
 import javax.swing.KeyStroke;
-import java.awt.Font;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import java.util.function.Consumer;
@@ -53,14 +52,12 @@ final class SidebarPanel extends JPanel {
         JLabel arena = sidebarLabel("A R E N A");
         product.setToolTipText(gymName);
         arena.setToolTipText(gymName);
-        arena.setForeground(VarZinhoTheme.ACCENT);
-        arena.setFont(arena.getFont().deriveFont(Font.BOLD, 11f));
+        VarZinhoTheme.styleEyebrow(arena, "accent");
         identity.add(arena, "cell 1 1");
         add(identity, "gapy 0 22");
 
         JLabel menu = sidebarLabel("MENU PRINCIPAL");
-        menu.setForeground(VarZinhoTheme.SIDEBAR_MUTED);
-        menu.setFont(menu.getFont().deriveFont(Font.BOLD, 10f));
+        VarZinhoTheme.styleEyebrow(menu, "sidebarMuted");
         add(menu);
 
         ButtonGroup pages = new ButtonGroup();
@@ -72,13 +69,8 @@ final class SidebarPanel extends JPanel {
         pages.add(operators);
         pages.add(settings);
         dashboard.setSelected(true);
-        styleNavigation(dashboard);
-        styleNavigation(courts);
-        styleNavigation(cameras);
-        styleNavigation(highlights);
-        styleNavigation(archive);
-        styleNavigation(operators);
-        styleNavigation(settings);
+        List.of(dashboard, courts, cameras, highlights, archive, operators, settings)
+                .forEach(VarZinhoTheme::styleNavigation);
         dashboard.addActionListener(event -> onPageChange.accept(Page.DASHBOARD));
         courts.addActionListener(event -> onPageChange.accept(Page.COURTS));
         cameras.addActionListener(event -> onPageChange.accept(Page.CAMERAS));
@@ -96,11 +88,10 @@ final class SidebarPanel extends JPanel {
         add(settings, "h 38:46:46");
 
         JPanel statusCard = new JPanel(new MigLayout("insets 14, fillx, wrap 1", "[grow,fill]", "[]8[]8[]6[]"));
-        statusCard.putClientProperty("FlatLaf.style", "background: #16383E; arc: 14");
+        VarZinhoTheme.styleSidebarCard(statusCard);
         JLabel status = sidebarLabel("●  SISTEMA OPERACIONAL");
-        status.setForeground(VarZinhoTheme.ACCENT);
-        status.setFont(status.getFont().deriveFont(Font.BOLD, 10f));
-        cameraStatus.setFont(cameraStatus.getFont().deriveFont(Font.BOLD));
+        VarZinhoTheme.styleEyebrow(status, "accent");
+        VarZinhoTheme.styleStrong(cameraStatus);
         cameraProgress.setForeground(VarZinhoTheme.ACCENT);
         cameraProgress.setBackground(VarZinhoTheme.SIDEBAR_MUTED.darker());
         statusCard.add(status);
@@ -108,12 +99,11 @@ final class SidebarPanel extends JPanel {
         statusCard.add(cameraProgress, "h 5!");
         add(statusCard);
         JButton theme = buildThemeButton();
-        theme.putClientProperty("FlatLaf.style", "background: $VarZinho.sidebarBackground; "
-                + "foreground: $VarZinho.sidebarForeground; borderColor: #45606A; focusedBorderColor: $VarZinho.accent");
+        VarZinhoTheme.styleSidebarAction(theme);
         theme.setIcon(VarZinhoIcons.theme(VarZinhoTheme.SIDEBAR_MUTED));
         add(theme);
         JLabel operatorName = sidebarLabel(operator.getName());
-        operatorName.setFont(operatorName.getFont().deriveFont(Font.BOLD));
+        VarZinhoTheme.styleStrong(operatorName);
         add(operatorName);
         add(sidebarLabel("@" + operator.getUsername()));
     }
@@ -190,17 +180,6 @@ final class SidebarPanel extends JPanel {
         JLabel label = new JLabel(text);
         label.setForeground(UIManager.getColor("VarZinho.sidebarForeground"));
         return label;
-    }
-
-    private static void styleNavigation(JToggleButton button) {
-        button.setHorizontalAlignment(JToggleButton.LEFT);
-        button.setFont(button.getFont().deriveFont(Font.BOLD, 13f));
-        button.putClientProperty("FlatLaf.style", "foreground: $VarZinho.sidebarForeground; "
-                + "background: $VarZinho.sidebarBackground; selectedBackground: #104440; "
-                + "selectedForeground: $VarZinho.sidebarForeground; arc: 12; iconTextGap: 12; "
-                // A transparent border keeps the items flat yet leaves room for the focus ring.
-                + "borderWidth: 2; borderColor: #00000000; hoverBorderColor: #00000000; "
-                + "focusedBorderColor: $VarZinho.accent");
     }
 
     private static JToggleButton navigation(String text, String icon) {

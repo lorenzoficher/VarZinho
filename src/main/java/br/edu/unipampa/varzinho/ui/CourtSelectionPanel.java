@@ -49,10 +49,10 @@ final class CourtSelectionPanel extends JPanel {
         add(courtSelector, BorderLayout.CENTER);
         add(adder, BorderLayout.EAST);
         courtSelector.setPreferredSize(new java.awt.Dimension(240, 38));
-        addCourt.setPreferredSize(new java.awt.Dimension(150, 38));
+        VarZinhoTheme.styleButton(addCourt, ButtonRole.PRIMARY);
         addCourt.addActionListener(event -> addCourt());
         EnterKey.submits(addCourt, courtNumberField);
-        removeCourt.setPreferredSize(new java.awt.Dimension(150, 38));
+        VarZinhoTheme.styleButton(removeCourt, ButtonRole.DESTRUCTIVE);
         removeCourt.addActionListener(event -> removeSelectedCourt(this::confirmRemoval));
     }
 

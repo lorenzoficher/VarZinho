@@ -30,7 +30,7 @@ final class FirstOperatorPanel extends JPanel {
     private final JButton create = new JButton("Criar operador");
 
     FirstOperatorPanel(OperatorAccess access, Consumer<String> errorSink, Consumer<SignedInOperator> onSignedIn) {
-        super(new MigLayout("insets 28, fillx, wrap 1", "[360,grow,fill]", "[][]18[][]12[][]12[][]24[]"));
+        super(new MigLayout("insets 28, fillx, wrap 1", VarZinhoTheme.FORM_COLUMN, "[][]18[][]12[][]12[][]24[]"));
         if (access == null) throw new IllegalArgumentException("creating an operator needs operator access");
         if (errorSink == null) throw new IllegalArgumentException("creating an operator needs an error destination");
         if (onSignedIn == null) throw new IllegalArgumentException("creating an operator needs somewhere to go next");
@@ -43,11 +43,11 @@ final class FirstOperatorPanel extends JPanel {
         VarZinhoTheme.styleTitle(title);
         add(brand);
         add(title);
-        add(new JLabel("Nome")); add(nameField, "h 38!");
-        add(new JLabel("Usuário")); add(usernameField, "h 38!");
-        add(new JLabel("Senha")); add(passwordField, "h 38!");
-        VarZinhoTheme.styleProminentAction(create);
-        add(create, "h 42!");
+        add(new JLabel("Nome")); add(nameField, VarZinhoTheme.CONTROL_SIZE);
+        add(new JLabel("Usuário")); add(usernameField, VarZinhoTheme.CONTROL_SIZE);
+        add(new JLabel("Senha")); add(passwordField, VarZinhoTheme.CONTROL_SIZE);
+        VarZinhoTheme.styleButton(create, ButtonRole.PRIMARY);
+        add(create, VarZinhoTheme.CONTROL_SIZE);
         create.addActionListener(event -> create());
     }
 

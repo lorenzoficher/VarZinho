@@ -97,6 +97,7 @@ final class ArenaWorkspace extends JPanel {
         dashboard.selector().setPreferredSize(new java.awt.Dimension(162, 38));
         context.add(dashboard.selector());
         JButton notices = new JButton(VarZinhoIcons.arena("bell", 20, VarZinhoTheme.EMERALD));
+        VarZinhoTheme.styleButton(notices, ButtonRole.LINK);
         notices.setToolTipText("Avisos da arena");
         notices.getAccessibleContext().setAccessibleName("Avisos da arena");
         notices.addActionListener(e -> {

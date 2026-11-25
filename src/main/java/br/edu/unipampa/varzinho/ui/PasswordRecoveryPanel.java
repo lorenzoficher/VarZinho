@@ -93,11 +93,11 @@ final class PasswordRecoveryPanel extends JPanel {
         JPanel panel = stepPanel("Esqueceu a senha?",
                 "Informe seu usuário e um e-mail para receber o link de recuperação.");
         panel.add(new JLabel("Usuário"));
-        panel.add(usernameField, "h 38!");
+        panel.add(usernameField, VarZinhoTheme.CONTROL_SIZE);
         panel.add(new JLabel("E-mail"));
-        panel.add(emailField, "h 38!");
-        VarZinhoTheme.styleProminentAction(sendLink);
-        panel.add(sendLink, "h 42!, gaptop 12");
+        panel.add(emailField, VarZinhoTheme.CONTROL_SIZE);
+        VarZinhoTheme.styleButton(sendLink, ButtonRole.PRIMARY);
+        panel.add(sendLink, VarZinhoTheme.CONTROL_SIZE + ", gaptop 12");
         return panel;
     }
 
@@ -105,8 +105,8 @@ final class PasswordRecoveryPanel extends JPanel {
         JPanel panel = stepPanel("Verifique seu e-mail", " ");
         panel.add(sentNotice);
         panel.add(new JLabel("Nesta demonstração nenhum e-mail é enviado: prossiga para criar a nova senha."));
-        VarZinhoTheme.styleProminentAction(proceed);
-        panel.add(proceed, "h 42!, gaptop 12");
+        VarZinhoTheme.styleButton(proceed, ButtonRole.PRIMARY);
+        panel.add(proceed, VarZinhoTheme.CONTROL_SIZE + ", gaptop 12");
         return panel;
     }
 
@@ -114,16 +114,16 @@ final class PasswordRecoveryPanel extends JPanel {
         JPanel panel = stepPanel("Crie uma nova senha",
                 "Use ao menos 8 caracteres, com maiúscula, minúscula, número e símbolo.");
         panel.add(new JLabel("Nova senha"));
-        panel.add(passwordField, "h 38!");
+        panel.add(passwordField, VarZinhoTheme.CONTROL_SIZE);
         panel.add(new JLabel("Confirmar nova senha"));
-        panel.add(confirmationField, "h 38!");
-        VarZinhoTheme.styleProminentAction(save);
-        panel.add(save, "h 42!, gaptop 12");
+        panel.add(confirmationField, VarZinhoTheme.CONTROL_SIZE);
+        VarZinhoTheme.styleButton(save, ButtonRole.PRIMARY);
+        panel.add(save, VarZinhoTheme.CONTROL_SIZE + ", gaptop 12");
         return panel;
     }
 
     private static JPanel stepPanel(String title, String help) {
-        JPanel panel = new JPanel(new MigLayout("insets 28, fillx, wrap 1", "[360,grow,fill]"));
+        JPanel panel = new JPanel(new MigLayout("insets 28, fillx, wrap 1", VarZinhoTheme.FORM_COLUMN));
         JLabel heading = new JLabel(title);
         VarZinhoTheme.styleTitle(heading);
         panel.add(heading);

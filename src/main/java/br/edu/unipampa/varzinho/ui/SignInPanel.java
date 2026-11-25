@@ -48,7 +48,7 @@ final class SignInPanel extends JPanel {
 
     SignInPanel(OperatorAccess access, Consumer<String> errorSink, Consumer<SignedInOperator> onSignedIn,
                 PasswordRecovery recovery) {
-        super(new MigLayout("insets 28, fillx, wrap 1", "[360,grow,fill]", "[][]18[][]12[][]24[]8[]"));
+        super(new MigLayout("insets 28, fillx, wrap 1", VarZinhoTheme.FORM_COLUMN, "[][]18[][]12[][]24[]8[]"));
         if (access == null) throw new IllegalArgumentException("signing in needs operator access");
         if (errorSink == null) throw new IllegalArgumentException("signing in needs an error destination");
         if (onSignedIn == null) throw new IllegalArgumentException("signing in needs somewhere to go next");
@@ -66,13 +66,13 @@ final class SignInPanel extends JPanel {
         add(title);
         add(help);
         add(new JLabel("Usuário"));
-        add(usernameField, "h 38!");
+        add(usernameField, VarZinhoTheme.CONTROL_SIZE);
         add(new JLabel("Senha"));
-        add(passwordField, "h 38!");
-        VarZinhoTheme.styleProminentAction(signIn);
-        add(signIn, "h 42!");
+        add(passwordField, VarZinhoTheme.CONTROL_SIZE);
+        VarZinhoTheme.styleButton(signIn, ButtonRole.PRIMARY);
+        add(signIn, VarZinhoTheme.CONTROL_SIZE);
         signIn.addActionListener(event -> signIn());
-        forgotPassword.putClientProperty("JButton.buttonType", "borderless");
+        VarZinhoTheme.styleButton(forgotPassword, ButtonRole.LINK);
         add(forgotPassword, "growx 0, center");
         forgotPassword.addActionListener(event -> recoverPassword());
     }
