@@ -4,6 +4,7 @@ import br.edu.unipampa.varzinho.application.BrowseArchive;
 import br.edu.unipampa.varzinho.application.CaptureHighlight;
 import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.ManageGym;
+import br.edu.unipampa.varzinho.application.ManageRecordings;
 import br.edu.unipampa.varzinho.application.SignedInOperator;
 import net.miginfocom.swing.MigLayout;
 
@@ -166,8 +167,8 @@ final class ArenaWorkspace extends JPanel {
     }
 
     void selectCourt(int number) { courtPanel.selectCourt(number); }
-    void enableRecordingEditing(br.edu.unipampa.varzinho.application.port.RecordingEditor editor) {
-        archivePanel.enableEditing(editor);
+    void enableRecordingEditing(ManageRecordings manageRecordings) {
+        archivePanel.enableEditing(manageRecordings);
     }
     void refreshDevices() { courtPanel.devices().refresh(); }
 

@@ -6,6 +6,7 @@ import br.edu.unipampa.varzinho.application.ConnectStreamCamera;
 import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.GymSession;
+import br.edu.unipampa.varzinho.application.ManageRecordings;
 import br.edu.unipampa.varzinho.application.OperatorAccess;
 import br.edu.unipampa.varzinho.application.SignedInOperator;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
@@ -105,8 +106,8 @@ public final class Launcher {
                 return () -> attachPhone(window, session.gym(), simulation, phone, spectators);
             });
             window.showStartupWarnings(warnings);
-            window.enableRecordingEditing(new StoredRecordingEditor(
-                    repository, Path.of("clips")));
+            window.enableRecordingEditing(new ManageRecordings(new StoredRecordingEditor(
+                    repository, Path.of("clips"))));
             window.setVisible(true);
         });
     }

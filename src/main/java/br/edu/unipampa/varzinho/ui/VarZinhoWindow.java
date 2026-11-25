@@ -4,6 +4,7 @@ import br.edu.unipampa.varzinho.application.BrowseArchive;
 import br.edu.unipampa.varzinho.application.CaptureHighlight;
 import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.ManageGym;
+import br.edu.unipampa.varzinho.application.ManageRecordings;
 import br.edu.unipampa.varzinho.application.SignedInOperator;
 
 import javax.swing.JOptionPane;
@@ -91,12 +92,12 @@ public final class VarZinhoWindow extends JFrame {
     }
 
     /**
-     * Wires the recording editor so the archive page can rename and delete saved highlights.
+     * Wires the recording use case so the archive page can rename and delete saved highlights.
      *
-     * @param editor the use case that renames and deletes recordings
+     * @param manageRecordings the use case that renames and deletes recordings
      */
-    public void enableRecordingEditing(br.edu.unipampa.varzinho.application.port.RecordingEditor editor) {
-        workspace.enableRecordingEditing(editor);
+    public void enableRecordingEditing(ManageRecordings manageRecordings) {
+        workspace.enableRecordingEditing(manageRecordings);
     }
 
     /**

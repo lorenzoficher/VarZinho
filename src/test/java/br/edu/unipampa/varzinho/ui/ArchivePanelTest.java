@@ -4,6 +4,7 @@ import br.edu.unipampa.varzinho.bootstrap.SampleGym;
 import br.edu.unipampa.varzinho.application.BrowseArchive;
 import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.ManageGym;
+import br.edu.unipampa.varzinho.application.ManageRecordings;
 import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryGymRepository;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.highlight.Highlight;
@@ -67,19 +68,20 @@ class ArchivePanelTest {
         repository.save(new Highlight("second", LATE, 2, "camera-2",
                 new VideoClip(movie.toString(), 30, Resolution.HD, 2.5)));
         var editor = new br.edu.unipampa.varzinho.infrastructure.persistence.StoredRecordingEditor(repository, archiveDir);
+        var recordings = new ManageRecordings(editor);
         editor.rename("second", "Lance Fernando Costa");
         var reopened = new CsvHighlightRepository(file);
         var panel = new ArchivePanel(courts(), new BrowseArchive(reopened), BRASILIA, errors::add);
         awaitRepositoryWork();
-        panel.enableEditing(editor);
+        panel.enableEditing(recordings);
         panel.searchField().setText("Fernando");
         assertEquals(1, panel.table().getRowCount());
         panel.table().setRowSelectionInterval(0, 0);
-        panel.deleteSelection(editor, item -> false);
+        panel.deleteSelection(recordings, item -> false);
         awaitRepositoryWork();
         assertTrue(Files.exists(movie));
         assertTrue(reopened.findById("second").isPresent());
-        panel.deleteSelection(editor, item -> item.getTitle().equals("Lance Fernando Costa"));
+        panel.deleteSelection(recordings, item -> item.getTitle().equals("Lance Fernando Costa"));
         awaitRepositoryWork();
         assertTrue(Files.notExists(movie));
         assertTrue(reopened.findById("second").isEmpty());
@@ -512,16 +514,17 @@ class ArchivePanelTest {
         FailingRepository repository = new FailingRepository();
         repository.save(highlight("first", EARLY, 1));
         ArchivePanel panel = panelAt(repository);
-        panel.enableEditing(repository);
+        ManageRecordings recordings = new ManageRecordings(repository);
+        panel.enableEditing(recordings);
         JButton rename = panel.editActions().get(0);
         JButton delete = panel.editActions().get(1);
 
         panel.table().setRowSelectionInterval(0, 0);
-        assertBlockedOffSwing(repository, rename, () -> panel.renameSelection(repository, item -> Optional.of("Golaço")));
+        assertBlockedOffSwing(repository, rename, () -> panel.renameSelection(recordings, item -> Optional.of("Golaço")));
         assertEquals("Golaço", repository.findById("first").orElseThrow().getTitle());
 
         panel.table().setRowSelectionInterval(0, 0);
-        assertBlockedOffSwing(repository, delete, () -> panel.deleteSelection(repository, item -> true));
+        assertBlockedOffSwing(repository, delete, () -> panel.deleteSelection(recordings, item -> true));
         assertTrue(repository.findById("first").isEmpty());
         assertTrue(errors.isEmpty(), errors.toString());
     }
@@ -531,14 +534,15 @@ class ArchivePanelTest {
         FailingRepository repository = new FailingRepository();
         repository.save(highlight("first", EARLY, 1));
         ArchivePanel panel = panelAt(repository);
-        panel.enableEditing(repository);
+        ManageRecordings recordings = new ManageRecordings(repository);
+        panel.enableEditing(recordings);
         repository.failing = true;
 
         panel.table().setRowSelectionInterval(0, 0);
-        panel.renameSelection(repository, item -> Optional.of("Golaço"));
+        panel.renameSelection(recordings, item -> Optional.of("Golaço"));
         awaitRepositoryWork();
         panel.table().setRowSelectionInterval(0, 0);
-        panel.deleteSelection(repository, item -> true);
+        panel.deleteSelection(recordings, item -> true);
         awaitRepositoryWork();
 
         assertEquals(List.of("Não foi possível renomear a gravação. Verifique o acervo.",
