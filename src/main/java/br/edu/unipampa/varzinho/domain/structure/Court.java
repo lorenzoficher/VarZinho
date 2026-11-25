@@ -11,6 +11,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -19,7 +20,8 @@ import java.util.function.Supplier;
  * their recent footage into a highlight.
  *
  * <p>The court decides which camera a capture uses; it does not keep the highlights it
- * produces, and it knows nothing of the sport played on it.
+ * produces. The operator may give it a display name and a sport, both free labels: no
+ * rule reads them, so the court serves whatever the gym plays without classifying it.
  */
 public final class Court {
     /**
@@ -28,10 +30,15 @@ public final class Court {
      */
     public static final int DEFAULT_CAPTURE_SECONDS = 30;
 
+    /** The longest display name or sport a court accepts, so a label still fits a card. */
+    public static final int MAX_LABEL_LENGTH = 40;
+
     private final int number;
     private final Clock clock;
     private final Supplier<String> highlightIds;
     private final List<Camera> cameras = new ArrayList<>();
+    private String displayName;
+    private String sport;
 
     /**
      * Builds a court that stamps its highlights with the machine's clock and random ids.
@@ -143,6 +150,49 @@ public final class Court {
     public boolean hasActiveCamera() {
         return cameras.stream().anyMatch(Camera::isRecording);
     }
+
+    /**
+     * Names the court for the people who use it. A blank name clears it.
+     *
+     * @param displayName the new name; surrounding spaces are dropped
+     * @throws IllegalArgumentException if the name is null, spans lines or is longer than
+     *     {@value #MAX_LABEL_LENGTH} characters; the previous name stays
+     */
+    public void rename(String displayName) {
+        this.displayName = label(displayName, "display name");
+    }
+
+    /**
+     * Records the sport played on the court, as the operator calls it. A blank sport
+     * clears it.
+     *
+     * @param sport the new sport; surrounding spaces are dropped
+     * @throws IllegalArgumentException if the sport is null, spans lines or is longer than
+     *     {@value #MAX_LABEL_LENGTH} characters; the previous sport stays
+     */
+    public void assignSport(String sport) {
+        this.sport = label(sport, "sport");
+    }
+
+    // A blank label is the operator taking it away, so it becomes null rather than "".
+    private String label(String text, String what) {
+        if (text == null) throw new IllegalArgumentException("a court's " + what + " cannot be null");
+        String stripped = text.strip();
+        if (stripped.contains("\n") || stripped.contains("\r")) {
+            throw new IllegalArgumentException("a court's " + what + " must fit on one line");
+        }
+        if (stripped.length() > MAX_LABEL_LENGTH) {
+            throw new IllegalArgumentException(
+                    "a court's " + what + " cannot be longer than " + MAX_LABEL_LENGTH + " characters");
+        }
+        return stripped.isEmpty() ? null : stripped;
+    }
+
+    /** {@return the name the operator gave the court, or empty when it has none} */
+    public Optional<String> getDisplayName() { return Optional.ofNullable(displayName); }
+
+    /** {@return the sport the operator recorded for the court, or empty when it has none} */
+    public Optional<String> getSport() { return Optional.ofNullable(sport); }
 
     /** {@return the court's number in its gym, always positive} */
     public int getNumber() { return number; }
