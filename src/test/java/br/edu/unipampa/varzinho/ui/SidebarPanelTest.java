@@ -9,6 +9,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.swing.AbstractButton;
 import javax.swing.JButton;
+import javax.swing.KeyStroke;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,6 +30,35 @@ class SidebarPanelTest {
 
         assertEquals(SidebarPanel.Page.ARCHIVE, shown.get());
         assertTrue(sidebar.archiveButton().isSelected());
+    }
+
+    @Test
+    void arrowDownOpensTheNextPage() throws Exception {
+        AtomicReference<SidebarPanel.Page> shown = new AtomicReference<>();
+        SidebarPanel sidebar = new SidebarPanel("Arena", operator(), shown::set);
+
+        press(sidebar.dashboardButton(), KeyEvent.VK_DOWN);
+
+        assertEquals(SidebarPanel.Page.COURTS, shown.get());
+        assertTrue(sidebar.courtsButton().isSelected());
+    }
+
+    @Test
+    void arrowsWrapAroundBothEndsOfTheMenu() throws Exception {
+        AtomicReference<SidebarPanel.Page> shown = new AtomicReference<>();
+        SidebarPanel sidebar = new SidebarPanel("Arena", operator(), shown::set);
+
+        press(sidebar.dashboardButton(), KeyEvent.VK_UP);
+        assertEquals(SidebarPanel.Page.SETTINGS, shown.get());
+
+        press(sidebar.settingsButton(), KeyEvent.VK_DOWN);
+        assertEquals(SidebarPanel.Page.DASHBOARD, shown.get());
+    }
+
+    private static void press(AbstractButton item, int key) {
+        var action = item.getActionForKeyStroke(KeyStroke.getKeyStroke(key, 0));
+        assertTrue(action != null, item.getText() + " ignores " + KeyEvent.getKeyText(key));
+        action.actionPerformed(new ActionEvent(item, ActionEvent.ACTION_PERFORMED, null));
     }
 
     @ParameterizedTest(name = "dark theme: {0}")

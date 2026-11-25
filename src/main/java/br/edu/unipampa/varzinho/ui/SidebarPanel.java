@@ -11,8 +11,10 @@ import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.UIManager;
 import javax.swing.JProgressBar;
+import javax.swing.KeyStroke;
 import java.awt.Font;
 import java.awt.Dimension;
+import java.awt.event.KeyEvent;
 import java.util.function.Consumer;
 import java.util.List;
 
@@ -84,6 +86,7 @@ final class SidebarPanel extends JPanel {
         archive.addActionListener(event -> onPageChange.accept(Page.ARCHIVE));
         operators.addActionListener(event -> onPageChange.accept(Page.OPERATORS));
         settings.addActionListener(event -> onPageChange.accept(Page.SETTINGS));
+        connectArrows(List.of(dashboard, courts, cameras, highlights, archive, operators, settings));
         add(dashboard, "h 46!");
         add(courts, "h 46!");
         add(cameras, "h 46!");
@@ -161,6 +164,26 @@ final class SidebarPanel extends JPanel {
         button.setToolTipText("Alternar entre os temas claro e escuro");
         button.addActionListener(event -> VarZinhoTheme.toggle());
         return button;
+    }
+
+    /**
+     * Lets ↑ and ↓ walk the menu the way it reads, wrapping at both ends. Each step opens
+     * the page it lands on, as a click would, so the item with focus is always the page
+     * on screen. Tab still leaves the menu for the page in one press per item.
+     */
+    private static void connectArrows(List<JToggleButton> menu) {
+        for (int index = 0; index < menu.size(); index++) {
+            JToggleButton item = menu.get(index);
+            JToggleButton next = menu.get((index + 1) % menu.size());
+            JToggleButton previous = menu.get((index + menu.size() - 1) % menu.size());
+            item.registerKeyboardAction(event -> open(next), KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), WHEN_FOCUSED);
+            item.registerKeyboardAction(event -> open(previous), KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), WHEN_FOCUSED);
+        }
+    }
+
+    private static void open(JToggleButton item) {
+        item.doClick();
+        item.requestFocusInWindow();
     }
 
     private static JLabel sidebarLabel(String text) {
