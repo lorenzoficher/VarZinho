@@ -55,7 +55,7 @@ final class RecordingActions {
         this.recount = recount;
         VarZinhoTheme.styleButton(openClip, ButtonRole.PRIMARY);
         openClip.setToolTipText("Abrir o lance selecionado (Ctrl+Enter na tabela)");
-        openClip.setIcon(VarZinhoIcons.openClip());
+        openClip.setIcon(VarZinhoIcons.openClip(VarZinhoTheme.ON_ACCENT));
         openClip.addActionListener(event -> openSelectedClip());
         table.getSelectionModel().addListSelectionListener(event -> updateOpenClip());
         recordings.onPreview(this::previewSelectedClip);
