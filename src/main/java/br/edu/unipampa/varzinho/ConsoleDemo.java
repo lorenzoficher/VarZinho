@@ -30,10 +30,22 @@ import java.util.List;
 public final class ConsoleDemo {
     private ConsoleDemo() { }
 
+    /**
+     * Runs the smoke-test writing to the default archive path.
+     *
+     * @param args command-line arguments; none are used
+     */
     public static void main(String[] args) {
         run(Path.of("data", "highlights.csv"));
     }
 
+    /**
+     * Runs the smoke-test, writing the highlight to the given archive file and
+     * reading it back.
+     *
+     * @param archive the CSV file to write the highlight to and then read back
+     * @throws IllegalArgumentException if {@code archive} is {@code null}
+     */
     public static void run(Path archive) {
         if (archive == null) throw new IllegalArgumentException("a console demo needs an archive path");
 
