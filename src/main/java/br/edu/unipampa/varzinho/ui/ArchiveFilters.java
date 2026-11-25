@@ -106,6 +106,9 @@ final class ArchiveFilters extends JPanel {
     JTextField dateField() { return dateField; }
 
     JTextField searchField() { return search; }
+
+    /** The controls that ask the archive for another day or court. */
+    List<java.awt.Component> queryControls() { return List.of(filter, dayFilter, dateField); }
     /**
      * Offers every court the gym has now as a filter, keeping the current choice. Called
      * when a court is added after the window opened.

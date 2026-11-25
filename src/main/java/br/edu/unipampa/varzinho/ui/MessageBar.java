@@ -30,6 +30,39 @@ final class MessageBar extends JPanel {
         return text.getText();
     }
 
+    /** Makes this bar the one that work started anywhere in {@code root}, or in its dialogs, reports to. */
+    void serve(javax.swing.JRootPane root) {
+        root.putClientProperty(MessageBar.class, this);
+    }
+
+    /**
+     * Shows what the work started from {@code source} is doing, if a bar serves its window
+     * or the window that owns its dialog.
+     *
+     * @return withdraws the note, giving back the previous message unless something newer
+     *     has replaced it meanwhile
+     */
+    static Runnable busyFor(java.awt.Component source, String progress) {
+        java.awt.Window window = source instanceof java.awt.Window own
+                ? own : javax.swing.SwingUtilities.getWindowAncestor(source);
+        while (window != null) {
+            if (window instanceof javax.swing.RootPaneContainer container
+                    && container.getRootPane().getClientProperty(MessageBar.class) instanceof MessageBar bar) {
+                return bar.busy(progress);
+            }
+            window = window.getOwner();
+        }
+        return () -> { };
+    }
+
+    private Runnable busy(String progress) {
+        String previous = message();
+        show(progress);
+        return () -> {
+            if (progress.equals(message())) show(previous);
+        };
+    }
+
     void showStartupWarnings(List<String> warnings) {
         if (warnings.isEmpty()) return;
         String combined = String.join(" ", warnings);

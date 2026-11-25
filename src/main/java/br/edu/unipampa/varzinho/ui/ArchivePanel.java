@@ -17,7 +17,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -43,6 +45,10 @@ final class ArchivePanel extends JPanel {
     private final ArchiveFilters filters;
     private final ArchiveTable recordings;
     private final RecordingActions actions;
+    private int lookups;
+
+    /** One reading of the archive: the rows asked for, and the whole archive's size when it was counted too. */
+    private record Reading(ArchiveListing listing, OptionalInt total) { }
 
     ArchivePanel(Supplier<List<CourtView>> courts, BrowseArchive archive, ZoneId zone, Consumer<String> errorSink) {
         this(courts, archive, Clock.system(zone), zone, clip -> Desktop.getDesktop().open(clip.toFile()), errorSink);
@@ -88,6 +94,11 @@ final class ArchivePanel extends JPanel {
     void deleteSelection(RecordingEditor editor, Predicate<HighlightView> confirm) {
         actions.deleteSelection(editor, confirm);
     }
+    void renameSelection(RecordingEditor editor, Function<HighlightView, Optional<String>> askName) {
+        actions.renameSelection(editor, askName);
+    }
+    /** The rename and delete buttons, once editing is enabled. */
+    List<JButton> editActions() { return actions.editActions(); }
     void refreshCourts() { filters.refreshCourts(); }
     static boolean playable(String path) { return RecordingActions.playable(path); }
 
@@ -97,11 +108,20 @@ final class ArchivePanel extends JPanel {
     }
 
     /**
-     * Reads the archive again for the chosen court and day. Damaged lines are reported
-     * and the readable records shown; an unreadable date or any other failure is
-     * reported and the rows are kept.
+     * Reads the archive again for the chosen court and day, on a worker. Damaged lines
+     * are reported and the readable records shown; an unreadable date or any other
+     * failure is reported and the rows are kept. Only the latest reading is shown.
      */
     void refresh() {
+        read(false);
+    }
+
+    /** Reads the archive after a capture, counting the whole archive when a filter hides part of it. */
+    void captureSaved() {
+        read(!filters.includesAll());
+    }
+
+    private void read(boolean countAll) {
         Optional<LocalDate> day;
         try {
             day = filters.chosenDay();
@@ -109,14 +129,23 @@ final class ArchivePanel extends JPanel {
             errorSink.accept("Informe a data como dd/mm/aaaa.");
             return;
         }
-        ArchiveListing listing;
-        try {
-            listing = lookup(day);
-        } catch (RepositoryException failure) {
-            LOGGER.log(Level.WARNING, "Could not read the highlight archive", failure);
-            errorSink.accept("Não foi possível ler o acervo. Verifique o armazenamento.");
-            return;
-        }
+        Optional<Integer> court = filters.courtNumber();
+        int reading = ++lookups;
+        RepositoryTask.run(filters.queryControls(), "Lendo o acervo…",
+                () -> new Reading(lookup(day, court), countAll ? countAll() : OptionalInt.empty()),
+                result -> { if (reading == lookups) show(result); },
+                failure -> { if (reading == lookups) readFailed(failure); });
+    }
+
+    private void readFailed(Throwable failure) {
+        Level level = failure instanceof RepositoryException ? Level.WARNING : Level.SEVERE;
+        LOGGER.log(level, "Could not read the highlight archive", failure);
+        errorSink.accept("Não foi possível ler o acervo. Verifique o armazenamento.");
+    }
+
+    private void show(Reading reading) {
+        ArchiveListing listing = reading.listing();
+        reading.total().ifPresent(onCount::accept);
         recordings.show(listing.getHighlights());
         if (filters.includesAll()) onCount.accept(recordings.count());
         actions.updateOpenClip();
@@ -126,20 +155,18 @@ final class ArchivePanel extends JPanel {
         });
     }
 
-    private ArchiveListing lookup(Optional<LocalDate> day) throws RepositoryException {
-        Optional<Integer> court = filters.courtNumber();
+    private ArchiveListing lookup(Optional<LocalDate> day, Optional<Integer> court) throws RepositoryException {
         if (court.isEmpty()) return day.isPresent() ? archive.byDay(day.get()) : archive.all();
         return day.isPresent() ? archive.byDay(day.get(), court.get()) : archive.byCourt(court.get());
     }
 
-    void captureSaved() {
-        if (!filters.includesAll()) {
-            try {
-                onCount.accept(archive.all().getHighlights().size());
-            } catch (RepositoryException failure) {
-                LOGGER.log(Level.WARNING, "Could not update archive count", failure);
-            }
+    // A count that cannot be read only leaves the old one; the rows asked for still show.
+    private OptionalInt countAll() {
+        try {
+            return OptionalInt.of(archive.all().getHighlights().size());
+        } catch (RepositoryException failure) {
+            LOGGER.log(Level.WARNING, "Could not update archive count", failure);
+            return OptionalInt.empty();
         }
-        refresh();
     }
 }

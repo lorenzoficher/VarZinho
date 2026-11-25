@@ -36,19 +36,26 @@ final class CourtPanel extends JPanel {
     private final ManageGym management;
     private final java.util.Map<Integer, String> names = new java.util.HashMap<>();
     private final List<Runnable> identityListeners = new ArrayList<>();
+    private final GymChanges changes;
 
     CourtPanel(ManageGym management, int bufferSeconds, Consumer<String> errorSink) {
+        this(management, bufferSeconds, errorSink, new CaptureActivity());
+    }
+
+    /** @param activity the loan of the model this panel's changes share with captures */
+    CourtPanel(ManageGym management, int bufferSeconds, Consumer<String> errorSink, CaptureActivity activity) {
         super(new BorderLayout(12, 12));
         this.management = management;
-        courtSelection = new CourtSelectionPanel(management, errorSink);
-        cameraList = new CameraListPanel(management, courtSelection::selectedCourtNumber, errorSink);
+        changes = new GymChanges(activity, this::pauseChanges, this::resumeChanges);
+        courtSelection = new CourtSelectionPanel(management, changes, errorSink);
+        cameraList = new CameraListPanel(management, changes, courtSelection::selectedCourtNumber, errorSink);
         installedCameras = cameraList.summaryTable();
-        cameraInstallation = new CameraInstallPanel(management, courtSelection::selectedCourtNumber,
+        cameraInstallation = new CameraInstallPanel(management, changes, courtSelection::selectedCourtNumber,
                 bufferSeconds, errorSink, () -> {
                     cameraList.refresh();
                     refreshCourtOverview();
                 });
-        cameraPosition = new CameraPositionPanel(management, courtSelection::selectedCourtNumber,
+        cameraPosition = new CameraPositionPanel(management, changes, courtSelection::selectedCourtNumber,
                 cameraList::selectedCamera, errorSink, cameraList::refreshKeepingSelection);
         cameraList.onPosition(() -> cameraPosition.moveTargetSelector().requestFocusInWindow());
         courtOverview = new CourtOverviewPanel(this::selectCourt, this::sportOf, this::nameOf, null);
@@ -58,7 +65,7 @@ final class CourtPanel extends JPanel {
                     "Configurar câmera · " + camera.getId(), java.awt.Dialog.ModalityType.DOCUMENT_MODAL);
             dialog.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
             javax.swing.JLabel feedback = new javax.swing.JLabel(" ");
-            CameraPositionPanel controls = new CameraPositionPanel(management, this::selectedCourtNumber,
+            CameraPositionPanel controls = new CameraPositionPanel(management, changes, this::selectedCourtNumber,
                     cameraList::selectedCamera, message -> { feedback.setText(message); errorSink.accept(message); },
                     () -> { cameraList.refreshKeepingSelection(); dialog.dispose(); });
             dialog.add(controls);
@@ -71,7 +78,7 @@ final class CourtPanel extends JPanel {
             javax.swing.JDialog dialog = new javax.swing.JDialog(javax.swing.SwingUtilities.getWindowAncestor(cameraList),
                     "Adicionar câmera", java.awt.Dialog.ModalityType.DOCUMENT_MODAL);
             dialog.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-            CameraInstallPanel form = new CameraInstallPanel(management, this::selectedCourtNumber, bufferSeconds,
+            CameraInstallPanel form = new CameraInstallPanel(management, changes, this::selectedCourtNumber, bufferSeconds,
                     errorSink,
                     () -> { cameraList.refresh(); dialog.dispose(); });
             JButton cancel = new JButton("Cancelar");
@@ -183,6 +190,8 @@ final class CourtPanel extends JPanel {
     }
 
     CameraListPanel devices() { return cameraList; }
+
+    GymChanges gymChanges() { return changes; }
 
     int selectedCourtNumber() { return courtSelection.selectedCourtNumber(); }
     void selectCourt(int number) { courtSelection.selectCourt(number); }

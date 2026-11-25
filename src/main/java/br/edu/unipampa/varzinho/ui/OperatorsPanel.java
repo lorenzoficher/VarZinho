@@ -11,6 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,29 +57,38 @@ final class OperatorsPanel extends JPanel {
     private void register() {
         char[] password = passwordField.getPassword();
         char[] confirmation = confirmationField.getPassword();
-        try {
-            if (!Arrays.equals(password, confirmation)) {
-                messages.accept("A confirmação não confere com a senha.");
-                clearPasswords();
-                return;
-            }
-            OperatorView registered = signedIn.register(nameField.getText(), usernameField.getText(),
-                    new String(password));
-            nameField.setText("");
-            usernameField.setText("");
+        boolean confirmed = Arrays.equals(password, confirmation);
+        String chosen = new String(password);
+        Arrays.fill(password, '\0');
+        Arrays.fill(confirmation, '\0');
+        if (!confirmed) {
+            messages.accept("A confirmação não confere com a senha.");
             clearPasswords();
-            messages.accept("Operador @" + registered.getUsername() + " cadastrado.");
-        } catch (IllegalArgumentException refused) {
-            clearPasswords();
-            messages.accept(PortugueseText.message(refused.getMessage()));
-        } catch (RepositoryException unwritable) {
-            LOGGER.log(Level.WARNING, "Could not register an operator", unwritable);
-            clearPasswords();
-            messages.accept("Não foi possível salvar o operador. Verifique o armazenamento.");
-        } finally {
-            Arrays.fill(password, '\0');
-            Arrays.fill(confirmation, '\0');
+            return;
         }
+        String name = nameField.getText();
+        String username = usernameField.getText();
+        // Hashing the password and writing the account both wait, so they run on a worker.
+        RepositoryTask.run(List.of(register), "Cadastrando o operador…",
+                () -> signedIn.register(name, username, chosen), this::registered, this::refused);
+    }
+
+    private void registered(OperatorView registered) {
+        nameField.setText("");
+        usernameField.setText("");
+        clearPasswords();
+        messages.accept("Operador @" + registered.getUsername() + " cadastrado.");
+    }
+
+    private void refused(Throwable failure) {
+        clearPasswords();
+        if (failure instanceof IllegalArgumentException) {
+            messages.accept(PortugueseText.message(failure.getMessage()));
+            return;
+        }
+        LOGGER.log(failure instanceof RepositoryException ? Level.WARNING : Level.SEVERE,
+                "Could not register an operator", failure);
+        messages.accept("Não foi possível salvar o operador. Verifique o armazenamento.");
     }
 
     private void clearPasswords() {

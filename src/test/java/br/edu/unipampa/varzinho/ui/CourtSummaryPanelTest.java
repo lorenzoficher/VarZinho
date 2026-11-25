@@ -19,6 +19,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static br.edu.unipampa.varzinho.ui.SwingWork.awaitRepositoryWork;
 
 class CourtSummaryPanelTest {
     private static final ZoneId BRASILIA = ZoneId.of("America/Sao_Paulo");
@@ -44,14 +45,17 @@ class CourtSummaryPanelTest {
     void stoppingOrSendingACameraToMaintenanceUpdatesTheRecordingCardAtOnce() {
         courts.selectCamera(1);
         courts.stopButton().doClick();
+        awaitRepositoryWork();
         assertEquals("1 de 2", summary.recordingText());
 
         courts.selectCamera(0);
         courts.maintenanceButton().doClick();
+        awaitRepositoryWork();
         assertEquals("0 de 2", summary.recordingText());
 
         courts.selectCamera(1);
         courts.startButton().doClick();
+        awaitRepositoryWork();
         assertEquals("1 de 2", summary.recordingText());
     }
 
@@ -60,6 +64,7 @@ class CourtSummaryPanelTest {
         courts.idField().setText("fixed-9");
         courts.modelField().setText("Fixed Pro");
         courts.installButton().doClick();
+        awaitRepositoryWork();
 
         assertEquals(3, courts.cameraLines().size(), errors.toString());
         assertTrue(summary.recordingText().endsWith(" de 3"), summary.recordingText());
@@ -70,6 +75,7 @@ class CourtSummaryPanelTest {
         courts.selectCamera(0);
         courts.moveTargetSelector().setSelectedItem(2);
         courts.moveToCourtButton().doClick();
+        awaitRepositoryWork();
 
         assertEquals("1 de 1", summary.recordingText(), errors.toString());
     }

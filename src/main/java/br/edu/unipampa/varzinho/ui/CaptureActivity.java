@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The Swing thread lends the model to one capture worker at a time. Feeds skip their
- * ticks meanwhile; a phone drop waits until the worker has returned the model.
+ * The Swing thread lends the model to one worker at a time: a capture, or a gym change
+ * being stored. Feeds skip their ticks meanwhile; a phone drop waits until the worker
+ * has returned the model.
  * Every method is called on the Swing thread, never by the worker itself.
  */
 final class CaptureActivity {

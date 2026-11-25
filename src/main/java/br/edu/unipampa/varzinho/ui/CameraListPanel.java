@@ -38,6 +38,7 @@ final class CameraListPanel extends JPanel {
     private static final List<String> COLUMNS = List.of("Câmera", "Tipo", "Resolução", "Status");
     private static final int STATUS_COLUMN = 3;
     private final ManageGym management;
+    private final GymChanges changes;
     private final IntSupplier selectedCourt;
     private final Consumer<String> errorSink;
     private final CameraTableModel cameraRows = new CameraTableModel();
@@ -60,12 +61,14 @@ final class CameraListPanel extends JPanel {
     private Runnable configureAction;
     private Runnable changed = () -> { };
 
-    CameraListPanel(ManageGym management, IntSupplier selectedCourt, Consumer<String> errorSink) {
+    CameraListPanel(ManageGym management, GymChanges changes, IntSupplier selectedCourt, Consumer<String> errorSink) {
         super(new BorderLayout(0, 14));
         if (management == null) throw new IllegalArgumentException("a camera list needs the gym's management");
+        if (changes == null) throw new IllegalArgumentException("a camera list needs a way to change the gym");
         if (selectedCourt == null) throw new IllegalArgumentException("a camera list needs the selected court");
         if (errorSink == null) throw new IllegalArgumentException("a camera list needs somewhere to report errors");
         this.management = management;
+        this.changes = changes;
         this.selectedCourt = selectedCourt;
         this.errorSink = errorSink;
         cameraTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -97,10 +100,10 @@ final class CameraListPanel extends JPanel {
         scroll.setBorder(javax.swing.BorderFactory.createEmptyBorder());
         add(scroll, BorderLayout.CENTER);
 
-        start.addActionListener(event -> changeSelected(management::startRecording));
-        stop.addActionListener(event -> changeSelected(management::stopRecording));
-        maintenance.addActionListener(event -> changeSelected(management::sendToMaintenance));
-        remove.addActionListener(event -> changeSelected(management::removeCamera));
+        start.addActionListener(event -> changeSelected(start, management::startRecording));
+        stop.addActionListener(event -> changeSelected(stop, management::stopRecording));
+        maintenance.addActionListener(event -> changeSelected(maintenance, management::sendToMaintenance));
+        remove.addActionListener(event -> changeSelected(remove, management::removeCamera));
         refresh();
     }
 
@@ -244,7 +247,7 @@ final class CameraListPanel extends JPanel {
         record.getAccessibleContext().setAccessibleName(label + " · " + camera.getId());
         record.addActionListener(event -> {
             selectCamera(index);
-            if (camera.isUnderMaintenance()) changeSelected(management::releaseFromMaintenance);
+            if (camera.isUnderMaintenance()) changeSelected(record, management::releaseFromMaintenance);
             else if (camera.isRecording()) stop.doClick(0);
             else start.doClick(0);
         });
@@ -279,16 +282,16 @@ final class CameraListPanel extends JPanel {
         return item;
     }
 
-    private void changeSelected(CameraChange change) {
+    private void changeSelected(java.awt.Component trigger, CameraChange change) {
         Optional<CameraView> camera = selectedCamera();
         if (camera.isEmpty()) {
             errorSink.accept("Selecione uma câmera primeiro.");
             return;
         }
-        GymChangeReporter.attempt(
-                () -> change.apply(selectedCourt.getAsInt(), camera.get().getId()),
-                errorSink);
-        refreshKeepingSelection();
+        int courtNumber = selectedCourt.getAsInt();
+        String cameraId = camera.get().getId();
+        changes.apply(trigger, () -> change.apply(courtNumber, cameraId), errorSink,
+                result -> refreshKeepingSelection());
     }
 
     @FunctionalInterface

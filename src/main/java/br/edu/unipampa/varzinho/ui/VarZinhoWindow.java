@@ -54,6 +54,7 @@ public final class VarZinhoWindow extends JFrame {
         workspace = new ArenaWorkspace(gymName, operator, management, capture, archive,
                 bufferSeconds, captureActivity, messages);
         setContentPane(workspace);
+        messages.serve(getRootPane());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         java.awt.Rectangle bounds = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
         setPreferredSize(new java.awt.Dimension(Math.min(1460, bounds.width), Math.min(900, bounds.height)));

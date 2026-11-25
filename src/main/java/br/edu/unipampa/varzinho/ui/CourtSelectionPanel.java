@@ -20,6 +20,7 @@ import java.util.function.IntPredicate;
 /** Chooses the current court, opens a new one and removes an empty one. */
 final class CourtSelectionPanel extends JPanel {
     private final ManageGym management;
+    private final GymChanges changes;
     private final Consumer<String> errorSink;
     private final JComboBox<Integer> courtSelector = new JComboBox<>();
     private final JTextField courtNumberField = new JTextField(4);
@@ -28,12 +29,14 @@ final class CourtSelectionPanel extends JPanel {
     private final List<Runnable> courtAddedListeners = new ArrayList<>();
     private final List<IntConsumer> courtRemovedListeners = new ArrayList<>();
 
-    CourtSelectionPanel(ManageGym management, Consumer<String> errorSink) {
+    CourtSelectionPanel(ManageGym management, GymChanges changes, Consumer<String> errorSink) {
         super(new BorderLayout(12, 0));
         if (management == null) throw new IllegalArgumentException("court selection needs the gym's management");
         if (management.courts().isEmpty()) throw new IllegalArgumentException("court selection needs a gym with a court");
+        if (changes == null) throw new IllegalArgumentException("court selection needs a way to change the gym");
         if (errorSink == null) throw new IllegalArgumentException("court selection needs somewhere to report errors");
         this.management = management;
+        this.changes = changes;
         this.errorSink = errorSink;
         VarZinhoTheme.styleCard(this);
         for (CourtView court : management.courts()) courtSelector.addItem(court.getNumber());
@@ -55,13 +58,15 @@ final class CourtSelectionPanel extends JPanel {
     /**
      * Removes the selected court once the operator confirms. A refusal — the court still
      * holds cameras, or it is the only one — is reported and the court stays selected.
+     * The removal itself runs on a worker; the selector follows once it returns.
      */
     void removeSelectedCourt(IntPredicate confirm) {
         int number = selectedCourtNumber();
         if (!confirm.test(number)) return;
-        if (!GymChangeReporter.attempt(() -> management.removeCourt(number), errorSink)) return;
-        courtSelector.removeItem(number);
-        courtRemovedListeners.forEach(listener -> listener.accept(number));
+        changes.attempt(removeCourt, () -> management.removeCourt(number), errorSink, () -> {
+            courtSelector.removeItem(number);
+            courtRemovedListeners.forEach(listener -> listener.accept(number));
+        });
     }
 
     void onCourtRemoved(IntConsumer listener) { courtRemovedListeners.add(listener); }
@@ -107,12 +112,12 @@ final class CourtSelectionPanel extends JPanel {
             errorSink.accept("Digite o número da quadra usando algarismos.");
             return;
         }
-        if (!GymChangeReporter.attempt(() -> management.addCourt(number),
-                errorSink)) return;
-        insertInOrder(number);
-        courtSelector.setSelectedItem(number);
-        courtNumberField.setText("");
-        courtAddedListeners.forEach(Runnable::run);
+        changes.attempt(addCourt, () -> management.addCourt(number), errorSink, () -> {
+            insertInOrder(number);
+            courtSelector.setSelectedItem(number);
+            courtNumberField.setText("");
+            courtAddedListeners.forEach(Runnable::run);
+        });
     }
 
     private void insertInOrder(int number) {

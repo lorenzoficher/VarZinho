@@ -9,9 +9,12 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,6 +36,7 @@ final class RecordingActions {
     private final Runnable refresh;
     private final Runnable recount;
     private final JButton openClip = new JButton("Assistir ao vídeo");
+    private final List<JButton> editActions = new ArrayList<>();
 
     RecordingActions(ArchiveTable recordings, DateTimeFormatter format, ArchivePanel.ClipPlayer player,
                      Consumer<String> errorSink, Runnable refresh, Runnable recount) {
@@ -60,6 +64,8 @@ final class RecordingActions {
         actions.add(rename);
         actions.add(delete);
         recordings.addActions(actions);
+        editActions.add(rename);
+        editActions.add(delete);
         Runnable update = () -> {
             boolean oneSelected = table.getSelectedRowCount() == 1;
             rename.setEnabled(oneSelected);
@@ -67,28 +73,39 @@ final class RecordingActions {
         };
         table.getSelectionModel().addListSelectionListener(event -> update.run());
         update.run();
-        rename.addActionListener(event -> renameSelection(editor));
+        rename.addActionListener(event -> renameSelection(editor, this::askName));
         delete.addActionListener(event -> deleteSelection(editor, this::confirmDeletion));
     }
 
-    private void renameSelection(RecordingEditor editor) {
-        if (table.getSelectedRowCount() != 1) return;
-        HighlightView item = recordings.selectedRecording();
+    private Optional<String> askName(HighlightView item) {
         JTextField name = new JTextField(item.getTitle(), 26);
         name.getAccessibleContext().setAccessibleName("Nome da gravação");
         Object[] options = {"Salvar nome", "Cancelar"};
         int answer = JOptionPane.showOptionDialog(table, new Object[]{"Nome da gravação", name}, "Renomear gravação",
                 JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
-        if (answer != 0) return;
-        try {
-            editor.rename(item.getId(), name.getText());
-            refresh.run();
-        } catch (IllegalArgumentException invalid) {
-            errorSink.accept("Informe um nome em uma única linha.");
-        } catch (RepositoryException failure) {
-            LOGGER.log(Level.WARNING, "Could not rename recording", failure);
+        return answer == 0 ? Optional.of(name.getText()) : Optional.empty();
+    }
+
+    /** Renames the selected recording to the name {@code askName} returns; empty means the operator gave up. */
+    void renameSelection(RecordingEditor editor, Function<HighlightView, Optional<String>> askName) {
+        if (table.getSelectedRowCount() != 1) return;
+        HighlightView item = recordings.selectedRecording();
+        Optional<String> chosen = askName.apply(item);
+        if (chosen.isEmpty()) return;
+        String id = item.getId();
+        String title = chosen.get();
+        RepositoryTask.<Void>run(editActions, "Renomeando a gravação…", () -> {
+            editor.rename(id, title);
+            return null;
+        }, renamed -> refresh.run(), failure -> {
+            if (failure instanceof IllegalArgumentException) {
+                errorSink.accept("Informe um nome em uma única linha.");
+                return;
+            }
+            LOGGER.log(failure instanceof RepositoryException ? Level.WARNING : Level.SEVERE,
+                    "Could not rename recording", failure);
             errorSink.accept("Não foi possível renomear a gravação. Verifique o acervo.");
-        }
+        });
     }
 
     private boolean confirmDeletion(HighlightView item) {
@@ -101,18 +118,24 @@ final class RecordingActions {
                 JOptionPane.WARNING_MESSAGE, null, options, options[0]) == 1;
     }
 
+    List<JButton> editActions() { return List.copyOf(editActions); }
+
     void deleteSelection(RecordingEditor editor, Predicate<HighlightView> confirm) {
         if (table.getSelectedRowCount() != 1) return;
         HighlightView item = recordings.selectedRecording();
         if (!confirm.test(item)) return;
-        try {
-            editor.delete(item.getId());
-            recordings.forgetCategory(item.getId());
+        String id = item.getId();
+        RepositoryTask.<Void>run(editActions, "Excluindo a gravação…", () -> {
+            editor.delete(id);
+            return null;
+        }, deleted -> {
+            recordings.forgetCategory(id);
             recount.run();
-        } catch (RepositoryException failure) {
-            LOGGER.log(Level.WARNING, "Could not delete recording", failure);
+        }, failure -> {
+            LOGGER.log(failure instanceof RepositoryException ? Level.WARNING : Level.SEVERE,
+                    "Could not delete recording", failure);
             errorSink.accept("Não foi possível excluir a gravação. Verifique o acervo e o arquivo de vídeo.");
-        }
+        });
     }
 
     // Only a stream camera writes a real file; the other kinds name one that nothing

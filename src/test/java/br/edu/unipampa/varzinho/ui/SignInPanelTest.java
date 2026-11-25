@@ -13,7 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static br.edu.unipampa.varzinho.ui.SwingWork.awaitRepositoryWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SignInPanelTest {
@@ -35,6 +37,7 @@ class SignInPanelTest {
         panel.passwordField().setText(PASSWORD);
 
         panel.signInButton().doClick();
+        awaitRepositoryWork();
 
         assertEquals(1, signedIn.size());
         assertEquals("ana", signedIn.get(0).getOperator().getUsername());
@@ -46,9 +49,11 @@ class SignInPanelTest {
         panel.usernameField().setText("nobody");
         panel.passwordField().setText(PASSWORD);
         panel.signInButton().doClick();
+        awaitRepositoryWork();
         panel.usernameField().setText("ana");
         panel.passwordField().setText("Wr0ng!pass");
         panel.signInButton().doClick();
+        awaitRepositoryWork();
 
         assertTrue(signedIn.isEmpty());
         assertEquals(2, errors.size());
@@ -61,11 +66,13 @@ class SignInPanelTest {
         panel.passwordField().setText("Wr0ng!pass");
 
         panel.signInButton().doClick();
+        awaitRepositoryWork();
 
         assertEquals("ana", panel.usernameField().getText());
         assertEquals(0, panel.passwordField().getPassword().length);
         panel.passwordField().setText(PASSWORD);
         panel.signInButton().doClick();
+        awaitRepositoryWork();
         assertEquals(1, signedIn.size());
         assertEquals("ana", signedIn.get(0).getOperator().getUsername());
     }
@@ -78,6 +85,7 @@ class SignInPanelTest {
         unreadable.passwordField().setText(PASSWORD);
 
         unreadable.signInButton().doClick();
+        awaitRepositoryWork();
 
         assertTrue(signedIn.isEmpty());
         assertEquals(1, errors.size());
@@ -108,6 +116,35 @@ class SignInPanelTest {
 
         assertEquals("typed", recovering.usernameField().getText());
         assertTrue(errors.isEmpty(), errors.toString());
+    }
+
+    @Test
+    void signingInReadsTheAccountOffTheSwingThreadWithTheButtonsDisabled() throws Exception {
+        GatedOperatorStore gated = new GatedOperatorStore();
+        gated.save(new Operator("Ana Lima", "ana", PASSWORD));
+        SignInPanel waiting = new SignInPanel(new OperatorAccess(gated), errors::add, signedIn::add);
+        waiting.usernameField().setText("ana");
+        waiting.passwordField().setText(PASSWORD);
+        gated.gate.close();
+
+        waiting.signInButton().doClick();
+        try {
+            gated.gate.awaitBlocked();
+            assertFalse(gated.gate.ranOnSwing());
+            assertTrue(SwingWork.swingResponds());
+            SwingWork.onSwing(() -> {
+                assertFalse(waiting.signInButton().isEnabled());
+                assertFalse(waiting.forgotPasswordButton().isEnabled());
+                assertTrue(signedIn.isEmpty());
+            });
+        } finally {
+            gated.gate.open();
+        }
+        awaitRepositoryWork();
+
+        assertEquals(1, signedIn.size());
+        assertTrue(waiting.signInButton().isEnabled());
+        assertTrue(waiting.forgotPasswordButton().isEnabled());
     }
 
     private static final class UnreadableStore implements OperatorStore {

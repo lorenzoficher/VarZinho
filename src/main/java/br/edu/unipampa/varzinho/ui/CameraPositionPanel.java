@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 /** Moves the selected camera between courts or aims it when it supports aiming. */
 final class CameraPositionPanel extends JPanel {
     private final ManageGym management;
+    private final GymChanges changes;
     private final IntSupplier selectedCourt;
     private final Supplier<Optional<CameraView>> selectedCamera;
     private final Consumer<String> errorSink;
@@ -33,16 +34,18 @@ final class CameraPositionPanel extends JPanel {
     private final JSpinner zoomSpinner = new JSpinner(new SpinnerNumberModel(1, -99, 99, 1));
     private final JButton aim = new JButton("Mover");
 
-    CameraPositionPanel(ManageGym management, IntSupplier selectedCourt,
+    CameraPositionPanel(ManageGym management, GymChanges changes, IntSupplier selectedCourt,
                         Supplier<Optional<CameraView>> selectedCamera, Consumer<String> errorSink,
                         Runnable onChanged) {
         super(new java.awt.BorderLayout());
         if (management == null) throw new IllegalArgumentException("camera positioning needs gym management");
+        if (changes == null) throw new IllegalArgumentException("camera positioning needs a way to change the gym");
         if (selectedCourt == null) throw new IllegalArgumentException("camera positioning needs a selected court");
         if (selectedCamera == null) throw new IllegalArgumentException("camera positioning needs a selected camera");
         if (errorSink == null) throw new IllegalArgumentException("camera positioning needs an error destination");
         if (onChanged == null) throw new IllegalArgumentException("camera positioning needs a refresh action");
         this.management = management;
+        this.changes = changes;
         this.selectedCourt = selectedCourt;
         this.selectedCamera = selectedCamera;
         this.errorSink = errorSink;
@@ -103,8 +106,11 @@ final class CameraPositionPanel extends JPanel {
         VarZinhoTheme.styleTitle(title);
         row.add(title, "span 3, wrap");
         row.add(new JLabel("Quadra de destino")); row.add(moveTargetSelector); row.add(moveToCourt, "h 38!");
-        moveToCourt.addActionListener(event -> changeSelected(camera -> management.moveCamera(
-                selectedCourt.getAsInt(), camera.getId(), (Integer) moveTargetSelector.getSelectedItem())));
+        moveToCourt.addActionListener(event -> {
+            int from = selectedCourt.getAsInt();
+            Integer to = (Integer) moveTargetSelector.getSelectedItem();
+            changeSelected(moveToCourt, camera -> () -> management.moveCamera(from, camera, to));
+        });
         return row;
     }
 
@@ -117,24 +123,26 @@ final class CameraPositionPanel extends JPanel {
         row.add(new JLabel("Panorâmica")); row.add(panSpinner);
         row.add(new JLabel("Inclinação")); row.add(tiltSpinner);
         row.add(new JLabel("Zoom")); row.add(zoomSpinner); row.add(aim, "h 38!");
-        aim.addActionListener(event -> changeSelected(camera -> management.aimCamera(
-                selectedCourt.getAsInt(), camera.getId(), (Integer) panSpinner.getValue(),
-                (Integer) tiltSpinner.getValue(), (Integer) zoomSpinner.getValue())));
+        aim.addActionListener(event -> {
+            int court = selectedCourt.getAsInt();
+            int pan = (Integer) panSpinner.getValue();
+            int tilt = (Integer) tiltSpinner.getValue();
+            int zoom = (Integer) zoomSpinner.getValue();
+            changeSelected(aim, camera -> () -> management.aimCamera(court, camera, pan, tilt, zoom));
+        });
         return row;
     }
 
-    private void changeSelected(CameraChange change) {
+    /** Everything a change reads from the window is read here, before the worker takes it. */
+    private void changeSelected(JButton trigger, java.util.function.Function<String, GymChanges.Change> changeFor) {
         Optional<CameraView> camera = selectedCamera.get();
         if (camera.isEmpty()) {
             errorSink.accept("Selecione uma câmera primeiro.");
             return;
         }
-        if (GymChangeReporter.attempt(() -> change.apply(camera.get()), errorSink)) onChanged.run();
-        updateAimAvailability();
-    }
-
-    @FunctionalInterface
-    private interface CameraChange {
-        void apply(CameraView camera) throws br.edu.unipampa.varzinho.application.port.RepositoryException;
+        changes.apply(trigger, changeFor.apply(camera.get().getId()), errorSink, result -> {
+            if (result != GymChanges.Result.REFUSED) onChanged.run();
+            updateAimAvailability();
+        });
     }
 }
