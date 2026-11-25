@@ -5,6 +5,7 @@ import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
@@ -174,5 +175,16 @@ final class PasswordRecoveryPanel extends JPanel {
     private void show(String next) {
         step = next;
         steps.show(this, next);
+        // The step just hidden took the focused control with it; without this the keyboard
+        // is left with no component to type into or Tab from.
+        firstControl().requestFocusInWindow();
+    }
+
+    private JComponent firstControl() {
+        switch (step) {
+            case SENT_STEP: return proceed;
+            case NEW_PASSWORD_STEP: return passwordField;
+            default: return usernameField;
+        }
     }
 }

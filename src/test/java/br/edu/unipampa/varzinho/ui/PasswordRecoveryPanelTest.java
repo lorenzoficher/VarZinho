@@ -7,13 +7,20 @@ import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryOperatorStore
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import java.awt.Component;
+import java.awt.GraphicsEnvironment;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 class PasswordRecoveryPanelTest {
     private static final String OLD_PASSWORD = "Str0ng!pass";
@@ -105,6 +112,36 @@ class PasswordRecoveryPanelTest {
         assertEquals(0, panel.passwordField().getPassword().length);
         assertEquals(0, panel.confirmationField().getPassword().length);
         assertTrue(resetUsernames.isEmpty());
+    }
+
+    @Test
+    void eachStepTakesTheFocusSoTheKeyboardIsNotLeftWithNowhereToGo() throws Exception {
+        assumeFalse(GraphicsEnvironment.isHeadless(), "focus needs a window on screen");
+        JFrame frame = new JFrame();
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                frame.add(panel);
+                frame.pack();
+                frame.setVisible(true);
+                panel.usernameField().requestFocusInWindow();
+            });
+
+            SwingUtilities.invokeAndWait(() -> requestLink("ana", "qualquer@exemplo.com"));
+            assertFocusMovesTo(frame, panel.proceedButton());
+
+            SwingUtilities.invokeAndWait(() -> panel.proceedButton().doClick());
+            assertFocusMovesTo(frame, panel.passwordField());
+        } finally {
+            SwingUtilities.invokeAndWait(frame::dispose);
+        }
+    }
+
+    private static void assertFocusMovesTo(JFrame frame, Component expected) throws Exception {
+        long deadline = System.currentTimeMillis() + 3000;
+        while (frame.getMostRecentFocusOwner() != expected && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50);
+        }
+        assertSame(expected, frame.getMostRecentFocusOwner());
     }
 
     private void requestLink(String username, String email) {
