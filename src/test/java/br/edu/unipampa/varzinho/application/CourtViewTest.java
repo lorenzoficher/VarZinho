@@ -9,12 +9,30 @@ import br.edu.unipampa.varzinho.enums.CameraStatus;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryGymRepository;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CourtViewTest {
+    @Test
+    void keepsTheNameAndSportTheCourtHadWhenTheSnapshotWasTaken() throws Exception {
+        Gym gym = new Gym("Arena", "Rua A");
+        gym.addCourt(new Court(1));
+        ManageGym management = new ManageGym(gym, new InMemoryGymRepository());
+        CourtView named = management.renameCourt(1, "Quadra coberta");
+        CourtView withSport = management.chooseSport(1, "Futsal");
+
+        management.renameCourt(1, "");
+
+        assertEquals(Optional.of("Quadra coberta"), named.getDisplayName());
+        assertEquals(Optional.empty(), named.getSport());
+        assertEquals(Optional.of("Futsal"), withSport.getSport());
+        assertEquals(Optional.empty(), management.court(1).getDisplayName());
+    }
+
     @Test
     void countsAnEmptyCourtAndKeepsTheOldSnapshotWhenACameraIsInstalled() throws Exception {
         Gym gym = new Gym("Arena", "Rua A");

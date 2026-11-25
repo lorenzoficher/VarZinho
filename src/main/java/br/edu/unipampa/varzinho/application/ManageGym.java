@@ -11,7 +11,10 @@ import br.edu.unipampa.varzinho.domain.structure.Gym;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -20,6 +23,8 @@ import java.util.stream.Collectors;
  * <p>Every change is applied to the gym first and stored after. When storing fails the
  * change has still happened in this run, and the {@link RepositoryException} says it was
  * not kept — a value the storage cannot hold is reported that way too, never as a refusal.
+ * A court's display name and sport are the exception: a label the storage cannot hold is
+ * undone, or every later change would fail to be stored along with it.
  */
 public final class ManageGym {
 
@@ -257,6 +262,49 @@ public final class ManageGym {
         }
         aimable.moveTo(pan, tilt, zoom);
         keep();
+        return CourtView.from(court);
+    }
+
+    /**
+     * Names a court for the people who use it and stores the gym. A blank name clears it.
+     *
+     * @param courtNumber the court to name
+     * @param displayName the new name
+     * @return a view of the court with its new name
+     * @throws IllegalArgumentException if the court is unknown or {@link Court#rename}
+     *     refuses the name; nothing changes
+     * @throws RepositoryException if the gym cannot be stored; the previous name is back
+     */
+    public CourtView renameCourt(int courtNumber, String displayName) throws RepositoryException {
+        return relabel(courtNumber, displayName, Court::getDisplayName, Court::rename);
+    }
+
+    /**
+     * Records the sport played on a court, as the operator calls it, and stores the gym.
+     * A blank sport clears it.
+     *
+     * @param courtNumber the court to change
+     * @param sport the new sport
+     * @return a view of the court with its new sport
+     * @throws IllegalArgumentException if the court is unknown or {@link Court#assignSport}
+     *     refuses the sport; nothing changes
+     * @throws RepositoryException if the gym cannot be stored; the previous sport is back
+     */
+    public CourtView chooseSport(int courtNumber, String sport) throws RepositoryException {
+        return relabel(courtNumber, sport, Court::getSport, Court::assignSport);
+    }
+
+    private CourtView relabel(int courtNumber, String label, Function<Court, Optional<String>> current,
+            BiConsumer<Court, String> change) throws RepositoryException {
+        Court court = requireCourt(courtNumber);
+        String previous = current.apply(court).orElse("");
+        change.accept(court, label);
+        try {
+            keep();
+        } catch (RepositoryException notKept) {
+            change.accept(court, previous);
+            throw notKept;
+        }
         return CourtView.from(court);
     }
 
