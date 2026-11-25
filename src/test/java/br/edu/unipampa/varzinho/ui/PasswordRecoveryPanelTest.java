@@ -15,8 +15,10 @@ import java.awt.GraphicsEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 
+import static br.edu.unipampa.varzinho.ui.SwingWork.awaitRepositoryWork;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -126,7 +128,12 @@ class PasswordRecoveryPanelTest {
                 panel.usernameField().requestFocusInWindow();
             });
 
-            SwingUtilities.invokeAndWait(() -> requestLink("ana", "qualquer@exemplo.com"));
+            SwingUtilities.invokeAndWait(() -> {
+                panel.usernameField().setText("ana");
+                panel.emailField().setText("qualquer@exemplo.com");
+                panel.sendLinkButton().doClick();
+            });
+            awaitRepositoryWork();
             assertFocusMovesTo(frame, panel.proceedButton());
 
             SwingUtilities.invokeAndWait(() -> panel.proceedButton().doClick());
@@ -134,6 +141,72 @@ class PasswordRecoveryPanelTest {
         } finally {
             SwingUtilities.invokeAndWait(frame::dispose);
         }
+    }
+
+    @Test
+    void requestingALinkReadsTheOperatorsOffTheSwingThreadWithTheButtonDisabled() throws Exception {
+        GatedOperatorStore gated = gatedStoreWithAna();
+        PasswordRecoveryPanel waiting = new PasswordRecoveryPanel(new OperatorAccess(gated), messages::add,
+                resetUsernames::add);
+        waiting.usernameField().setText("ana");
+        waiting.emailField().setText("qualquer@exemplo.com");
+        gated.gate.close();
+
+        waiting.sendLinkButton().doClick();
+        try {
+            gated.gate.awaitBlocked();
+            assertFalse(gated.gate.ranOnSwing());
+            assertTrue(SwingWork.swingResponds());
+            SwingWork.onSwing(() -> {
+                assertFalse(waiting.sendLinkButton().isEnabled());
+                assertEquals(PasswordRecoveryPanel.REQUEST_STEP, waiting.step());
+            });
+        } finally {
+            gated.gate.open();
+        }
+        awaitRepositoryWork();
+
+        assertEquals(PasswordRecoveryPanel.SENT_STEP, waiting.step());
+        assertTrue(waiting.sendLinkButton().isEnabled());
+    }
+
+    @Test
+    void savingANewPasswordWritesOffTheSwingThreadWithTheButtonDisabled() throws Exception {
+        GatedOperatorStore gated = gatedStoreWithAna();
+        PasswordRecoveryPanel waiting = new PasswordRecoveryPanel(new OperatorAccess(gated), messages::add,
+                resetUsernames::add);
+        waiting.usernameField().setText("ana");
+        waiting.emailField().setText("qualquer@exemplo.com");
+        waiting.sendLinkButton().doClick();
+        awaitRepositoryWork();
+        waiting.proceedButton().doClick();
+        waiting.passwordField().setText(NEW_PASSWORD);
+        waiting.confirmationField().setText(NEW_PASSWORD);
+        gated.gate.close();
+
+        waiting.saveButton().doClick();
+        try {
+            gated.gate.awaitBlocked();
+            assertFalse(gated.gate.ranOnSwing());
+            assertTrue(SwingWork.swingResponds());
+            SwingWork.onSwing(() -> {
+                assertFalse(waiting.saveButton().isEnabled());
+                assertEquals(0, waiting.passwordField().getPassword().length);
+            });
+        } finally {
+            gated.gate.open();
+        }
+        awaitRepositoryWork();
+
+        assertEquals(List.of("ana"), resetUsernames);
+        assertDoesNotThrow(() -> new OperatorAccess(gated).signIn("ana", NEW_PASSWORD));
+        assertTrue(waiting.saveButton().isEnabled());
+    }
+
+    private static GatedOperatorStore gatedStoreWithAna() throws RepositoryException {
+        GatedOperatorStore gated = new GatedOperatorStore();
+        gated.save(new Operator("Ana Lima", "ana", OLD_PASSWORD));
+        return gated;
     }
 
     private static void assertFocusMovesTo(JFrame frame, Component expected) throws Exception {
@@ -148,11 +221,13 @@ class PasswordRecoveryPanelTest {
         panel.usernameField().setText(username);
         panel.emailField().setText(email);
         panel.sendLinkButton().doClick();
+        awaitRepositoryWork();
     }
 
     private void choosePassword(String password, String confirmation) {
         panel.passwordField().setText(password);
         panel.confirmationField().setText(confirmation);
         panel.saveButton().doClick();
+        awaitRepositoryWork();
     }
 }
