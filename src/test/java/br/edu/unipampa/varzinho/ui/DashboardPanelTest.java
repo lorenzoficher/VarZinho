@@ -258,6 +258,7 @@ class DashboardPanelTest {
             assertFalse(dashboard.saveButton().isEnabled());
         });
         assertTrue(saved.await(5, java.util.concurrent.TimeUnit.SECONDS));
+        SwingWork.awaitRepositoryWork();
         SwingUtilities.invokeAndWait(() -> {
             var table = historyPanel.get().table();
             assertEquals(1, table.getRowCount());

@@ -14,6 +14,7 @@ import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
 import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryHighlightRepository;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
+import br.edu.unipampa.varzinho.application.port.RecordingEditor;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -28,8 +29,10 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import javax.swing.JButton;
 import java.util.function.Supplier;
 
+import static br.edu.unipampa.varzinho.ui.SwingWork.awaitRepositoryWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -59,14 +62,17 @@ class ArchivePanelTest {
         editor.rename("second", "Lance Fernando Costa");
         var reopened = new CsvHighlightRepository(file);
         var panel = new ArchivePanel(courts(), new BrowseArchive(reopened), BRASILIA, errors::add);
+        awaitRepositoryWork();
         panel.enableEditing(editor);
         panel.searchField().setText("Fernando");
         assertEquals(1, panel.table().getRowCount());
         panel.table().setRowSelectionInterval(0, 0);
         panel.deleteSelection(editor, item -> false);
+        awaitRepositoryWork();
         assertTrue(Files.exists(movie));
         assertTrue(reopened.findById("second").isPresent());
         panel.deleteSelection(editor, item -> item.getTitle().equals("Lance Fernando Costa"));
+        awaitRepositoryWork();
         assertTrue(Files.notExists(movie));
         assertTrue(reopened.findById("second").isEmpty());
         assertTrue(reopened.findById("first").isPresent());
@@ -79,13 +85,16 @@ class ArchivePanelTest {
         var repository = new InMemoryHighlightRepository();
         repository.save(highlight("first", EARLY, 1));
         var panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        awaitRepositoryWork();
         panel.table().setRowSelectionInterval(0, 0);
         repository.save(highlight("next", LATE, 2));
         panel.captureSaved();
+        awaitRepositoryWork();
         assertEquals(1, panel.table().getSelectedRow());
         assertEquals("camera-first", panel.table().getValueAt(panel.table().getSelectedRow(), 2));
         assertFalse(panel.openClipButton().isEnabled());
         panel.filter().setSelectedItem("Quadra 2");
+        awaitRepositoryWork();
         assertEquals(-1, panel.table().getSelectedRow());
     }
 
@@ -95,6 +104,7 @@ class ArchivePanelTest {
         repository.save(highlight("first", EARLY, 1));
         repository.save(highlight("next", LATE, 2));
         var panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        awaitRepositoryWork();
         JTable table = panel.table();
         table.setValueAt("Defesa", 1, 4);
         panel.searchField().setText("DEFESA");
@@ -125,6 +135,7 @@ class ArchivePanelTest {
         repository.save(highlight("h-2", LATE, 2));
 
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        awaitRepositoryWork();
 
         assertEquals(2, panel.table().getRowCount());
         assertEquals("camera-h-2", panel.table().getValueAt(0, 2));
@@ -137,10 +148,12 @@ class ArchivePanelTest {
         repository.save(highlight("h-1", EARLY, 1));
         repository.save(highlight("h-3", LATE, 3));
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        awaitRepositoryWork();
         gym.addCourt(new Court(3));
 
         panel.refreshCourts();
         panel.filter().setSelectedItem("Quadra 3");
+        awaitRepositoryWork();
 
         assertEquals(1, panel.table().getRowCount());
         assertEquals("camera-h-3", panel.table().getValueAt(0, 2));
@@ -152,8 +165,10 @@ class ArchivePanelTest {
         repository.save(highlight("h-1", EARLY, 1));
         repository.save(highlight("h-2", LATE, 2));
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        awaitRepositoryWork();
 
         panel.filter().setSelectedItem("Quadra 2");
+        awaitRepositoryWork();
 
         assertEquals(1, panel.table().getRowCount());
         assertEquals(2, panel.table().getValueAt(0, 1));
@@ -165,6 +180,7 @@ class ArchivePanelTest {
         repository.save(highlight("first", EARLY, 1));
         repository.save(highlight("second", LATE, 2));
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        awaitRepositoryWork();
         panel.searchField().setText("SECOND");
         assertEquals(1, panel.table().getRowCount());
         assertEquals("camera-second", panel.table().getValueAt(0, 2));
@@ -175,6 +191,7 @@ class ArchivePanelTest {
     @Test
     void filterOffersAllCourtsFollowedByEachCourt() {
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(new InMemoryHighlightRepository()), BRASILIA, errors::add);
+        awaitRepositoryWork();
 
         assertEquals("Todas as quadras", panel.filter().getItemAt(0));
         assertEquals(gym.getCourts().size() + 1, panel.filter().getItemCount());
@@ -187,6 +204,7 @@ class ArchivePanelTest {
         repository.save(highlight("h-1", LATE, 1));
 
         JTable table = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add).table();
+        awaitRepositoryWork();
 
         assertEquals(List.of("Data e hora", "Quadra", "Câmera", "Duração", "Categoria", "Clipe", "Nome"), columnNames(table));
         assertEquals("29/09/2026 18:30:15", table.getValueAt(0, 0));
@@ -203,9 +221,11 @@ class ArchivePanelTest {
     void refreshPicksUpHighlightsSavedAfterTheTableFilled() throws RepositoryException {
         InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        awaitRepositoryWork();
         repository.save(highlight("h-1", EARLY, 1));
 
         panel.refresh();
+        awaitRepositoryWork();
 
         assertEquals(1, panel.table().getRowCount());
     }
@@ -215,9 +235,11 @@ class ArchivePanelTest {
         FailingRepository repository = new FailingRepository();
         repository.save(highlight("h-1", EARLY, 1));
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        awaitRepositoryWork();
         repository.failing = true;
 
         panel.refresh();
+        awaitRepositoryWork();
 
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).contains("ler o acervo"));
@@ -234,6 +256,7 @@ class ArchivePanelTest {
                 "h-3,2026-09-29T21:30:15Z,1,camera-h-3,clips/h-3.mp4,30,FULL_HD,12.5"));
 
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(new CsvHighlightRepository(file)), BRASILIA, errors::add);
+        awaitRepositoryWork();
 
         assertEquals(2, panel.table().getRowCount());
         assertEquals("camera-h-3", panel.table().getValueAt(0, 2));
@@ -252,7 +275,9 @@ class ArchivePanelTest {
         ArchivePanel panel = panelAt(repository);
 
         panel.dayFilter().setSelectedItem("Hoje");
+        awaitRepositoryWork();
         panel.filter().setSelectedItem("Quadra 2");
+        awaitRepositoryWork();
 
         assertEquals(List.of("camera-today-late", "camera-today-early"), cameras(panel));
     }
@@ -265,6 +290,7 @@ class ArchivePanelTest {
         ArchivePanel panel = panelAt(repository);
 
         panel.dayFilter().setSelectedItem("Ontem");
+        awaitRepositoryWork();
 
         assertEquals(List.of("camera-yesterday-late"), cameras(panel));
     }
@@ -277,8 +303,10 @@ class ArchivePanelTest {
         ArchivePanel panel = panelAt(repository);
 
         panel.dayFilter().setSelectedItem("Escolher data");
+        awaitRepositoryWork();
         panel.dateField().setText("29/09/2026");
         panel.dateField().postActionEvent();
+        awaitRepositoryWork();
 
         assertEquals(List.of("camera-h-1"), cameras(panel));
         assertTrue(errors.isEmpty(), errors.toString());
@@ -292,7 +320,9 @@ class ArchivePanelTest {
         ArchivePanel panel = panelAt(repository);
 
         panel.dayFilter().setSelectedItem("Escolher data");
+        awaitRepositoryWork();
         panel.filter().setSelectedItem("Quadra 2");
+        awaitRepositoryWork();
 
         assertEquals("19/11/2026", panel.dateField().getText());
         assertEquals(List.of("camera-today"), cameras(panel));
@@ -306,10 +336,13 @@ class ArchivePanelTest {
         ArchivePanel panel = panelAt(repository);
 
         panel.dayFilter().setSelectedItem("Escolher data");
+        awaitRepositoryWork();
         panel.dateField().setText("29/09/2026");
         panel.dateField().postActionEvent();
+        awaitRepositoryWork();
         panel.dateField().setText("31/02/2026");
         panel.dateField().postActionEvent();
+        awaitRepositoryWork();
 
         assertEquals(List.of("Informe a data como dd/mm/aaaa."), errors);
         assertEquals(1, panel.table().getRowCount());
@@ -326,6 +359,7 @@ class ArchivePanelTest {
         errors.clear();
 
         panel.dayFilter().setSelectedItem("Hoje");
+        awaitRepositoryWork();
 
         assertEquals(List.of("camera-h-1"), cameras(panel));
         assertEquals(1, errors.size());
@@ -335,6 +369,7 @@ class ArchivePanelTest {
     @Test
     void openClipIsDisabledUntilAHighlightIsChosen() {
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(new InMemoryHighlightRepository()), BRASILIA, errors::add);
+        awaitRepositoryWork();
 
         assertFalse(panel.openClipButton().isEnabled());
     }
@@ -344,6 +379,7 @@ class ArchivePanelTest {
         InMemoryHighlightRepository repository = new InMemoryHighlightRepository();
         repository.save(highlight("h-never-written", EARLY, 1));
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
+        awaitRepositoryWork();
         JTable grid = panel.table();
         var cell = (javax.swing.JButton) grid.prepareRenderer(grid.getCellRenderer(0, 5), 0, 5);
         assertEquals("Sem MP4", cell.getText());
@@ -386,13 +422,96 @@ class ArchivePanelTest {
         assertEquals(List.of("Nenhum reprodutor de vídeo disponível para abrir o clipe."), errors);
     }
 
+    @Test
+    void choosingACourtReadsTheArchiveOffTheSwingThreadWithTheFiltersDisabled() throws Exception {
+        FailingRepository repository = new FailingRepository();
+        repository.save(highlight("first", EARLY, 1));
+        repository.save(highlight("second", LATE, 2));
+        ArchivePanel panel = panelAt(repository);
+        repository.gate.close();
+
+        panel.filter().setSelectedItem("Quadra 2");
+        try {
+            repository.gate.awaitBlocked();
+            assertFalse(repository.gate.ranOnSwing());
+            assertTrue(SwingWork.swingResponds());
+            SwingWork.onSwing(() -> {
+                assertFalse(panel.filter().isEnabled());
+                assertFalse(panel.dayFilter().isEnabled());
+            });
+        } finally {
+            repository.gate.open();
+        }
+        awaitRepositoryWork();
+
+        assertEquals(List.of("camera-second"), cameras(panel));
+        assertTrue(panel.filter().isEnabled());
+        assertTrue(panel.dayFilter().isEnabled());
+    }
+
+    @Test
+    void renamingAndDeletingStoreOffTheSwingThreadWithTheirButtonsDisabled() throws Exception {
+        FailingRepository repository = new FailingRepository();
+        repository.save(highlight("first", EARLY, 1));
+        ArchivePanel panel = panelAt(repository);
+        panel.enableEditing(repository);
+        JButton rename = panel.editActions().get(0);
+        JButton delete = panel.editActions().get(1);
+
+        panel.table().setRowSelectionInterval(0, 0);
+        assertBlockedOffSwing(repository, rename, () -> panel.renameSelection(repository, item -> Optional.of("Golaço")));
+        assertEquals("Golaço", repository.findById("first").orElseThrow().getTitle());
+
+        panel.table().setRowSelectionInterval(0, 0);
+        assertBlockedOffSwing(repository, delete, () -> panel.deleteSelection(repository, item -> true));
+        assertTrue(repository.findById("first").isEmpty());
+        assertTrue(errors.isEmpty(), errors.toString());
+    }
+
+    @Test
+    void aFailedRenameOrDeleteSaysWhatItSaidBeforeAndGivesTheButtonsBack() throws Exception {
+        FailingRepository repository = new FailingRepository();
+        repository.save(highlight("first", EARLY, 1));
+        ArchivePanel panel = panelAt(repository);
+        panel.enableEditing(repository);
+        repository.failing = true;
+
+        panel.table().setRowSelectionInterval(0, 0);
+        panel.renameSelection(repository, item -> Optional.of("Golaço"));
+        awaitRepositoryWork();
+        panel.table().setRowSelectionInterval(0, 0);
+        panel.deleteSelection(repository, item -> true);
+        awaitRepositoryWork();
+
+        assertEquals(List.of("Não foi possível renomear a gravação. Verifique o acervo.",
+                "Não foi possível excluir a gravação. Verifique o acervo e o arquivo de vídeo."), errors);
+        assertTrue(panel.editActions().stream().allMatch(JButton::isEnabled));
+    }
+
+    private static void assertBlockedOffSwing(FailingRepository repository, JButton trigger, Runnable action)
+            throws InterruptedException {
+        repository.gate.close();
+        action.run();
+        try {
+            repository.gate.awaitBlocked();
+            assertFalse(repository.gate.ranOnSwing());
+            assertTrue(SwingWork.swingResponds());
+            SwingWork.onSwing(() -> assertFalse(trigger.isEnabled()));
+        } finally {
+            repository.gate.open();
+        }
+        awaitRepositoryWork();
+    }
+
     private ArchivePanel panelAt(HighlightRepository repository) {
         return panelAt(repository, clip -> { throw new AssertionError("no player should open " + clip); });
     }
 
     private ArchivePanel panelAt(HighlightRepository repository, ArchivePanel.ClipPlayer player) {
-        return new ArchivePanel(courts(), new BrowseArchive(repository, TONIGHT, BRASILIA), TONIGHT, BRASILIA,
-                player, errors::add);
+        ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository, TONIGHT, BRASILIA), TONIGHT,
+                BRASILIA, player, errors::add);
+        awaitRepositoryWork();
+        return panel;
     }
 
     private static List<String> cameras(ArchivePanel panel) {
@@ -420,12 +539,24 @@ class ArchivePanelTest {
         return names;
     }
 
-    private static final class FailingRepository implements HighlightRepository {
+    private static final class FailingRepository implements HighlightRepository, RecordingEditor {
         private final InMemoryHighlightRepository stored = new InMemoryHighlightRepository();
-        private boolean failing;
+        private final SwingWork.Gate gate = new SwingWork.Gate();
+        private volatile boolean failing;
 
-        @Override public void rename(String id, String title) throws RepositoryException { stored.rename(id, title); }
-        @Override public void delete(String id) { stored.delete(id); }
+        @Override
+        public void rename(String id, String title) throws RepositoryException {
+            gate.pass();
+            if (failing) throw new RepositoryException("disk unplugged");
+            stored.rename(id, title);
+        }
+
+        @Override
+        public void delete(String id) throws RepositoryException {
+            gate.pass();
+            if (failing) throw new RepositoryException("disk unplugged");
+            stored.delete(id);
+        }
 
         @Override
         public void save(Highlight highlight) throws RepositoryException {
@@ -439,12 +570,14 @@ class ArchivePanelTest {
 
         @Override
         public List<Highlight> findAll() throws RepositoryException {
+            gate.pass();
             if (failing) throw new RepositoryException("disk unplugged");
             return stored.findAll();
         }
 
         @Override
         public List<Highlight> findByCourt(int courtNumber) throws RepositoryException {
+            gate.pass();
             if (failing) throw new RepositoryException("disk unplugged");
             return stored.findByCourt(courtNumber);
         }
