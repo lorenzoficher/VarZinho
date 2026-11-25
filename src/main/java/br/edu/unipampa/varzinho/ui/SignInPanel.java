@@ -12,6 +12,7 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import java.awt.Component;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -90,18 +91,24 @@ final class SignInPanel extends JPanel {
         });
     }
 
+    // Hashing the password and reading the account both wait, so they run on a worker.
     private void signIn() {
+        String username = usernameField.getText();
         char[] typed = passwordField.getPassword();
-        try {
-            onSignedIn.accept(access.signIn(usernameField.getText(), new String(typed)));
-        } catch (IllegalArgumentException refused) {
+        String password = new String(typed);
+        Arrays.fill(typed, '\0');
+        RepositoryTask.run(List.of(signIn, forgotPassword), "Entrando…", () -> access.signIn(username, password),
+                onSignedIn, this::refused);
+    }
+
+    private void refused(Throwable failure) {
+        if (failure instanceof IllegalArgumentException) {
             passwordField.setText("");
-            errorSink.accept(PortugueseText.message(refused.getMessage()));
-        } catch (RepositoryException unreadable) {
-            LOGGER.log(Level.WARNING, "Could not read the operator account", unreadable);
-            errorSink.accept("Não foi possível ler os operadores. Verifique o armazenamento.");
-        } finally {
-            Arrays.fill(typed, '\0');
+            errorSink.accept(PortugueseText.message(failure.getMessage()));
+            return;
         }
+        LOGGER.log(failure instanceof RepositoryException ? Level.WARNING : Level.SEVERE,
+                "Could not read the operator account", failure);
+        errorSink.accept("Não foi possível ler os operadores. Verifique o armazenamento.");
     }
 }
