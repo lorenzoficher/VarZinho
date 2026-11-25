@@ -4,6 +4,8 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import java.awt.event.KeyEvent;
 
 /**
  * Enter inside a form's fields presses the form's button.
@@ -26,6 +28,12 @@ final class EnterKey {
     static void submits(JButton action, JComponent... fields) {
         for (JComponent field : fields) {
             textOf(field).addActionListener(event -> action.doClick());
+            if (field instanceof JSpinner) {
+                // A spinner's text field takes Enter only after typing; a value set with the
+                // arrow keys leaves Enter to the field's ancestors, so the spinner catches it.
+                field.registerKeyboardAction(event -> action.doClick(),
+                        KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+            }
         }
     }
 
