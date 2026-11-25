@@ -33,6 +33,7 @@ import javax.swing.SwingUtilities;
 final class RecordingActions {
     private static final Logger LOGGER = Logger.getLogger(RecordingActions.class.getName());
     private static final String NO_PLAYER = "Nenhum reprodutor de vídeo disponível para abrir o clipe.";
+    private static final String SAVE_NAME = "Salvar nome";
     private final ArchiveTable recordings;
     private final JTable table;
     private final DateTimeFormatter timeFormat;
@@ -40,7 +41,6 @@ final class RecordingActions {
     private final Consumer<String> errorSink;
     private final Runnable refresh;
     private final Runnable recount;
-    private static final String SAVE_NAME = "Salvar nome";
     private final JButton openClip = new JButton("Assistir ao vídeo");
     private final List<JButton> editActions = new ArrayList<>();
 
