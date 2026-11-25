@@ -28,6 +28,11 @@ import java.util.logging.Logger;
  */
 public final class VarZinhoWindow extends JFrame {
     private static final Logger LOGGER = Logger.getLogger(VarZinhoWindow.class.getName());
+    /** The smallest window every page is laid out for; it still fits a 1366×768 screen with a taskbar. */
+    private static final int MINIMUM_WIDTH = 1024;
+    private static final int MINIMUM_HEIGHT = 640;
+    private static final int PREFERRED_WIDTH = 1460;
+    private static final int PREFERRED_HEIGHT = 900;
     private transient final List<Timer> clocks = new ArrayList<>();
     private transient final CaptureActivity captureActivity = new CaptureActivity();
     private transient final MessageBar messages = new MessageBar();
@@ -57,11 +62,18 @@ public final class VarZinhoWindow extends JFrame {
         messages.serve(getRootPane());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         java.awt.Rectangle bounds = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-        setPreferredSize(new java.awt.Dimension(Math.min(1460, bounds.width), Math.min(900, bounds.height)));
+        setMinimumSize(minimumSupportedSize());
+        setPreferredSize(new java.awt.Dimension(
+                Math.max(MINIMUM_WIDTH, Math.min(PREFERRED_WIDTH, bounds.width)),
+                Math.max(MINIMUM_HEIGHT, Math.min(PREFERRED_HEIGHT, bounds.height))));
         pack();
         setLocationRelativeTo(null);
         clocks.add(clockFor(feed, captureActivity, this::showBufferStatus, messages));
         clocks.forEach(Timer::start);
+    }
+
+    static java.awt.Dimension minimumSupportedSize() {
+        return new java.awt.Dimension(MINIMUM_WIDTH, MINIMUM_HEIGHT);
     }
 
     @Override public void dispose() {

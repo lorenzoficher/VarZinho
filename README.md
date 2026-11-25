@@ -355,6 +355,19 @@ O **Dashboard** abre após o login. Escolha a quadra no cabeçalho ou em **Suas 
 - Tudo isso funciona sem o mouse, com o foco sempre visível nos dois temas. **Tab** e **Shift+Tab** passam pelos controles; na barra lateral, **↑** e **↓** trocam de página. **Enter** envia o formulário em que o cursor está e **Esc** fecha qualquer janela de diálogo. Nas tabelas, as setas andam entre as linhas e o Tab segue para o próximo controle.
 - Em **Configurações**, alterne entre os temas claro e escuro ou escolha um nome de exibição para a quadra durante a sessão. A barra de mensagens e o sino do cabeçalho mostram o retorno das operações.
 
+#### Tamanhos de janela suportados
+
+A janela abre com até 1460×900 e não pode ser reduzida abaixo de **1024×640**,
+tamanho que ainda cabe numa tela de 1366×768 com a barra de tarefas. Todo tamanho
+a partir desse mínimo é suportado: nenhuma página corta texto, sobrepõe
+componentes ou mostra rolagem horizontal. Quando falta altura, a página rola na
+vertical. Quando falta largura, seções lado a lado passam a ficar uma sobre a
+outra, assim que deixam de caber. Os tamanhos são em pixels lógicos, antes da
+escala de tela do sistema.
+[SupportedWindowSizesTest](src/test/java/br/edu/unipampa/varzinho/ui/SupportedWindowSizesTest.java)
+confere as sete páginas no mínimo, em **1366×768** e em **1920×1080**, nos temas
+claro e escuro, e ainda a cada 32 pixels de largura entre o mínimo e 1920.
+
 ## Principais classes
 
 Caminhos relativos a `src/main/java/br/edu/unipampa/varzinho/`.

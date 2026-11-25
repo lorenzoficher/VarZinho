@@ -87,13 +87,13 @@ final class SidebarPanel extends JPanel {
         operators.addActionListener(event -> onPageChange.accept(Page.OPERATORS));
         settings.addActionListener(event -> onPageChange.accept(Page.SETTINGS));
         connectArrows(List.of(dashboard, courts, cameras, highlights, archive, operators, settings));
-        add(dashboard, "h 46!");
-        add(courts, "h 46!");
-        add(cameras, "h 46!");
-        add(highlights, "h 54!");
-        add(archive, "h 46!");
-        add(operators, "h 46!");
-        add(settings, "h 46!");
+        add(dashboard, "h 38:46:46");
+        add(courts, "h 38:46:46");
+        add(cameras, "h 38:46:46");
+        add(highlights, "h 38:54:54");
+        add(archive, "h 38:46:46");
+        add(operators, "h 38:46:46");
+        add(settings, "h 38:46:46");
 
         JPanel statusCard = new JPanel(new MigLayout("insets 14, fillx, wrap 1", "[grow,fill]", "[]8[]8[]6[]"));
         statusCard.putClientProperty("FlatLaf.style", "background: #16383E; arc: 14");

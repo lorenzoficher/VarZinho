@@ -2,7 +2,7 @@ package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.application.CourtView;
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
+import java.awt.Component;
 import java.awt.GridLayout;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -21,6 +21,7 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import net.miginfocom.swing.MigLayout;
 
 /** Search, court and calendar controls for the archive. */
 final class ArchiveFilters extends JPanel {
@@ -43,6 +44,7 @@ final class ArchiveFilters extends JPanel {
     ArchiveFilters(Supplier<List<CourtView>> courts, Clock clock, ZoneId zone, JButton openClip,
                    ArchiveTable recordings, Runnable refresh) {
         super(new BorderLayout());
+        setOpaque(false);
         this.courts = courts;
         this.clock = clock;
         this.zone = zone;
@@ -86,17 +88,22 @@ final class ArchiveFilters extends JPanel {
         titles.add(eyebrow);
         titles.add(title);
         heading.add(titles);
-        JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEADING, 6, 0));
-        filterRow.setOpaque(false);
-        filterRow.add(search);
-        filterRow.add(filter);
-        filterRow.add(new JLabel("Dia:"));
-        filterRow.add(dayFilter);
-        filterRow.add(dateField);
-
-        filterRow.add(openClip);
+        AdaptivePair filterRow = new AdaptivePair("[][grow]");
+        filterRow.add(filterGroup(search, filter));
+        filterRow.add(filterGroup(new JLabel("Dia:"), dayFilter, dateField, openClip));
         heading.add(filterRow);
         add(heading);
+    }
+
+    /**
+     * One row that never wraps: a FlowLayout would wrap into a row of fixed height and hide
+     * what wrapped, while this row reports the width it needs, so the pair stacks instead.
+     */
+    private static JPanel filterGroup(Component... controls) {
+        JPanel group = new JPanel(new MigLayout("insets 0, gap 6, nogrid"));
+        group.setOpaque(false);
+        for (Component control : controls) group.add(control);
+        return group;
     }
 
     JComboBox<String> filter() { return filter; }

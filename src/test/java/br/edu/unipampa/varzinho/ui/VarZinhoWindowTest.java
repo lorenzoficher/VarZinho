@@ -52,6 +52,34 @@ class VarZinhoWindowTest {
         });
     }
 
+    @Test
+    void windowCannotBeResizedBelowTheSupportedMinimum() throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeFalse(java.awt.GraphicsEnvironment.isHeadless(),
+                "a window needs a display");
+        var operator = new OperatorAccess(new InMemoryOperatorStore())
+                .createFirst("Rafaela Alves", "rafaela", "Strong1!");
+        SwingUtilities.invokeAndWait(() -> {
+            var gym = br.edu.unipampa.varzinho.bootstrap.SampleGym.build();
+            var repository = new br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryHighlightRepository();
+            Feed idle = new Feed() {
+                @Override public int periodMillis() { return 1000; }
+                @Override public void tick(Instant now) { }
+            };
+            var window = new VarZinhoWindow("Arena", operator,
+                    new br.edu.unipampa.varzinho.application.ManageGym(gym,
+                            new br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryGymRepository()),
+                    new br.edu.unipampa.varzinho.application.CaptureHighlight(gym, repository),
+                    new br.edu.unipampa.varzinho.application.BrowseArchive(repository), idle, 30);
+            try {
+                assertEquals(VarZinhoWindow.minimumSupportedSize(), window.getMinimumSize());
+                assertTrue(window.getWidth() >= VarZinhoWindow.minimumSupportedSize().width);
+                assertTrue(window.getHeight() >= VarZinhoWindow.minimumSupportedSize().height);
+            } finally {
+                window.dispose();
+            }
+        });
+    }
+
     private static boolean visible(java.awt.Container parent, Class<?> type) {
         for (java.awt.Component component : parent.getComponents()) {
             if (!component.isVisible()) continue;
