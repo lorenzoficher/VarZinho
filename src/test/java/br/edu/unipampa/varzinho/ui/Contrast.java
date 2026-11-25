@@ -34,7 +34,7 @@ final class Contrast {
         return ((Number) style(button, "focusWidth")).floatValue();
     }
 
-    private static Object style(AbstractButton button, String key) {
+    static Object style(AbstractButton button, String key) {
         return ((FlatButtonUI) button.getUI()).getStyleableValue(button, key);
     }
 

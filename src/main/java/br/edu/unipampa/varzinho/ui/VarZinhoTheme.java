@@ -164,7 +164,12 @@ public final class VarZinhoTheme {
                 // one rings its focus inside, in the dark ink it writes on the lime.
                 button.putClientProperty("FlatLaf.style", BUTTON_MARGIN + "background: $VarZinho.accent; "
                         + "foreground: $VarZinho.onAccent; borderColor: $VarZinho.accent; "
-                        + "hoverBorderColor: $VarZinho.accent; focusedBorderColor: $VarZinho.onAccent");
+                        + "hoverBorderColor: $VarZinho.accent; focusedBorderColor: $VarZinho.onAccent; "
+                        // The button Enter presses is drawn from the default.* keys; without
+                        // them it would turn blue and stand apart from every other primary.
+                        + "default.background: $VarZinho.accent; default.foreground: $VarZinho.onAccent; "
+                        + "default.borderColor: $VarZinho.accent; default.hoverBorderColor: $VarZinho.accent; "
+                        + "default.focusedBorderColor: $VarZinho.onAccent; default.focusColor: $VarZinho.onAccent");
             }
             case SECONDARY -> {
                 font(button, Font.PLAIN, BODY_FONT_SIZE);

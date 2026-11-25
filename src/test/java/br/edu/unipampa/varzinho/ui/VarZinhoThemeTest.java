@@ -127,6 +127,22 @@ class VarZinhoThemeTest {
         assertContrasts(Contrast.focusedBorderColor(action), VarZinhoTheme.ACCENT, "focus ring inside the accent");
     }
 
+    @ParameterizedTest(name = "dark theme: {0}")
+    @ValueSource(booleans = {false, true})
+    void primaryActionLooksTheSameWhenEnterPressesIt(boolean dark) {
+        installTheme(dark);
+        JButton action = new JButton("Entrar");
+        javax.swing.JRootPane root = new javax.swing.JRootPane();
+        root.getContentPane().add(action);
+        VarZinhoTheme.styleButton(action, ButtonRole.PRIMARY);
+
+        root.setDefaultButton(action);
+
+        assertEquals(Contrast.style(action, "borderColor"), Contrast.style(action, "default.borderColor"));
+        assertEquals(action.getBackground(), Contrast.style(action, "default.background"));
+        assertEquals(Contrast.focusedBorderColor(action), Contrast.style(action, "default.focusedBorderColor"));
+    }
+
     @Test
     void aStyledButtonRemembersItsRole() {
         JButton button = new JButton("Excluir gravação");
