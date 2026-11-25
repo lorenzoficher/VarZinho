@@ -71,14 +71,14 @@ final class ArenaWorkspace extends JPanel {
         courtsPage.add(summary, BorderLayout.NORTH);
         courtsPage.add(courtPanel.courtPage(), BorderLayout.CENTER);
         pages.add(courtsPage, SidebarPanel.Page.COURTS.name());
-        pages.add(new OperatorsPanel(session, messages::show), SidebarPanel.Page.OPERATORS.name());
+        pages.add(ScrollablePage.around(new OperatorsPanel(session, messages::show)), SidebarPanel.Page.OPERATORS.name());
         cameraPage = courtPanel.cameraPage();
         pages.add(ScrollablePage.around(cameraPage), SidebarPanel.Page.CAMERAS.name());
         highlightsPage.add(capturePanel, BorderLayout.NORTH);
         highlightsPage.add(bufferStatus, BorderLayout.SOUTH);
         pages.add(highlightsPage, SidebarPanel.Page.HIGHLIGHTS.name());
         pages.add(filesPage, SidebarPanel.Page.ARCHIVE.name());
-        pages.add(new SettingsPanel(courtPanel, messages::show), SidebarPanel.Page.SETTINGS.name());
+        pages.add(ScrollablePage.around(new SettingsPanel(courtPanel, messages::show)), SidebarPanel.Page.SETTINGS.name());
 
         sidebar = new SidebarPanel(gymName, operator, this::navigate);
         dashboard = new DashboardPanel(management, courtPanel, capturePanel, this::navigate, messages::show);

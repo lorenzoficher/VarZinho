@@ -29,6 +29,7 @@ final class ArchiveFilters extends JPanel {
     private static final String TODAY = "Hoje";
     private static final String YESTERDAY = "Ontem";
     private static final String CHOSEN_DATE = "Escolher data";
+    private static final int FILTERS_SIDE_BY_SIDE_WIDTH = 720;
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT);
     private final Supplier<List<CourtView>> courts;
@@ -43,6 +44,7 @@ final class ArchiveFilters extends JPanel {
     ArchiveFilters(Supplier<List<CourtView>> courts, Clock clock, ZoneId zone, JButton openClip,
                    ArchiveTable recordings, Runnable refresh) {
         super(new BorderLayout());
+        setOpaque(false);
         this.courts = courts;
         this.clock = clock;
         this.zone = zone;
@@ -86,17 +88,20 @@ final class ArchiveFilters extends JPanel {
         titles.add(eyebrow);
         titles.add(title);
         heading.add(titles);
-        JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEADING, 6, 0));
-        filterRow.setOpaque(false);
-        filterRow.add(search);
-        filterRow.add(filter);
-        filterRow.add(new JLabel("Dia:"));
-        filterRow.add(dayFilter);
-        filterRow.add(dateField);
-
-        filterRow.add(openClip);
+        // A FlowLayout wraps into a row of fixed height and hides what wraps, so the two
+        // groups stack explicitly when the archive is narrower than both side by side.
+        AdaptivePair filterRow = new AdaptivePair(FILTERS_SIDE_BY_SIDE_WIDTH, "[][grow]");
+        filterRow.add(filterGroup(search, filter));
+        filterRow.add(filterGroup(new JLabel("Dia:"), dayFilter, dateField, openClip));
         heading.add(filterRow);
         add(heading);
+    }
+
+    private static JPanel filterGroup(java.awt.Component... controls) {
+        JPanel group = new JPanel(new FlowLayout(FlowLayout.LEADING, 6, 0));
+        group.setOpaque(false);
+        for (java.awt.Component control : controls) group.add(control);
+        return group;
     }
 
     JComboBox<String> filter() { return filter; }

@@ -32,11 +32,12 @@ final class OperatorsPanel extends JPanel {
     private final JButton register = new JButton("Cadastrar operador");
 
     OperatorsPanel(SignedInOperator signedIn, Consumer<String> messages) {
-        super(new MigLayout("insets 0, wrap 2", "[right][grow,fill]", "[]16[][][][][]"));
+        super(new MigLayout("insets 24, wrap 2", "[right][240:420,fill]", "[]16[][][][][]"));
         if (signedIn == null) throw new IllegalArgumentException("registering an operator needs a signed-in operator");
         if (messages == null) throw new IllegalArgumentException("registering an operator needs a message destination");
         this.signedIn = signedIn;
         this.messages = messages;
+        VarZinhoTheme.styleCard(this);
         JLabel title = new JLabel("Operadores");
         VarZinhoTheme.styleTitle(title);
         add(title, "span 2, left");

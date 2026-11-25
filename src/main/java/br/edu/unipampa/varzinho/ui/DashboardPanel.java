@@ -73,8 +73,8 @@ final class DashboardPanel extends JPanel {
         share.setEnabled(false);
         share.setToolTipText("Disponível quando o endereço HTTPS dos espectadores estiver configurado.");
         AdaptivePair live = new AdaptivePair(850, "[0:pref,grow,fill][300:340:390,fill]");
-        live.add(hero(save), "h 214!");
-        live.add(quickPtz, "h 214!");
+        live.add(hero(save), "h 214:pref, growy");
+        live.add(quickPtz, "h 214:pref, growy");
         add(live);
 
         overview = new CourtOverviewPanel(courtPanel::selectCourt, courtPanel::sportOf, courtPanel::nameOf,

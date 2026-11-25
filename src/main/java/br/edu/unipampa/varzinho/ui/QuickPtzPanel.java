@@ -53,7 +53,7 @@ final class QuickPtzPanel extends JPanel {
         add(eyebrow, "cell 0 0");
         add(cameras, "cell 1 0, alignx right, w 105:145:170");
         add(title, "cell 0 1, span 2");
-        JPanel pad = new JPanel(new MigLayout("insets 0, fillx", "[][][]12[105:130:140,fill]", "[][][]"));
+        JPanel pad = new JPanel(new MigLayout("insets 0", "[][][]12[105:130:140,fill]", "[][][]"));
         pad.setOpaque(false);
         pad.add(step("↑", tilt, 5), "cell 1 0");
         pad.add(step("←", pan, -5), "cell 0 1");
