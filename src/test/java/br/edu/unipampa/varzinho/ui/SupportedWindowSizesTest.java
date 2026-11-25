@@ -40,6 +40,9 @@ class SupportedWindowSizesTest {
     /** Room the operating system's title bar and frame borders take from the window. */
     private static final int WINDOW_DECORATION_HEIGHT = 40;
     private static final int MAXIMUM_LAYOUT_PASSES = 6;
+    /** Every width from the minimum up is supported; this step is fine enough to land between the breakpoints. */
+    private static final int WIDTH_SWEEP_STEP = 32;
+    private static final int WIDTH_SWEEP_END = 1920;
 
     private static final List<Dimension> SUPPORTED_SIZES = List.of(
             VarZinhoWindow.minimumSupportedSize(), new Dimension(1366, 768), new Dimension(1920, 1080));
@@ -58,26 +61,45 @@ class SupportedWindowSizesTest {
         List<Arguments> cases = new ArrayList<>();
         for (boolean dark : new boolean[] {false, true}) {
             for (Dimension size : SUPPORTED_SIZES) {
-                for (int page = 0; page < PAGES.size(); page++) {
-                    cases.add(Arguments.of(dark ? "dark" : "light", size.width + "x" + size.height, page));
-                }
+                for (int page = 0; page < PAGES.size(); page++) cases.add(Arguments.of(dark, size, page));
             }
         }
         return cases.stream();
     }
 
-    @ParameterizedTest(name = "{0} theme, {1}, page {2}")
+    /** The light theme alone: both themes share every size, so the width is what can break a layout. */
+    static Stream<Arguments> pagesAtEveryWidthFromTheMinimum() {
+        Dimension minimum = VarZinhoWindow.minimumSupportedSize();
+        List<Arguments> cases = new ArrayList<>();
+        for (int width = minimum.width; width <= WIDTH_SWEEP_END; width += WIDTH_SWEEP_STEP) {
+            for (int page = 0; page < PAGES.size(); page++) {
+                cases.add(Arguments.of(false, new Dimension(width, minimum.height), page));
+            }
+        }
+        return cases.stream();
+    }
+
+    @ParameterizedTest(name = "dark theme: {0}, {1}, page {2}")
     @MethodSource("pagesAtEverySizeInBothThemes")
-    void pageShowsEverythingWithoutClippingOverlapOrSidewaysScrolling(String theme, String size, int page)
+    void pageShowsEverythingWithoutClippingOverlapOrSidewaysScrolling(boolean dark, Dimension window, int page)
             throws RepositoryException {
+        assertLaysOutCleanly(dark, window, page);
+    }
+
+    @ParameterizedTest(name = "{1}, page {2}")
+    @MethodSource("pagesAtEveryWidthFromTheMinimum")
+    void pageShowsEverythingAtEveryWidthBetweenTheSupportedSizes(boolean dark, Dimension window, int page)
+            throws RepositoryException {
+        assertLaysOutCleanly(dark, window, page);
+    }
+
+    private static void assertLaysOutCleanly(boolean dark, Dimension window, int page) throws RepositoryException {
         SignedInOperator operator = new OperatorAccess(new InMemoryOperatorStore())
                 .createFirst("Rafaela Alves", "rafaela", "Strong1!");
-        String[] dimensions = size.split("x");
-        Dimension window = new Dimension(Integer.parseInt(dimensions[0]), Integer.parseInt(dimensions[1]));
         List<String> problems = new ArrayList<>();
         onSwing(() -> {
             VarZinhoTheme.install();
-            if (theme.equals("dark")) VarZinhoTheme.toggle();
+            if (dark) VarZinhoTheme.toggle();
             ArenaWorkspace workspace = workspace(operator);
             SidebarPanel sidebar = (SidebarPanel) ((BorderLayout) workspace.getLayout())
                     .getLayoutComponent(BorderLayout.WEST);

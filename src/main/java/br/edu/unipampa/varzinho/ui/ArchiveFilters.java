@@ -2,7 +2,7 @@ package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.application.CourtView;
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
+import java.awt.Component;
 import java.awt.GridLayout;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -21,6 +21,7 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import net.miginfocom.swing.MigLayout;
 
 /** Search, court and calendar controls for the archive. */
 final class ArchiveFilters extends JPanel {
@@ -29,7 +30,6 @@ final class ArchiveFilters extends JPanel {
     private static final String TODAY = "Hoje";
     private static final String YESTERDAY = "Ontem";
     private static final String CHOSEN_DATE = "Escolher data";
-    private static final int FILTERS_SIDE_BY_SIDE_WIDTH = 720;
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT);
     private final Supplier<List<CourtView>> courts;
@@ -88,19 +88,21 @@ final class ArchiveFilters extends JPanel {
         titles.add(eyebrow);
         titles.add(title);
         heading.add(titles);
-        // A FlowLayout wraps into a row of fixed height and hides what wraps, so the two
-        // groups stack explicitly when the archive is narrower than both side by side.
-        AdaptivePair filterRow = new AdaptivePair(FILTERS_SIDE_BY_SIDE_WIDTH, "[][grow]");
+        AdaptivePair filterRow = new AdaptivePair("[][grow]");
         filterRow.add(filterGroup(search, filter));
         filterRow.add(filterGroup(new JLabel("Dia:"), dayFilter, dateField, openClip));
         heading.add(filterRow);
         add(heading);
     }
 
-    private static JPanel filterGroup(java.awt.Component... controls) {
-        JPanel group = new JPanel(new FlowLayout(FlowLayout.LEADING, 6, 0));
+    /**
+     * One row that never wraps: a FlowLayout would wrap into a row of fixed height and hide
+     * what wrapped, while this row reports the width it needs, so the pair stacks instead.
+     */
+    private static JPanel filterGroup(Component... controls) {
+        JPanel group = new JPanel(new MigLayout("insets 0, gap 6, nogrid"));
         group.setOpaque(false);
-        for (java.awt.Component control : controls) group.add(control);
+        for (Component control : controls) group.add(control);
         return group;
     }
 

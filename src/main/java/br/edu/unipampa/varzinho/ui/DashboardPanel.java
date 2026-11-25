@@ -72,7 +72,7 @@ final class DashboardPanel extends JPanel {
         liveView.setEnabled(false);
         share.setEnabled(false);
         share.setToolTipText("Disponível quando o endereço HTTPS dos espectadores estiver configurado.");
-        AdaptivePair live = new AdaptivePair(850, "[0:pref,grow,fill][300:340:390,fill]");
+        AdaptivePair live = new AdaptivePair(850, "[pref,grow,fill][300:340:390,fill]");
         live.add(hero(save), "h 214:pref, growy");
         live.add(quickPtz, "h 214:pref, growy");
         add(live);
