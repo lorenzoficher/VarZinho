@@ -105,7 +105,8 @@ final class SidebarPanel extends JPanel {
         statusCard.add(cameraProgress, "h 5!");
         add(statusCard);
         JButton theme = buildThemeButton();
-        theme.putClientProperty("FlatLaf.style", "background: $VarZinho.sidebarBackground; foreground: $VarZinho.sidebarForeground; borderColor: #45606A");
+        theme.putClientProperty("FlatLaf.style", "background: $VarZinho.sidebarBackground; "
+                + "foreground: $VarZinho.sidebarForeground; borderColor: #45606A; focusedBorderColor: $VarZinho.accent");
         theme.setIcon(VarZinhoIcons.theme(VarZinhoTheme.SIDEBAR_MUTED));
         add(theme);
         JLabel operatorName = sidebarLabel(operator.getName());
@@ -173,7 +174,10 @@ final class SidebarPanel extends JPanel {
         button.setFont(button.getFont().deriveFont(Font.BOLD, 13f));
         button.putClientProperty("FlatLaf.style", "foreground: $VarZinho.sidebarForeground; "
                 + "background: $VarZinho.sidebarBackground; selectedBackground: #104440; "
-                + "selectedForeground: $VarZinho.sidebarForeground; borderWidth: 0; arc: 12; iconTextGap: 12");
+                + "selectedForeground: $VarZinho.sidebarForeground; arc: 12; iconTextGap: 12; "
+                // A transparent border keeps the items flat yet leaves room for the focus ring.
+                + "borderWidth: 2; borderColor: #00000000; hoverBorderColor: #00000000; "
+                + "focusedBorderColor: $VarZinho.accent");
     }
 
     private static JToggleButton navigation(String text, String icon) {

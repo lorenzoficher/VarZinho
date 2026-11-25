@@ -91,7 +91,8 @@ final class CameraListPanel extends JPanel {
         addCamera.setBackground(VarZinhoTheme.EMERALD);
         addCamera.setForeground(Color.WHITE);
         add(heading, BorderLayout.NORTH);
-        addCamera.putClientProperty("FlatLaf.style", "arc: 14; margin: 8,14,8,14; borderWidth: 0");
+        addCamera.putClientProperty("FlatLaf.style", "arc: 14; margin: 8,14,8,14; "
+                + VarZinhoTheme.FILLED_FOCUS_RING);
 
         rows.setOpaque(false);
         JScrollPane scroll = ScrollablePage.around(rows);

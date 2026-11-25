@@ -27,7 +27,7 @@ public final class VarZinhoTheme {
     public static final Color CONTENT_LIGHT = Color.decode("#F3F7F6");
     /** Page background in the dark theme. */
     public static final Color CONTENT_DARK = Color.decode("#172328");
-    /** Lime-green accent used for highlighted actions and focus rings. */
+    /** Lime-green accent used for highlighted actions, and for focus rings on dark surfaces. */
     public static final Color ACCENT = Color.decode("#C8F35C");
     /** Dark text colour drawn over the accent colour. */
     public static final Color ON_ACCENT = Color.decode("#062A32");
@@ -50,6 +50,16 @@ public final class VarZinhoTheme {
     public static final int BUTTON_ARC = 14;
     /** Corner-arc radius applied to popup menus. */
     public static final int POPUP_ARC = 14;
+    /** Width, in pixels, the focus ring adds inside a focused component's border. */
+    private static final float FOCUS_RING_WIDTH = 1f;
+
+    /**
+     * Style fragment for a button filled with a solid colour and drawn without a border.
+     * A ring inside the fill would hug the page edge and read as a smaller button, so the
+     * focus is a ring outside it, in a colour that stands out from the page and the fill.
+     */
+    static final String FILLED_FOCUS_RING = "borderWidth: 0; default.borderWidth: 0; focusWidth: 2; "
+            + "innerFocusWidth: 0; focusColor: $VarZinho.filledFocus; default.focusColor: $VarZinho.filledFocus";
 
     private VarZinhoTheme() { }
 
@@ -80,7 +90,7 @@ public final class VarZinhoTheme {
         action.setFont(action.getFont().deriveFont(Font.BOLD, (float) PROMINENT_ACTION_FONT_SIZE));
         action.putClientProperty("JButton.buttonType", "default");
         action.putClientProperty("FlatLaf.style", "background: $VarZinho.accent; "
-                + "foreground: $VarZinho.onAccent; borderWidth: 0; arc: 16");
+                + "foreground: $VarZinho.onAccent; arc: 16; " + FILLED_FOCUS_RING);
     }
 
     static void styleCard(JComponent component) {
@@ -122,10 +132,18 @@ public final class VarZinhoTheme {
                 .findFirst().orElse(systemFont.getFamily());
         UIManager.put("defaultFont", new javax.swing.plaf.FontUIResource(family, Font.PLAIN, 13));
         UIManager.put("Panel.background", new javax.swing.plaf.ColorUIResource(content));
-        UIManager.put("Component.focusColor", ACCENT);
+        // The lime accent vanishes on the light page, so the light theme rings focus in
+        // emerald; both clear WCAG's 3:1 for a focus indicator on pages and cards.
+        Color focus = dark ? ACCENT : EMERALD;
+        UIManager.put("Component.focusColor", focus);
+        UIManager.put("Component.focusedBorderColor", focus);
+        UIManager.put("Component.innerFocusWidth", FOCUS_RING_WIDTH);
+        UIManager.put("Button.focusedBorderColor", focus);
+        UIManager.put("Button.innerFocusWidth", FOCUS_RING_WIDTH);
         UIManager.put("Button.default.background", ACCENT);
         UIManager.put("Button.default.foreground", ON_ACCENT);
-        UIManager.put("Button.default.focusColor", ACCENT);
+        UIManager.put("Button.default.focusColor", focus);
+        UIManager.put("Button.default.focusedBorderColor", ON_ACCENT);
         UIManager.put("Component.arc", COMPONENT_ARC);
         UIManager.put("Button.arc", BUTTON_ARC);
         UIManager.put("TextComponent.arc", COMPONENT_ARC);
@@ -139,6 +157,7 @@ public final class VarZinhoTheme {
         UIManager.put("VarZinho.contentBackground", content);
         UIManager.put("VarZinho.accent", ACCENT);
         UIManager.put("VarZinho.onAccent", ON_ACCENT);
+        UIManager.put("VarZinho.filledFocus", dark ? SIDEBAR_FOREGROUND : SIDEBAR);
         UIManager.put("VarZinho.emerald", dark ? Color.decode("#76DCB9") : EMERALD);
         UIManager.put("VarZinho.recording", dark ? Color.decode("#FF9B96") : Color.decode("#AA3735"));
         UIManager.put("VarZinho.stopped", dark ? Color.decode("#B6C6C9") : Color.decode("#586D75"));

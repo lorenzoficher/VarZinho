@@ -4,9 +4,13 @@ import br.edu.unipampa.varzinho.application.OperatorAccess;
 import br.edu.unipampa.varzinho.application.OperatorView;
 import br.edu.unipampa.varzinho.infrastructure.persistence.InMemoryOperatorStore;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,6 +27,31 @@ class SidebarPanelTest {
 
         assertEquals(SidebarPanel.Page.ARCHIVE, shown.get());
         assertTrue(sidebar.archiveButton().isSelected());
+    }
+
+    @ParameterizedTest(name = "dark theme: {0}")
+    @ValueSource(booleans = {false, true})
+    void everySidebarControlShowsItsFocusOverTheSidebar(boolean dark) throws Exception {
+        VarZinhoThemeTest.installTheme(dark);
+        try {
+            SidebarPanel sidebar = new SidebarPanel("Arena", operator(), page -> { });
+
+            for (AbstractButton control : List.of(sidebar.dashboardButton(), sidebar.courtsButton(),
+                    sidebar.camerasButton(), sidebar.highlightsButton(), sidebar.archiveButton(),
+                    sidebar.operatorsButton(), sidebar.settingsButton(), themeButton(sidebar))) {
+                assertTrue(Contrast.borderWidth(control) > 0, control.getText() + " draws no focus border");
+                VarZinhoThemeTest.assertContrasts(Contrast.focusedBorderColor(control), VarZinhoTheme.SIDEBAR,
+                        control.getText() + " focus on the sidebar");
+            }
+        } finally {
+            VarZinhoTheme.install();
+        }
+    }
+
+    private static JButton themeButton(SidebarPanel sidebar) {
+        return Arrays.stream(sidebar.getComponents()).filter(JButton.class::isInstance)
+                .map(JButton.class::cast).filter(button -> "Alternar tema".equals(button.getText()))
+                .findFirst().orElseThrow();
     }
 
     @Test
