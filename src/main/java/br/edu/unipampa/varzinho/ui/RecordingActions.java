@@ -1,7 +1,7 @@
 package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.application.HighlightView;
-import br.edu.unipampa.varzinho.application.port.RecordingEditor;
+import br.edu.unipampa.varzinho.application.ManageRecordings;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import java.awt.Component;
 import java.awt.FlowLayout;
@@ -63,7 +63,7 @@ final class RecordingActions {
 
     JButton openClipButton() { return openClip; }
 
-    void enableEditing(RecordingEditor editor) {
+    void enableEditing(ManageRecordings manageRecordings) {
         JButton rename = new JButton("Renomear gravação");
         JButton delete = new JButton("Excluir gravação");
         VarZinhoTheme.styleButton(rename, ButtonRole.SECONDARY);
@@ -82,8 +82,8 @@ final class RecordingActions {
         };
         table.getSelectionModel().addListSelectionListener(event -> update.run());
         update.run();
-        rename.addActionListener(event -> renameSelection(editor, this::askName));
-        delete.addActionListener(event -> deleteSelection(editor, this::confirmDeletion));
+        rename.addActionListener(event -> renameSelection(manageRecordings, this::askName));
+        delete.addActionListener(event -> deleteSelection(manageRecordings, this::confirmDeletion));
     }
 
     private Optional<String> askName(HighlightView item) {
@@ -126,7 +126,7 @@ final class RecordingActions {
     }
 
     /** Renames the selected recording to the name {@code askName} returns; empty means the operator gave up. */
-    void renameSelection(RecordingEditor editor, Function<HighlightView, Optional<String>> askName) {
+    void renameSelection(ManageRecordings manageRecordings, Function<HighlightView, Optional<String>> askName) {
         if (table.getSelectedRowCount() != 1) return;
         HighlightView item = recordings.selectedRecording();
         Optional<String> chosen = askName.apply(item);
@@ -134,7 +134,7 @@ final class RecordingActions {
         String id = item.getId();
         String title = chosen.get();
         RepositoryTask.<Void>run(editActions, "Renomeando a gravação…", () -> {
-            editor.rename(id, title);
+            manageRecordings.rename(id, title);
             return null;
         }, renamed -> refresh.run(), failure -> {
             if (failure instanceof IllegalArgumentException) {
@@ -159,13 +159,13 @@ final class RecordingActions {
 
     List<JButton> editActions() { return List.copyOf(editActions); }
 
-    void deleteSelection(RecordingEditor editor, Predicate<HighlightView> confirm) {
+    void deleteSelection(ManageRecordings manageRecordings, Predicate<HighlightView> confirm) {
         if (table.getSelectedRowCount() != 1) return;
         HighlightView item = recordings.selectedRecording();
         if (!confirm.test(item)) return;
         String id = item.getId();
         RepositoryTask.<Void>run(editActions, "Excluindo a gravação…", () -> {
-            editor.delete(id);
+            manageRecordings.delete(id);
             return null;
         }, deleted -> {
             recordings.forgetCategory(id);

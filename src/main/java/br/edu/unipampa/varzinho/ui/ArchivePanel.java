@@ -4,7 +4,7 @@ import br.edu.unipampa.varzinho.application.ArchiveListing;
 import br.edu.unipampa.varzinho.application.BrowseArchive;
 import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.HighlightView;
-import br.edu.unipampa.varzinho.application.port.RecordingEditor;
+import br.edu.unipampa.varzinho.application.ManageRecordings;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
@@ -90,12 +90,12 @@ final class ArchivePanel extends JPanel {
     JTextField searchField() { return filters.searchField(); }
     JTable table() { return recordings.table(); }
     JButton openClipButton() { return actions.openClipButton(); }
-    void enableEditing(RecordingEditor editor) { actions.enableEditing(editor); }
-    void deleteSelection(RecordingEditor editor, Predicate<HighlightView> confirm) {
-        actions.deleteSelection(editor, confirm);
+    void enableEditing(ManageRecordings manageRecordings) { actions.enableEditing(manageRecordings); }
+    void deleteSelection(ManageRecordings manageRecordings, Predicate<HighlightView> confirm) {
+        actions.deleteSelection(manageRecordings, confirm);
     }
-    void renameSelection(RecordingEditor editor, Function<HighlightView, Optional<String>> askName) {
-        actions.renameSelection(editor, askName);
+    void renameSelection(ManageRecordings manageRecordings, Function<HighlightView, Optional<String>> askName) {
+        actions.renameSelection(manageRecordings, askName);
     }
     /** The rename and delete buttons, once editing is enabled. */
     List<JButton> editActions() { return actions.editActions(); }

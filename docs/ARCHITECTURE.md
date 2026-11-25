@@ -39,14 +39,18 @@ package, nor Swing or AWT. Neither of the two imports `java.sql`, `javax.sql`
 or the PostgreSQL driver. Infrastructure imports no UI or bootstrap package.
 The window imports nothing from the domain or infrastructure. Domain
 exceptions import no other project package. `ArchitectureTest` reads the
-`import` lines under `src/main/java` and fails on any of these.
+`import` lines under `src/main/java` and fails on any of these. It also fails
+when the window names a port other than `RepositoryException` and
+`CorruptedRecordException`, whether in an `import` or by its fully qualified
+name: the window may catch what a use case throws, never call a port.
 
 The window constructs no adapter. `bootstrap/Launcher` is the composition
 root: it asks `bootstrap/Storage` for the storage, builds the use cases and,
 when there is one, the phone, and hands them to the window, which reaches the
 model only through the use cases in `application/`. The use cases take their
 ports in the constructor — `ManageGym(Gym, GymRepository)`,
-`CaptureHighlight(Gym, HighlightRepository)`, `OperatorAccess(OperatorStore)` —
+`CaptureHighlight(Gym, HighlightRepository)`, `OperatorAccess(OperatorStore)`,
+`ManageRecordings(RecordingEditor)` —
 so their tests run them on the in-memory adapters, with no window open.
 
 The brief's responsibilities remain distinct: `domain/` models the system,
