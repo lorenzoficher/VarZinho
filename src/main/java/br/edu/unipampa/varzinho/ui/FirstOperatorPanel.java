@@ -11,6 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,16 +59,22 @@ final class FirstOperatorPanel extends JPanel {
 
     private void create() {
         char[] typed = passwordField.getPassword();
-        try {
-            onSignedIn.accept(access.createFirst(nameField.getText(), usernameField.getText(), new String(typed)));
-        } catch (IllegalArgumentException | IllegalStateException refused) {
+        String password = new String(typed);
+        Arrays.fill(typed, '\0');
+        String name = nameField.getText();
+        String username = usernameField.getText();
+        RepositoryTask.run(List.of(create), "Criando o operador…",
+                () -> access.createFirst(name, username, password), onSignedIn, this::refused);
+    }
+
+    private void refused(Throwable failure) {
+        if (failure instanceof IllegalArgumentException || failure instanceof IllegalStateException) {
             passwordField.setText("");
-            errorSink.accept(PortugueseText.message(refused.getMessage()));
-        } catch (RepositoryException unwritable) {
-            LOGGER.log(Level.WARNING, "Could not create the first operator account", unwritable);
-            errorSink.accept("Não foi possível salvar o operador. Verifique o armazenamento.");
-        } finally {
-            Arrays.fill(typed, '\0');
+            errorSink.accept(PortugueseText.message(failure.getMessage()));
+            return;
         }
+        LOGGER.log(failure instanceof RepositoryException ? Level.WARNING : Level.SEVERE,
+                "Could not create the first operator account", failure);
+        errorSink.accept("Não foi possível salvar o operador. Verifique o armazenamento.");
     }
 }
