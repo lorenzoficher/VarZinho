@@ -22,11 +22,12 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Keeps the gym's structure in three PostgreSQL tables — the gym, its courts and their
- * cameras — reached through plain JDBC.
+ * Keeps the gym's structure in three PostgreSQL tables — the gym, its courts with their
+ * labels, and their cameras — reached through plain JDBC.
  *
  * <p>The tables are private to this class, and the class creates them when they are
  * missing. Saving replaces the whole gym inside one transaction, so the database never
@@ -47,6 +48,12 @@ public final class PostgresGymRepository implements GymRepository {
 
     private static final String CREATE_COURT = "CREATE TABLE IF NOT EXISTS court ("
             + "number INTEGER PRIMARY KEY)";
+
+    // Added after the court table first shipped: a database created before then gains the
+    // columns on open and keeps its rows, which read as courts without labels.
+    private static final String ADD_COURT_LABELS = "ALTER TABLE court "
+            + "ADD COLUMN IF NOT EXISTS display_name TEXT, "
+            + "ADD COLUMN IF NOT EXISTS sport TEXT";
 
     // Position keeps the order cameras were installed in. Each kind fills only its own aim
     // columns, so a row cannot describe a camera that is half fixed and half PTZ.
@@ -70,13 +77,13 @@ public final class PostgresGymRepository implements GymRepository {
             + "AND pan IS NOT NULL AND tilt IS NOT NULL AND zoom IS NOT NULL)))";
 
     private static final String INSERT_GYM = "INSERT INTO gym (name, address) VALUES (?, ?)";
-    private static final String INSERT_COURT = "INSERT INTO court (number) VALUES (?)";
+    private static final String INSERT_COURT = "INSERT INTO court (number, display_name, sport) VALUES (?, ?, ?)";
     private static final String INSERT_CAMERA = "INSERT INTO camera (court_number, position, id, kind, "
             + "model, resolution, buffer_seconds, status, angle, pan, tilt, zoom) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     private static final String SELECT_GYM = "SELECT name, address FROM gym";
-    private static final String SELECT_COURTS = "SELECT number FROM court ORDER BY number";
+    private static final String SELECT_COURTS = "SELECT number, display_name, sport FROM court ORDER BY number";
     private static final String SELECT_CAMERAS = "SELECT court_number, id, kind, model, resolution, "
             + "buffer_seconds, status, angle, pan, tilt, zoom FROM camera ORDER BY court_number, position";
 
@@ -186,6 +193,8 @@ public final class PostgresGymRepository implements GymRepository {
                 PreparedStatement cameraRow = connection.prepareStatement(INSERT_CAMERA)) {
             for (Court court : courts) {
                 courtRow.setInt(1, court.getNumber());
+                courtRow.setString(2, court.getDisplayName().orElse(null));
+                courtRow.setString(3, court.getSport().orElse(null));
                 courtRow.executeUpdate();
                 int position = 0;
                 for (Camera camera : court.getCameras()) {
@@ -265,7 +274,7 @@ public final class PostgresGymRepository implements GymRepository {
             }
             try (ResultSet rows = statement.executeQuery(SELECT_COURTS)) {
                 while (rows.next()) {
-                    gym.addCourt(new Court(rows.getInt("number")));
+                    gym.addCourt(court(rows));
                 }
             }
             try (ResultSet rows = statement.executeQuery(SELECT_CAMERAS)) {
@@ -279,6 +288,13 @@ public final class PostgresGymRepository implements GymRepository {
             // half a gym would be a gym nobody built, so the whole load fails.
             throw new RepositoryException("the stored gym is not valid: " + refused.getMessage(), refused);
         }
+    }
+
+    private static Court court(ResultSet row) throws SQLException {
+        Court court = new Court(row.getInt("number"));
+        court.rename(Objects.requireNonNullElse(row.getString("display_name"), ""));
+        court.assignSport(Objects.requireNonNullElse(row.getString("sport"), ""));
+        return court;
     }
 
     private static void install(Gym gym, ResultSet row) throws SQLException {
@@ -315,6 +331,7 @@ public final class PostgresGymRepository implements GymRepository {
                 Statement statement = connection.createStatement()) {
             statement.execute(CREATE_GYM);
             statement.execute(CREATE_COURT);
+            statement.execute(ADD_COURT_LABELS);
             statement.execute(CREATE_CAMERA);
         } catch (SQLException cause) {
             throw new RepositoryException("could not prepare the gym tables at " + url, cause);
