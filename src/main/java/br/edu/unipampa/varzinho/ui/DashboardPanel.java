@@ -61,10 +61,8 @@ final class DashboardPanel extends JPanel {
             sportButtons.put(sport, button);
             modalities.add(button);
             strip.add(button);
-            button.setToolTipText("Definir a modalidade desta quadra nesta sessão");
-            button.addActionListener(e -> {
-                courtPanel.chooseSport(sport);
-            });
+            button.setToolTipText("Definir a modalidade desta quadra");
+            button.addActionListener(e -> courtPanel.chooseSport(button, sport, () -> { }));
         }
         add(strip);
 
@@ -148,7 +146,7 @@ final class DashboardPanel extends JPanel {
         courtName.setText(courtPanel.nameOf(selected.getNumber()));
         String sport = courtPanel.sportOf(selected.getNumber());
         modalities.clearSelection();
-        if (sport != null) sportButtons.get(sport).setSelected(true);
+        if (sport != null && sportButtons.containsKey(sport)) sportButtons.get(sport).setSelected(true);
         tick(selected);
         quickPtz.refresh();
         overview.refresh(courts, selected.getNumber());
@@ -195,8 +193,9 @@ final class DashboardPanel extends JPanel {
             case "Vôlei" -> "volleyball";
             case "Basquete" -> "basketball";
             case "Beach Tennis" -> "racket";
-            default -> throw new IllegalArgumentException("unknown sport " + sport);
+            default -> null;
         };
-        return VarZinhoIcons.arena(icon, 19, color);
+        // The gym keeps whatever sport the operator typed; one with no drawing gets the court's.
+        return icon == null ? VarZinhoIcons.court(color) : VarZinhoIcons.arena(icon, 19, color);
     }
 }

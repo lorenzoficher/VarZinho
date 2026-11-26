@@ -2,6 +2,7 @@ package br.edu.unipampa.varzinho.ui;
 
 import br.edu.unipampa.varzinho.application.CameraKind;
 import br.edu.unipampa.varzinho.application.CameraView;
+import br.edu.unipampa.varzinho.application.CourtView;
 import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.enums.Resolution;
 
@@ -35,9 +36,7 @@ final class CourtPanel extends JPanel {
     private final CourtOverviewPanel courtOverview;
     private final JLabel installedTitle = new JLabel();
     private final JTable installedCameras;
-    private final java.util.Map<Integer, String> sports = new java.util.HashMap<>();
     private final ManageGym management;
-    private final java.util.Map<Integer, String> names = new java.util.HashMap<>();
     private final List<Runnable> identityListeners = new ArrayList<>();
     private final GymChanges changes;
     private final int bufferSeconds;
@@ -83,8 +82,6 @@ final class CourtPanel extends JPanel {
         });
         courtSelection.onCourtRemoved(number -> {
             cameraPosition.removeCourt(number);
-            names.remove(number);
-            sports.remove(number);
             refreshCourtOverview();
         });
         cameraList.onSelectionChange(cameraPosition::updateAimAvailability);
@@ -185,7 +182,8 @@ final class CourtPanel extends JPanel {
         var cameras = management.court(number).getCameras();
         installedTitle.setText("Câmeras da quadra " + number + " (" + cameras.size() + ")");
     }
-    String sportOf(int number) { return sports.get(number); }
+    /** @return the sport the gym records for the court, or null when it has none */
+    String sportOf(int number) { return court(number).flatMap(CourtView::getSport).orElse(null); }
     Optional<CameraView> selectedCamera() { return cameraList.selectedCamera(); }
 
     JDialog configureDialog(CameraView camera) {
@@ -226,18 +224,35 @@ final class CourtPanel extends JPanel {
         return dialog;
     }
 
-    String nameOf(int number) { return names.getOrDefault(number, "Quadra " + number); }
-    void onIdentityChange(Runnable action) { identityListeners.add(action); }
-
-    void renameSelected(String name) {
-        if (name.isBlank()) names.remove(selectedCourtNumber());
-        else names.put(selectedCourtNumber(), name.strip());
-        identityChanged();
+    String nameOf(int number) {
+        return court(number).flatMap(CourtView::getDisplayName).orElse("Quadra " + number);
     }
 
-    void chooseSport(String sport) {
-        sports.put(selectedCourtNumber(), sport);
-        identityChanged();
+    // A selector may still offer a court another change just removed, so a missing court
+    // reads as an unnamed one instead of failing the repaint.
+    private Optional<CourtView> court(int number) {
+        return management.courts().stream().filter(court -> court.getNumber() == number).findFirst();
+    }
+    void onIdentityChange(Runnable action) { identityListeners.add(action); }
+
+    /** @param onSaved runs only when the gym stored the new name; a blank name clears it */
+    void renameSelected(Component trigger, String name, Runnable onSaved) {
+        int number = selectedCourtNumber();
+        relabel(trigger, () -> management.renameCourt(number, name), onSaved);
+    }
+
+    /** @param onSaved runs only when the gym stored the new sport */
+    void chooseSport(Component trigger, String sport, Runnable onSaved) {
+        int number = selectedCourtNumber();
+        relabel(trigger, () -> management.chooseSport(number, sport), onSaved);
+    }
+
+    // A label the gym could not store is undone, so every outcome repaints what it holds.
+    private void relabel(Component trigger, GymChanges.Change change, Runnable onSaved) {
+        changes.apply(trigger, change, errorSink, result -> {
+            identityChanged();
+            if (result == GymChanges.Result.SAVED) onSaved.run();
+        });
     }
 
     private void identityChanged() {

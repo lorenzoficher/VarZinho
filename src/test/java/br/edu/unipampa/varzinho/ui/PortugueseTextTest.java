@@ -65,6 +65,25 @@ class PortugueseTextTest {
     }
 
     @Test
+    void translatesTheRefusalsOfACourtsLabelsAsTheDomainWordsThem() {
+        Court court = new Court(1);
+        String tooLong = "x".repeat(Court.MAX_LABEL_LENGTH + 1);
+
+        assertEquals("O nome de exibição da quadra pode ter no máximo " + Court.MAX_LABEL_LENGTH + " caracteres.",
+                PortugueseText.message(refusal(() -> court.rename(tooLong))));
+        assertEquals("A modalidade da quadra pode ter no máximo " + Court.MAX_LABEL_LENGTH + " caracteres.",
+                PortugueseText.message(refusal(() -> court.assignSport(tooLong))));
+        assertEquals("O nome de exibição da quadra deve caber em uma linha.",
+                PortugueseText.message(refusal(() -> court.rename("a\nb"))));
+        assertEquals("A modalidade da quadra deve caber em uma linha.",
+                PortugueseText.message(refusal(() -> court.assignSport("a\nb"))));
+    }
+
+    private static String refusal(Runnable change) {
+        return org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, change::run).getMessage();
+    }
+
+    @Test
     void namesTheCameraAndCourtInLookupRefusals() {
         assertEquals("A câmera CAM-3 não está instalada na quadra 2.", PortugueseText.message(
                 "camera CAM-3 is not installed on court 2"));
