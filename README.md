@@ -592,6 +592,10 @@ Depois de mudar um comentário JavaDoc, regenere o HTML e faça o commit de
 mvn clean javadoc:javadoc
 ```
 
+Gere com JDK 21, a versão usada no HTML versionado: o `javadoc` de outra versão
+troca o modelo de todas as páginas, e o diff deixa de mostrar só o que mudou.
+O código continua compilando para Java 17 (`release` 17) de qualquer forma.
+
 O `clean` importa: sem ele, o plugin só confere se a pasta `src/main/java` mudou,
 não cada arquivo, e responde "everything is up to date" mesmo depois de um
 comentário editado — o HTML antigo continua lá. O `clean` apaga só `target/`;
