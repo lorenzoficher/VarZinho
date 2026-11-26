@@ -109,20 +109,19 @@ class ArchivePanelTest {
     }
 
     @Test
-    void searchingDisplayedCategoriesAndDatesCanSelectTheFirstVisibleResult() {
+    void searchingDisplayedCamerasAndDatesCanSelectTheFirstVisibleResult() {
         var repository = new InMemoryHighlightRepository();
         repository.save(highlight("first", EARLY, 1));
         repository.save(highlight("next", LATE, 2));
         var panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
         awaitRepositoryWork();
         JTable table = panel.table();
-        table.setValueAt("Defesa", 1, 4);
-        panel.searchField().setText("DEFESA");
+        panel.searchField().setText("CAMERA-FIRST");
         assertEquals(1, table.getRowCount());
         panel.searchField().postActionEvent();
         assertEquals(0, table.getSelectedRow());
         assertEquals("camera-first", table.getValueAt(table.getSelectedRow(), 2));
-        table.setValueAt("Gol", 0, 4);
+        panel.searchField().setText("unknown camera");
         assertEquals(0, table.getRowCount());
         panel.searchField().postActionEvent();
         assertEquals(-1, table.getSelectedRow());
@@ -266,15 +265,13 @@ class ArchivePanelTest {
         JTable table = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add).table();
         awaitRepositoryWork();
 
-        assertEquals(List.of("Data e hora", "Quadra", "Câmera", "Duração", "Categoria", "Clipe", "Nome"), columnNames(table));
+        assertEquals(List.of("Data e hora", "Quadra", "Câmera", "Duração", "Clipe", "Nome"), columnNames(table));
         assertEquals("29/09/2026 18:30:15", table.getValueAt(0, 0));
         assertEquals(1, table.getValueAt(0, 1));
         assertEquals("camera-h-1", table.getValueAt(0, 2));
         assertEquals("30 s", table.getValueAt(0, 3));
-        assertEquals("Lance", table.getValueAt(0, 4));
-        table.setValueAt("Gol", 0, 4);
-        assertEquals("Gol", table.getValueAt(0, 4));
-        assertEquals("clips/h-1.mp4", table.getValueAt(0, 5));
+        assertFalse(table.isCellEditable(0, 4));
+        assertEquals("clips/h-1.mp4", table.getValueAt(0, 4));
     }
 
     @Test
@@ -441,7 +438,7 @@ class ArchivePanelTest {
         ArchivePanel panel = new ArchivePanel(courts(), new BrowseArchive(repository), BRASILIA, errors::add);
         awaitRepositoryWork();
         JTable grid = panel.table();
-        var cell = (javax.swing.JButton) grid.prepareRenderer(grid.getCellRenderer(0, 5), 0, 5);
+        var cell = (javax.swing.JButton) grid.prepareRenderer(grid.getCellRenderer(0, 4), 0, 4);
         assertEquals("Sem MP4", cell.getText());
         assertFalse(cell.isEnabled());
         panel.table().setRowSelectionInterval(0, 0);
