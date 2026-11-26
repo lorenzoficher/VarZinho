@@ -510,11 +510,11 @@ o fluxo inteiro sem abrir nenhuma janela.
 
 ## Capturas de tela
 
-Capturas dos componentes reais da interface Swing, renderizados com dados de demonstração após os ajustes da auditoria. As duas variantes mostram o tema claro e o escuro. Os formulários de entrada foram também renderizados no tema escuro para conferir contraste, embora a aplicação inicie no tema claro.
+Capturas dos componentes reais da interface Swing, renderizados com dados de demonstração após os ajustes da auditoria. As duas variantes mostram o tema claro e o escuro. Os formulários anteriores ao acesso são apresentados no tema claro, usado ao iniciar a aplicação.
 
 A página pública foi capturada em Chromium isolado, recebendo um padrão de teste transmitido pelo FFmpeg. Essa página oferece apenas o tema claro.
 
-A evidência PostgreSQL foi obtida com um banco temporário PostgreSQL 16.15. Uma JVM gravou a academia, o nome e a modalidade da quadra e o operador. Depois de encerrar essa JVM, outra execução carregou os mesmos dados por meio de Storage, com VARZINHO_DATABASE_URL configurada. A imagem reúne a interface carregada e a saída real da consulta psql em um painel de leitura.
+A evidência PostgreSQL foi obtida com um banco temporário PostgreSQL 16.15. Uma JVM gravou os dados de demonstração da academia. A consulta exibida comprova o nome e a modalidade das quadras. Depois de encerrar essa JVM, outra execução carregou os mesmos dados por meio de Storage, com VARZINHO_DATABASE_URL configurada. A imagem reúne a interface carregada e a saída real da consulta psql em um painel de leitura.
 
 **Painel.** Demonstra a organização da interface, a navegação e os controles de captura e PTZ, relacionados aos critérios 6, 7 e 8.
 
@@ -550,19 +550,19 @@ A evidência PostgreSQL foi obtida com um banco temporário PostgreSQL 16.15. Um
 
 | Claro | Escuro |
 |---|---|
-| ![Persistência PostgreSQL no tema claro](docs/screenshots/29-postgresql-apos-reinicio-claro.png) | ![Persistência PostgreSQL no tema escuro](docs/screenshots/29-postgresql-apos-reinicio-escuro.png) |
+| ![Persistência PostgreSQL no tema claro](docs/screenshots/28-postgresql-apos-reinicio-claro.png) | ![Persistência PostgreSQL no tema escuro](docs/screenshots/28-postgresql-apos-reinicio-escuro.png) |
 
 **Espectador.** Página pública com reprodução de um padrão de teste transmitido pelo FFmpeg. Demonstra o fluxo de visualização no navegador.
 
-![Página pública do espectador](docs/screenshots/28-espectador-claro.png)
+![Página pública do espectador](docs/screenshots/27-espectador-claro.png)
 
 | Tela ou estado | Claro | Escuro |
 |---|---|---|
-| Primeiro operador | [Abrir](docs/screenshots/01-primeiro-operador-claro.png) | [Abrir](docs/screenshots/01-primeiro-operador-escuro.png) |
-| Entrada do operador | [Abrir](docs/screenshots/02-entrada-do-operador-claro.png) | [Abrir](docs/screenshots/02-entrada-do-operador-escuro.png) |
-| Recuperar senha | [Abrir](docs/screenshots/03-recuperar-senha-claro.png) | [Abrir](docs/screenshots/03-recuperar-senha-escuro.png) |
-| Recuperação enviada | [Abrir](docs/screenshots/04-recuperacao-enviada-claro.png) | [Abrir](docs/screenshots/04-recuperacao-enviada-escuro.png) |
-| Nova senha | [Abrir](docs/screenshots/05-nova-senha-claro.png) | [Abrir](docs/screenshots/05-nova-senha-escuro.png) |
+| Primeiro operador | [Abrir](docs/screenshots/01-primeiro-operador-claro.png) | Tema de entrada |
+| Entrada do operador | [Abrir](docs/screenshots/02-entrada-do-operador-claro.png) | Tema de entrada |
+| Recuperar senha | [Abrir](docs/screenshots/03-recuperar-senha-claro.png) | Tema de entrada |
+| Recuperação enviada | [Abrir](docs/screenshots/04-recuperacao-enviada-claro.png) | Tema de entrada |
+| Nova senha | [Abrir](docs/screenshots/05-nova-senha-claro.png) | Tema de entrada |
 | Painel | [Abrir](docs/screenshots/06-painel-claro.png) | [Abrir](docs/screenshots/06-painel-escuro.png) |
 | Quadras | [Abrir](docs/screenshots/07-quadras-claro.png) | [Abrir](docs/screenshots/07-quadras-escuro.png) |
 | Câmeras | [Abrir](docs/screenshots/08-cameras-claro.png) | [Abrir](docs/screenshots/08-cameras-escuro.png) |
@@ -584,8 +584,8 @@ A evidência PostgreSQL foi obtida com um banco temporário PostgreSQL 16.15. Um
 | Confirmar exclusão | [Abrir](docs/screenshots/24-confirmar-exclusao-claro.png) | [Abrir](docs/screenshots/24-confirmar-exclusao-escuro.png) |
 | Reproduzir vídeo | [Abrir](docs/screenshots/25-reproduzir-video-claro.png) | [Abrir](docs/screenshots/25-reproduzir-video-escuro.png) |
 | Baixar vídeo | [Abrir](docs/screenshots/26-baixar-video-claro.png) | [Abrir](docs/screenshots/26-baixar-video-escuro.png) |
-| Espectador | [Abrir](docs/screenshots/28-espectador-claro.png) | Tema único |
-| PostgreSQL após reinício | [Abrir](docs/screenshots/29-postgresql-apos-reinicio-claro.png) | [Abrir](docs/screenshots/29-postgresql-apos-reinicio-escuro.png) |
+| Espectador | [Abrir](docs/screenshots/27-espectador-claro.png) | Tema único |
+| PostgreSQL após reinício | [Abrir](docs/screenshots/28-postgresql-apos-reinicio-claro.png) | [Abrir](docs/screenshots/28-postgresql-apos-reinicio-escuro.png) |
 
 ## Documentação
 
