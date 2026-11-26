@@ -100,6 +100,11 @@ public final class VarZinhoWindow extends JFrame {
         workspace.enableRecordingEditing(manageRecordings);
     }
 
+    /** Reads the archive again after old recordings were removed outside the window. */
+    public void recordingsExpired() {
+        workspace.recordingsExpired();
+    }
+
     /**
      * Runs the phone's feed on a clock of its own, shows its court and offers the stream
      * in the browser.

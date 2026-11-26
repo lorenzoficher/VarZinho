@@ -15,7 +15,8 @@ nobody scrubs through six hours of video to find a goal.
 ## Solution
 
 Cameras record continuously into a circular buffer holding the last 30
-seconds. A button on the court freezes that window into a permanent clip.
+seconds. A button on the court freezes that window into a clip, kept for seven
+days.
 Everything older is discarded automatically and never reaches disk.
 
 The result is an archive containing only the moments somebody cared about,
@@ -125,6 +126,13 @@ failing silently or printing a stack trace.
 The interface owns no rule. It calls the domain and displays what comes back;
 if logic starts accumulating in a window class, it belongs in a domain class
 instead.
+
+### FR-8 — Retention
+
+A recording is removed seven days after its capture, its video file included,
+so the disk does not fill. `VARZINHO_RETENTION_DAYS` sets another number of
+days, and `0` keeps everything. Expiry runs when the window opens and every
+hour after, without blocking the window.
 
 ## Non-functional requirements
 

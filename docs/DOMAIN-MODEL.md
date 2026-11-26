@@ -247,7 +247,7 @@ are, which are stored in lowercase.
 
 ## Persistence boundaries
 
-`HighlightRepository` stores the permanent highlight archive.
+`HighlightRepository` stores the highlight archive; `ExpireRecordings` removes the entries older than the retention period.
 `GymRepository` stores the gym, courts, cameras, their status and PTZ
 position. `OperatorStore` stores the operator accounts, never a plain
 password. `CsvHighlightRepository` can recover valid highlights around a

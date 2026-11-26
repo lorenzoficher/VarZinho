@@ -170,6 +170,7 @@ final class ArenaWorkspace extends JPanel {
     void enableRecordingEditing(ManageRecordings manageRecordings) {
         archivePanel.enableEditing(manageRecordings);
     }
+    void recordingsExpired() { archivePanel.refresh(); }
     void refreshDevices() { courtPanel.devices().refresh(); }
 
     void liveActions(Runnable open, Runnable copy, String hint) {
