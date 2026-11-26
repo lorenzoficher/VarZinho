@@ -128,8 +128,10 @@
                 <configuration>
                     <release>17</release>
                     <show>protected</show>
-                    <!-- Recent plugin versions write to target/reports; the delivery expects target/site/apidocs. -->
-                    <outputDirectory>${project.build.directory}/site</outputDirectory>
+                    <!-- The submission ships the HTML and target/ is not versioned, so it lands in docs/apidocs (the plugin appends apidocs). -->
+                    <outputDirectory>${project.basedir}/docs</outputDirectory>
+                    <!-- Without it every regeneration rewrites every page with a new date, and the diff hides the real changes. -->
+                    <notimestamp>true</notimestamp>
                     <doctitle>VarZinho ${project.version} API</doctitle>
                     <windowtitle>VarZinho ${project.version} API</windowtitle>
                     <!-- Missing tags are being filled in per layer; only real errors should stop the build. -->

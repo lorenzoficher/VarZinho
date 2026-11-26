@@ -1,0 +1,15 @@
+br.edu.unipampa.varzinho
+br.edu.unipampa.varzinho.application
+br.edu.unipampa.varzinho.application.port
+br.edu.unipampa.varzinho.bootstrap
+br.edu.unipampa.varzinho.domain.capture
+br.edu.unipampa.varzinho.domain.highlight
+br.edu.unipampa.varzinho.domain.people
+br.edu.unipampa.varzinho.domain.structure
+br.edu.unipampa.varzinho.enums
+br.edu.unipampa.varzinho.exception
+br.edu.unipampa.varzinho.infrastructure.persistence
+br.edu.unipampa.varzinho.infrastructure.simulation
+br.edu.unipampa.varzinho.infrastructure.spectator
+br.edu.unipampa.varzinho.infrastructure.stream
+br.edu.unipampa.varzinho.ui

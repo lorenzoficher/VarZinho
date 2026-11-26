@@ -25,6 +25,7 @@ mvn test
 - [ ] Fields are private; no setters added without a real use case
 - [ ] Layer dependencies satisfy `ArchitectureTest`
 - [ ] Documentation updated if behaviour changed
+- [ ] If a JavaDoc comment changed, `mvn clean javadoc:javadoc` was run (JDK 21) and `docs/apidocs/` committed
 - [ ] Only files belonging to my aggregate were touched
 
 ## Notes for the reviewer

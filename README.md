@@ -580,21 +580,28 @@ salvo junto com a academia, e o guia **Como conectar a câmera** do celular.
 
 ## Documentação JavaDoc
 
-O JavaDoc do código é gerado como HTML navegável pelo Maven:
+O JavaDoc já vem gerado em HTML navegável, versionado junto com o código:
+**[`docs/apidocs/index.html`](docs/apidocs/index.html)**. Abra esse arquivo no
+navegador para ver todos os pacotes, classes e métodos públicos e protegidos —
+num clone novo ele já está lá, sem precisar compilar nada.
+
+Depois de mudar um comentário JavaDoc, regenere o HTML e faça o commit de
+`docs/apidocs/` junto com a mudança:
 
 ```bash
 mvn clean javadoc:javadoc
 ```
 
-O resultado fica em `target/site/apidocs/index.html` — abra esse arquivo no
-navegador para ver todos os pacotes, classes e métodos públicos e protegidos. A
-pasta `target/` não é versionada: para a entrega, gere o HTML e copie
-`target/site/apidocs/` junto com o código.
+Gere com JDK 21, a versão usada no HTML versionado: o `javadoc` de outra versão
+troca o modelo de todas as páginas, e o diff deixa de mostrar só o que mudou.
+O código continua compilando para Java 17 (`release` 17) de qualquer forma.
 
 O `clean` importa: sem ele, o plugin só confere se a pasta `src/main/java` mudou,
 não cada arquivo, e responde "everything is up to date" mesmo depois de um
-comentário editado — o HTML antigo continua lá. Num clone novo,
-`mvn javadoc:javadoc` sozinho basta.
+comentário editado — o HTML antigo continua lá. O `clean` apaga só `target/`;
+`docs/apidocs/` é reescrita por cima. Se uma classe for removida ou renomeada,
+apague `docs/apidocs/` antes de gerar, para a página antiga não ficar para trás.
+As páginas saem sem data de geração, então o diff mostra só o que mudou de fato.
 
 O comando pode exibir avisos sobre `@param`, `@return` ou comentários ausentes;
 eles não interrompem a geração e vão diminuindo à medida que cada camada é
