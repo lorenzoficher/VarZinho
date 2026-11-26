@@ -37,7 +37,7 @@ public final class CsvGymRepository implements GymRepository {
     private static final String SEPARATOR = ",";
     private static final String GYM = "gym";
     private static final String COURT = "court";
-    // A court line once held only the number; files written then must keep loading.
+    // A court line once held only the number, and an unlabelled court is still written so.
     private static final int UNLABELLED_COURT_COLUMNS = 2;
     private static final int COURT_COLUMNS = 4;
     private static final int COMMON_COLUMNS = 7;
@@ -112,8 +112,7 @@ public final class CsvGymRepository implements GymRepository {
         courts.removeIf(CsvGymRepository::holdsOnlyStreams);
         courts.sort(Comparator.comparingInt(Court::getNumber));
         for (Court court : courts) {
-            lines.add(line(COURT, String.valueOf(court.getNumber()),
-                    court.getDisplayName().orElse(""), court.getSport().orElse("")));
+            lines.add(courtLine(court));
         }
         for (Court court : courts) {
             for (Camera camera : court.getCameras()) {
@@ -180,6 +179,16 @@ public final class CsvGymRepository implements GymRepository {
             throw new RepositoryException("the gym file " + file + " has no gym line");
         }
         return Optional.of(gym);
+    }
+
+    // A court without labels keeps the line it always had, so saving a file written before
+    // labels existed leaves it exactly as it was.
+    private static String courtLine(Court court) {
+        String number = String.valueOf(court.getNumber());
+        if (court.getDisplayName().isEmpty() && court.getSport().isEmpty()) {
+            return line(COURT, number);
+        }
+        return line(COURT, number, court.getDisplayName().orElse(""), court.getSport().orElse(""));
     }
 
     private static Court court(String[] fields, int lineNumber) throws RepositoryException {
