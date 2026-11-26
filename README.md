@@ -592,9 +592,21 @@ Depois de mudar um comentário JavaDoc, regenere o HTML e faça o commit de
 mvn clean javadoc:javadoc
 ```
 
-Gere com JDK 21, a versão usada no HTML versionado: o `javadoc` de outra versão
-troca o modelo de todas as páginas, e o diff deixa de mostrar só o que mudou.
-O código continua compilando para Java 17 (`release` 17) de qualquer forma.
+Gere com JDK 25, a versão usada no HTML versionado: é ela que dá à página a
+barra lateral, o tema claro/escuro e a busca, e o `javadoc` de outra versão
+troca o modelo de todas as páginas, fazendo o diff deixar de mostrar só o que
+mudou. Basta apontar o `JAVA_HOME` para ele só nesse comando:
+
+```bash
+JAVA_HOME=/caminho/do/jdk-25 mvn clean javadoc:javadoc
+```
+
+Compilar, testar e rodar continuam pedindo só o JDK 17: o código é compilado
+para Java 17 (`release` 17) seja qual for o JDK.
+
+A página inicial do JavaDoc vem de
+[`src/main/javadoc/overview.html`](src/main/javadoc/overview.html), e a
+descrição de cada pacote, do `package-info.java` dele.
 
 O `clean` importa: sem ele, o plugin só confere se a pasta `src/main/java` mudou,
 não cada arquivo, e responde "everything is up to date" mesmo depois de um
