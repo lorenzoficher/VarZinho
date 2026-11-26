@@ -623,19 +623,21 @@ class CourtPanelTest {
     }
 
     @Test
-    void aSaveTheStorageRefusesIsReportedWhileTheChangeStays() {
+    void aSaveTheStorageRefusesIsReportedAndTheCourtIsNotAdded() {
         gymRepository.failFromNowOn();
+        int selected = panel.selectedCourtNumber();
         panel.courtNumberField().setText("3");
 
         press(panel.addCourtButton());
 
-        assertEquals(List.of("Não foi possível salvar a academia. Verifique o armazenamento."), errors);
-        assertEquals(3, panel.selectedCourtNumber());
-        assertEquals(3, gym.getCourts().size());
+        assertEquals(List.of(GymChanges.NOT_SAVED), errors);
+        assertEquals(selected, panel.selectedCourtNumber());
+        assertFalse(panel.courtNumbers().contains(3));
+        assertEquals(2, gym.getCourts().size());
     }
 
     @Test
-    void aValueTheStorageCannotHoldLeavesTheCameraInstalledAndLaterCourtsListed(@TempDir Path folder) {
+    void aCameraTheStorageCannotHoldIsNotInstalledAndLaterChangesStillSave(@TempDir Path folder) {
         CourtPanel csvPanel = new CourtPanel(
                 new ManageGym(gym, new CsvGymRepository(folder.resolve("gym.csv"))), 30, errors::add);
         csvPanel.selectCourt(2);
@@ -648,9 +650,8 @@ class CourtPanelTest {
         csvPanel.courtNumberField().setText("3");
         press(csvPanel.addCourtButton());
 
-        assertEquals(2, errors.size());
-        assertTrue(errors.get(0).startsWith("Não foi possível salvar a academia."), errors.get(0));
-        assertTrue(gym.findCourt(2).orElseThrow().getCameras().stream().anyMatch(camera -> camera.getId().equals("fixed-9")));
+        assertEquals(List.of(GymChanges.NOT_SAVED), errors);
+        assertFalse(gym.findCourt(2).orElseThrow().getCameras().stream().anyMatch(camera -> camera.getId().equals("fixed-9")));
         assertEquals(3, csvPanel.selectedCourtNumber());
         assertEquals(3, gym.getCourts().size());
     }
@@ -735,7 +736,7 @@ class CourtPanelTest {
         press(panel.stopButton());
 
         assertTrue(panel.stopButton().isEnabled());
-        assertEquals(List.of("Não foi possível salvar a academia. Verifique o armazenamento."), errors);
+        assertEquals(List.of(GymChanges.NOT_SAVED), errors);
     }
 
     @Test
