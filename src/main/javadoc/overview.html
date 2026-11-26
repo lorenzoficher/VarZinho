@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>VarZinho API overview</title>
+</head>
+<body>
+<p>VarZinho captures highlights in a sports gym: every camera keeps its last 30 seconds in a
+circular buffer, and pressing a court's button turns that window into a permanent clip.</p>
+
+<p>It is the project for AL0330, Object-Oriented Programming, at Unipampa Alegrete. Its focus is
+the domain model, not video processing: fixed and PTZ cameras carry metadata only, and a phone's
+real <code>.mp4</code> clips are written by FFmpeg, an external program, behind an interface. No
+frame is ever decoded in Java.</p>
+
+<h1>How a capture happens</h1>
+<ol>
+<li>A clock hands every court one second of footage, and each recording
+{@link br.edu.unipampa.varzinho.domain.capture.Camera} writes it into its
+{@link br.edu.unipampa.varzinho.domain.capture.CircularBuffer}, overwriting the oldest second.</li>
+<li>The operator presses a court's button. {@link br.edu.unipampa.varzinho.application.CaptureHighlight}
+asks the {@link br.edu.unipampa.varzinho.domain.structure.Court}, whose first recording camera
+freezes its last 30 seconds into a {@link br.edu.unipampa.varzinho.domain.highlight.VideoClip},
+and the court stamps the clip as an immutable
+{@link br.edu.unipampa.varzinho.domain.highlight.Highlight}.</li>
+<li>The use case returns it as a {@link br.edu.unipampa.varzinho.application.PendingCapture},
+whose {@code archive()} stores it through
+{@link br.edu.unipampa.varzinho.application.port.HighlightRepository}, in CSV files or in
+PostgreSQL.</li>
+</ol>
+
+<h1>Layers</h1>
+<p>The packages follow Clean Architecture. Each layer depends only on the layers inside it, and
+<code>ArchitectureTest</code> fails the build on any import that points outward.</p>
+<table class="summary-table">
+<caption>Layers, from the innermost out</caption>
+<thead>
+<tr><th scope="col">Layer</th><th scope="col">Packages</th><th scope="col">Holds</th></tr>
+</thead>
+<tbody>
+<tr><td>Domain</td>
+<td>{@link br.edu.unipampa.varzinho.domain.structure structure},
+{@link br.edu.unipampa.varzinho.domain.capture capture},
+{@link br.edu.unipampa.varzinho.domain.highlight highlight},
+{@link br.edu.unipampa.varzinho.domain.people people},
+{@link br.edu.unipampa.varzinho.enums enums},
+{@link br.edu.unipampa.varzinho.exception exception}</td>
+<td>The entities and their rules. Imports nothing from the other layers, nor Swing, SQL or
+FFmpeg.</td></tr>
+<tr><td>Application</td>
+<td>{@link br.edu.unipampa.varzinho.application application},
+{@link br.edu.unipampa.varzinho.application.port application.port}</td>
+<td>The use cases, the read models the window shows, and the storage contracts (ports).</td></tr>
+<tr><td>Infrastructure</td>
+<td>{@link br.edu.unipampa.varzinho.infrastructure.persistence persistence},
+{@link br.edu.unipampa.varzinho.infrastructure.stream stream},
+{@link br.edu.unipampa.varzinho.infrastructure.simulation simulation},
+{@link br.edu.unipampa.varzinho.infrastructure.spectator spectator}</td>
+<td>The adapters: CSV, PostgreSQL and in-memory storage, FFmpeg, the simulated clock and the
+public spectator view.</td></tr>
+<tr><td>Presentation</td>
+<td>{@link br.edu.unipampa.varzinho.ui ui}</td>
+<td>The Swing window. Reaches the model only through the use cases and owns no business
+rule.</td></tr>
+<tr><td>Composition root</td>
+<td>{@link br.edu.unipampa.varzinho.bootstrap bootstrap}</td>
+<td>The one place that names every concrete adapter and puts the application together.</td></tr>
+</tbody>
+</table>
+
+<h1>Where to start reading</h1>
+<ul>
+<li>The model: {@link br.edu.unipampa.varzinho.domain.structure.Gym},
+{@link br.edu.unipampa.varzinho.domain.capture.Camera} and its subclasses, and
+{@link br.edu.unipampa.varzinho.domain.highlight.Highlight}.</li>
+<li>What the operator can do: the use cases in
+{@link br.edu.unipampa.varzinho.application application}.</li>
+<li>How the pieces are wired: {@link br.edu.unipampa.varzinho.bootstrap.Launcher}.</li>
+<li>Without the window: {@link br.edu.unipampa.varzinho.ConsoleDemo} runs the whole flow in
+text.</li>
+</ul>
+</body>
+</html>
