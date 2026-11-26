@@ -516,36 +516,76 @@ A página pública foi capturada em Chromium isolado, recebendo um padrão de te
 
 A evidência PostgreSQL foi obtida com um banco temporário PostgreSQL 16.15. Uma JVM gravou a academia, o nome e a modalidade da quadra e o operador. Depois de encerrar essa JVM, outra execução carregou os mesmos dados por meio de Storage, com VARZINHO_DATABASE_URL configurada. A imagem reúne a interface carregada e a saída real da consulta psql em um painel de leitura.
 
+**Painel.** Demonstra a organização da interface, a navegação e os controles de captura e PTZ, relacionados aos critérios 6, 7 e 8.
+
+| Claro | Escuro |
+|---|---|
+| ![Painel no tema claro](docs/screenshots/06-painel-claro.png) | ![Painel no tema escuro](docs/screenshots/06-painel-escuro.png) |
+
+**Lance registrado.** Demonstra o registro de um lance de câmera simulada e o retorno da operação ao usuário. O histórico identifica a ausência de MP4 na simulação.
+
+| Claro | Escuro |
+|---|---|
+| ![Lance registrado no tema claro](docs/screenshots/12-lance-registrado-claro.png) | ![Lance registrado no tema escuro](docs/screenshots/12-lance-registrado-escuro.png) |
+
+**Erro de domínio.** A tentativa de captura em uma quadra sem câmera ativa apresenta a mensagem de erro na barra inferior. Demonstra tratamento de exceções e feedback ao usuário, conforme a seção 2.8 do Trabalho 1 e o critério 8 do Trabalho 2.
+
+| Claro | Escuro |
+|---|---|
+| ![Erro de domínio no tema claro](docs/screenshots/13-erro-quadra-sem-camera-ativa-claro.png) | ![Erro de domínio no tema escuro](docs/screenshots/13-erro-quadra-sem-camera-ativa-escuro.png) |
+
+**Acervo.** Demonstra a consulta do histórico por quadra e os dados das gravações.
+
+| Claro | Escuro |
+|---|---|
+| ![Acervo no tema claro](docs/screenshots/14-acervo-claro.png) | ![Acervo no tema escuro](docs/screenshots/14-acervo-escuro.png) |
+
+**Cadastro de operador.** Demonstra o formulário e a confirmação de cadastro. As capturas de validação na tabela mostram senha inválida e confirmação divergente.
+
+| Claro | Escuro |
+|---|---|
+| ![Cadastro de operador no tema claro](docs/screenshots/19-operador-cadastrado-claro.png) | ![Cadastro de operador no tema escuro](docs/screenshots/19-operador-cadastrado-escuro.png) |
+
+**Persistência PostgreSQL.** A interface de uma segunda JVM apresenta o nome e a modalidade persistidos. A saída real do psql consulta as mesmas quadras. Evidencia a persistência entre execuções do critério 9.
+
+| Claro | Escuro |
+|---|---|
+| ![Persistência PostgreSQL no tema claro](docs/screenshots/29-postgresql-apos-reinicio-claro.png) | ![Persistência PostgreSQL no tema escuro](docs/screenshots/29-postgresql-apos-reinicio-escuro.png) |
+
+**Espectador.** Página pública com reprodução de um padrão de teste transmitido pelo FFmpeg. Demonstra o fluxo de visualização no navegador.
+
+![Página pública do espectador](docs/screenshots/28-espectador-claro.png)
+
 | Tela ou estado | Claro | Escuro |
 |---|---|---|
-| primeiro operador | [Abrir](docs/screenshots/01-primeiro-operador-claro.png) | [Abrir](docs/screenshots/01-primeiro-operador-escuro.png) |
-| entrada do operador | [Abrir](docs/screenshots/02-entrada-do-operador-claro.png) | [Abrir](docs/screenshots/02-entrada-do-operador-escuro.png) |
-| recuperar senha | [Abrir](docs/screenshots/03-recuperar-senha-claro.png) | [Abrir](docs/screenshots/03-recuperar-senha-escuro.png) |
-| recuperacao enviada | [Abrir](docs/screenshots/04-recuperacao-enviada-claro.png) | [Abrir](docs/screenshots/04-recuperacao-enviada-escuro.png) |
-| nova senha | [Abrir](docs/screenshots/05-nova-senha-claro.png) | [Abrir](docs/screenshots/05-nova-senha-escuro.png) |
-| painel | [Abrir](docs/screenshots/06-painel-claro.png) | [Abrir](docs/screenshots/06-painel-escuro.png) |
-| quadras | [Abrir](docs/screenshots/07-quadras-claro.png) | [Abrir](docs/screenshots/07-quadras-escuro.png) |
-| cameras | [Abrir](docs/screenshots/08-cameras-claro.png) | [Abrir](docs/screenshots/08-cameras-escuro.png) |
-| instalar camera | [Abrir](docs/screenshots/09-instalar-camera-claro.png) | [Abrir](docs/screenshots/09-instalar-camera-escuro.png) |
-| configurar camera | [Abrir](docs/screenshots/10-configurar-camera-claro.png) | [Abrir](docs/screenshots/10-configurar-camera-escuro.png) |
-| melhores momentos | [Abrir](docs/screenshots/11-melhores-momentos-claro.png) | [Abrir](docs/screenshots/11-melhores-momentos-escuro.png) |
-| lance registrado | [Abrir](docs/screenshots/12-lance-registrado-claro.png) | [Abrir](docs/screenshots/12-lance-registrado-escuro.png) |
-| erro quadra sem camera ativa | [Abrir](docs/screenshots/13-erro-quadra-sem-camera-ativa-claro.png) | [Abrir](docs/screenshots/13-erro-quadra-sem-camera-ativa-escuro.png) |
-| acervo | [Abrir](docs/screenshots/14-acervo-claro.png) | [Abrir](docs/screenshots/14-acervo-escuro.png) |
-| renomear gravacao | [Abrir](docs/screenshots/15-renomear-gravacao-claro.png) | [Abrir](docs/screenshots/15-renomear-gravacao-escuro.png) |
-| operadores | [Abrir](docs/screenshots/16-operadores-claro.png) | [Abrir](docs/screenshots/16-operadores-escuro.png) |
-| erro confirmacao | [Abrir](docs/screenshots/17-erro-confirmacao-claro.png) | [Abrir](docs/screenshots/17-erro-confirmacao-escuro.png) |
-| erro senha | [Abrir](docs/screenshots/18-erro-senha-claro.png) | [Abrir](docs/screenshots/18-erro-senha-escuro.png) |
-| operador cadastrado | [Abrir](docs/screenshots/19-operador-cadastrado-claro.png) | [Abrir](docs/screenshots/19-operador-cadastrado-escuro.png) |
-| configuracoes | [Abrir](docs/screenshots/20-configuracoes-claro.png) | [Abrir](docs/screenshots/20-configuracoes-escuro.png) |
-| conectar celular | [Abrir](docs/screenshots/21-conectar-celular-claro.png) | [Abrir](docs/screenshots/21-conectar-celular-escuro.png) |
-| guia camera | [Abrir](docs/screenshots/22-guia-camera-claro.png) | [Abrir](docs/screenshots/22-guia-camera-escuro.png) |
-| confirmar remocao quadra | [Abrir](docs/screenshots/23-confirmar-remocao-quadra-claro.png) | [Abrir](docs/screenshots/23-confirmar-remocao-quadra-escuro.png) |
-| confirmar exclusao | [Abrir](docs/screenshots/24-confirmar-exclusao-claro.png) | [Abrir](docs/screenshots/24-confirmar-exclusao-escuro.png) |
-| reproduzir video | [Abrir](docs/screenshots/25-reproduzir-video-claro.png) | [Abrir](docs/screenshots/25-reproduzir-video-escuro.png) |
-| baixar video | [Abrir](docs/screenshots/26-baixar-video-claro.png) | [Abrir](docs/screenshots/26-baixar-video-escuro.png) |
-| espectador | [Abrir](docs/screenshots/28-espectador-claro.png) | Tema único |
-| postgresql apos reinicio | [Abrir](docs/screenshots/29-postgresql-apos-reinicio-claro.png) | [Abrir](docs/screenshots/29-postgresql-apos-reinicio-escuro.png) |
+| Primeiro operador | [Abrir](docs/screenshots/01-primeiro-operador-claro.png) | [Abrir](docs/screenshots/01-primeiro-operador-escuro.png) |
+| Entrada do operador | [Abrir](docs/screenshots/02-entrada-do-operador-claro.png) | [Abrir](docs/screenshots/02-entrada-do-operador-escuro.png) |
+| Recuperar senha | [Abrir](docs/screenshots/03-recuperar-senha-claro.png) | [Abrir](docs/screenshots/03-recuperar-senha-escuro.png) |
+| Recuperação enviada | [Abrir](docs/screenshots/04-recuperacao-enviada-claro.png) | [Abrir](docs/screenshots/04-recuperacao-enviada-escuro.png) |
+| Nova senha | [Abrir](docs/screenshots/05-nova-senha-claro.png) | [Abrir](docs/screenshots/05-nova-senha-escuro.png) |
+| Painel | [Abrir](docs/screenshots/06-painel-claro.png) | [Abrir](docs/screenshots/06-painel-escuro.png) |
+| Quadras | [Abrir](docs/screenshots/07-quadras-claro.png) | [Abrir](docs/screenshots/07-quadras-escuro.png) |
+| Câmeras | [Abrir](docs/screenshots/08-cameras-claro.png) | [Abrir](docs/screenshots/08-cameras-escuro.png) |
+| Instalar câmera | [Abrir](docs/screenshots/09-instalar-camera-claro.png) | [Abrir](docs/screenshots/09-instalar-camera-escuro.png) |
+| Configurar câmera | [Abrir](docs/screenshots/10-configurar-camera-claro.png) | [Abrir](docs/screenshots/10-configurar-camera-escuro.png) |
+| Melhores momentos | [Abrir](docs/screenshots/11-melhores-momentos-claro.png) | [Abrir](docs/screenshots/11-melhores-momentos-escuro.png) |
+| Lance registrado | [Abrir](docs/screenshots/12-lance-registrado-claro.png) | [Abrir](docs/screenshots/12-lance-registrado-escuro.png) |
+| Erro de quadra sem câmera ativa | [Abrir](docs/screenshots/13-erro-quadra-sem-camera-ativa-claro.png) | [Abrir](docs/screenshots/13-erro-quadra-sem-camera-ativa-escuro.png) |
+| Acervo | [Abrir](docs/screenshots/14-acervo-claro.png) | [Abrir](docs/screenshots/14-acervo-escuro.png) |
+| Renomear gravação | [Abrir](docs/screenshots/15-renomear-gravacao-claro.png) | [Abrir](docs/screenshots/15-renomear-gravacao-escuro.png) |
+| Operadores | [Abrir](docs/screenshots/16-operadores-claro.png) | [Abrir](docs/screenshots/16-operadores-escuro.png) |
+| Erro de confirmação | [Abrir](docs/screenshots/17-erro-confirmacao-claro.png) | [Abrir](docs/screenshots/17-erro-confirmacao-escuro.png) |
+| Erro de senha | [Abrir](docs/screenshots/18-erro-senha-claro.png) | [Abrir](docs/screenshots/18-erro-senha-escuro.png) |
+| Operador cadastrado | [Abrir](docs/screenshots/19-operador-cadastrado-claro.png) | [Abrir](docs/screenshots/19-operador-cadastrado-escuro.png) |
+| Configurações | [Abrir](docs/screenshots/20-configuracoes-claro.png) | [Abrir](docs/screenshots/20-configuracoes-escuro.png) |
+| Conectar celular | [Abrir](docs/screenshots/21-conectar-celular-claro.png) | [Abrir](docs/screenshots/21-conectar-celular-escuro.png) |
+| Guia da câmera | [Abrir](docs/screenshots/22-guia-camera-claro.png) | [Abrir](docs/screenshots/22-guia-camera-escuro.png) |
+| Confirmar remoção da quadra | [Abrir](docs/screenshots/23-confirmar-remocao-quadra-claro.png) | [Abrir](docs/screenshots/23-confirmar-remocao-quadra-escuro.png) |
+| Confirmar exclusão | [Abrir](docs/screenshots/24-confirmar-exclusao-claro.png) | [Abrir](docs/screenshots/24-confirmar-exclusao-escuro.png) |
+| Reproduzir vídeo | [Abrir](docs/screenshots/25-reproduzir-video-claro.png) | [Abrir](docs/screenshots/25-reproduzir-video-escuro.png) |
+| Baixar vídeo | [Abrir](docs/screenshots/26-baixar-video-claro.png) | [Abrir](docs/screenshots/26-baixar-video-escuro.png) |
+| Espectador | [Abrir](docs/screenshots/28-espectador-claro.png) | Tema único |
+| PostgreSQL após reinício | [Abrir](docs/screenshots/29-postgresql-apos-reinicio-claro.png) | [Abrir](docs/screenshots/29-postgresql-apos-reinicio-escuro.png) |
 
 ## Documentação
 
