@@ -271,6 +271,21 @@ public final class VarZinhoTheme {
     }
 
     private static void applyDefaults(boolean dark) {
+        UIManager.put("FileChooser.saveDialogTitleText", "Salvar vídeo");
+        UIManager.put("FileChooser.saveButtonText", "Salvar");
+        UIManager.put("FileChooser.cancelButtonText", "Cancelar");
+        UIManager.put("FileChooser.saveInLabelText", "Salvar em");
+        UIManager.put("FileChooser.lookInLabelText", "Procurar em");
+        UIManager.put("FileChooser.fileNameLabelText", "Nome do arquivo");
+        UIManager.put("FileChooser.filesOfTypeLabelText", "Tipo de arquivo");
+        UIManager.put("FileChooser.acceptAllFileFilterText", "Todos os arquivos");
+        UIManager.put("FileChooser.upFolderToolTipText", "Pasta acima");
+        UIManager.put("FileChooser.homeFolderToolTipText", "Pasta pessoal");
+        UIManager.put("FileChooser.newFolderToolTipText", "Nova pasta");
+        UIManager.put("FileChooser.listViewButtonToolTipText", "Lista");
+        UIManager.put("FileChooser.detailsViewButtonToolTipText", "Detalhes");
+        UIManager.put("FileChooser.saveButtonToolTipText", "Salvar o vídeo na pasta selecionada");
+        UIManager.put("FileChooser.cancelButtonToolTipText", "Cancelar o salvamento");
         Color content = dark ? CONTENT_DARK : CONTENT_LIGHT;
         Font systemFont = UIManager.getFont("Label.font");
         String[] installed = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
