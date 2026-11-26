@@ -50,7 +50,7 @@ resolução e tamanho.
 - FlatLaf, FlatLaf Extras e MigLayout Swing — interface gráfica, aprovados na [#158](https://github.com/lorenzoficher/VarZinho/issues/158)
 - Ícones [Tabler Icons](https://tabler.io/icons), licença MIT — arquivos SVG copiados para `src/main/resources/icons/tabler/`, junto com o [`LICENSE`](src/main/resources/icons/tabler/LICENSE); não são uma dependência do Maven
 - FFmpeg — opcional, só para a captura com o celular
-- PostgreSQL, via Docker — opcional, só para o banco de dados
+- PostgreSQL 16, via Docker — o banco de dados padrão; sem Docker, há o modo CSV
 
 ## Instalando o Maven
 
@@ -72,11 +72,19 @@ mvn -v          # deve mostrar a versão do Maven e o mesmo JDK
 
 ## Como executar
 
+Os dados ficam no PostgreSQL, que o Docker sobe. Com o Docker (Docker Desktop no
+Windows e no macOS) aberto, na raiz do repositório:
+
 ```bash
+docker compose up -d --wait
 mvn compile
 mvn test
 mvn exec:java
 ```
+
+Não é preciso definir nenhuma variável: sem elas, a aplicação conecta no banco
+que o [docker-compose.yml](docker-compose.yml) cria. Sem Docker, use o modo CSV,
+descrito em [Banco de dados PostgreSQL](#banco-de-dados-postgresql).
 
 `mvn exec:java` abre a janela Swing ([Main](src/main/java/br/edu/unipampa/varzinho/Main.java)
 → [Launcher](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java)
@@ -88,9 +96,8 @@ primeiro. A senha precisa de 8 caracteres, com maiúscula, minúscula, dígito e
 símbolo. Fechar esse formulário encerra o programa; fechar a janela principal
 encerra a sessão.
 
-Os lances salvos ficam em `data/highlights.csv`, as quadras e câmeras em
-`data/gym.csv` e os operadores em `data/operators.csv`, guardando só o hash da
-senha. Tudo reaparece na próxima execução.
+Os lances, as quadras, as câmeras e os operadores ficam no banco (dos operadores,
+só o hash da senha). Tudo reaparece na próxima execução.
 
 Há também uma demonstração em modo texto, sem janela, que percorre o fluxo
 inteiro — monta o ginásio, as quadras e as câmeras, grava, captura, salva,
@@ -215,30 +222,14 @@ Para validar localmente sem movimentar dinheiro, rode
 
 ### Banco de dados PostgreSQL
 
-Por padrão tudo fica nos arquivos CSV de `data/`. Para usar o PostgreSQL você
-precisa do Docker (Docker Desktop no Windows e no macOS) aberto. A partir de um
-clone novo, na raiz do repositório:
+O PostgreSQL é o armazenamento padrão. Você precisa do Docker (Docker Desktop no
+Windows e no macOS) aberto. A partir de um clone novo, na raiz do repositório:
 
-1. Copie e cole o bloco do seu terminal. Ele sobe o banco, espera ficar pronto,
-   indica o banco à aplicação e abre a janela.
-
-   No bash (Linux, macOS ou Git Bash):
+1. Suba o banco e abra a janela. Os dois comandos são iguais no bash e no
+   PowerShell:
 
    ```bash
    docker compose up -d --wait
-   export VARZINHO_DATABASE_URL=jdbc:postgresql://localhost:5432/varzinho
-   export VARZINHO_DATABASE_USER=varzinho
-   export VARZINHO_DATABASE_PASSWORD=varzinho
-   mvn compile exec:java
-   ```
-
-   No PowerShell (Windows):
-
-   ```powershell
-   docker compose up -d --wait
-   $env:VARZINHO_DATABASE_URL = "jdbc:postgresql://localhost:5432/varzinho"
-   $env:VARZINHO_DATABASE_USER = "varzinho"
-   $env:VARZINHO_DATABASE_PASSWORD = "varzinho"
    mvn compile exec:java
    ```
 
@@ -248,9 +239,8 @@ clone novo, na raiz do repositório:
    Docker Compose anterior à 2.17, que não o conhece, rode `docker compose up -d`
    e espere `docker compose ps` mostrar o serviço como `healthy`.
 
-   As variáveis valem só naquele terminal. Para reabrir a aplicação, cole o
-   bloco inteiro de novo: com o banco já de pé, o `docker compose up` não muda
-   nada. Os dados ficam no volume `varzinho-data` e sobrevivem a reiniciar ou
+   Para reabrir a aplicação, rode os dois comandos de novo: com o banco já de
+   pé, o `docker compose up` não muda nada. Os dados ficam no volume `varzinho-data` e sobrevivem a reiniciar ou
    recriar o container; só `docker compose down -v` os apaga
    (`docker compose down` para o banco e mantém os dados).
 
@@ -261,31 +251,55 @@ clone novo, na raiz do repositório:
 
 | Variável | Quem lê | Para quê |
 |---|---|---|
-| `VARZINHO_DATABASE_URL` | aplicação | Endereço JDBC do banco. Definida, o ginásio, o acervo e os operadores vão para o PostgreSQL; ausente ou vazia, para os CSV de `data/` |
-| `VARZINHO_DATABASE_USER` | aplicação | Usuário do banco. Obrigatória quando a URL está definida |
-| `VARZINHO_DATABASE_PASSWORD` | aplicação | Senha do banco |
+| `VARZINHO_STORAGE` | aplicação | `postgresql` (padrão, quando ausente) ou `csv`, o modo sem banco que guarda tudo nos arquivos de `data/` |
+| `VARZINHO_DATABASE_URL` | aplicação | Endereço JDBC do banco. Ausente ou vazia: `jdbc:postgresql://localhost:5432/varzinho`, o banco do `docker-compose.yml` |
+| `VARZINHO_DATABASE_USER` | aplicação | Usuário do banco. Padrão `varzinho`; obrigatória quando a URL está definida |
+| `VARZINHO_DATABASE_PASSWORD` | aplicação | Senha do banco. Padrão `varzinho` quando a URL não está definida |
 | `VARZINHO_DB_NAME`, `VARZINHO_DB_USER`, `VARZINHO_DB_PASSWORD` | `docker compose` | Nome do banco, usuário e senha criados no container (padrão `varzinho` nos três) |
 | `VARZINHO_DB_PORT` | `docker compose` | Porta do computador ligada ao banco (padrão `5432`) |
 
 As variáveis `VARZINHO_DB_*` só valem para o `docker compose`; a aplicação lê
-apenas as `VARZINHO_DATABASE_*`. Se você mudar uma delas, ajuste a outra. Por
+apenas `VARZINHO_STORAGE` e as `VARZINHO_DATABASE_*`. Se você mudar uma das
+`VARZINHO_DB_*`, indique o mesmo valor à aplicação. Por
 exemplo, com a porta 5432 ocupada, suba com `VARZINHO_DB_PORT=5433 docker compose up -d`
 (no PowerShell, `$env:VARZINHO_DB_PORT = "5433"` antes do comando) e use
-`jdbc:postgresql://localhost:5433/varzinho` na URL. O nome, o usuário e a senha
+`jdbc:postgresql://localhost:5433/varzinho` em `VARZINHO_DATABASE_URL`, junto com
+`VARZINHO_DATABASE_USER=varzinho` e `VARZINHO_DATABASE_PASSWORD=varzinho`. O nome, o usuário e a senha
 só são aplicados quando o volume é criado; para trocá-los depois, apague o
 volume com `docker compose down -v`.
 
-Sem `VARZINHO_DATABASE_URL`, tudo continua nos arquivos de `data/`. Se o banco
-indicado não responder, o programa mostra o erro e não abre: ele **não** volta a
-gravar em CSV, para que nenhum lance fique num arquivo enquanto você o procura no
-banco. A mensagem mostra o endereço do banco, nunca a senha.
+Se o banco não responder, o programa mostra o erro e não abre: ele **não** passa
+a gravar em CSV por conta própria, para que nenhum lance fique num arquivo
+enquanto você o procura no banco. A mensagem do registro mostra o endereço do
+banco, nunca a senha.
+
+#### Sem Docker: o modo CSV
+
+Numa máquina sem Docker, peça os arquivos explicitamente. Os lances ficam em
+`data/highlights.csv`, as quadras e câmeras em `data/gym.csv` e os operadores em
+`data/operators.csv`:
+
+```bash
+VARZINHO_STORAGE=csv mvn compile exec:java
+```
+
+No PowerShell:
+
+```powershell
+$env:VARZINHO_STORAGE = "csv"
+mvn compile exec:java
+```
+
+O modo CSV não usa o banco: definir `VARZINHO_STORAGE=csv` junto com
+`VARZINHO_DATABASE_URL` é recusado, para não haver dúvida sobre onde os lances
+estão. Os dados de um modo não aparecem no outro.
 
 Com o Docker instalado, `mvn test` também testa contra um PostgreSQL de verdade;
 sem ele, esses testes são pulados.
 
 #### Como conferir que os dados sobrevivem ao reinício
 
-Com a janela aberta pelo bloco acima, sobre um banco novo:
+Com a janela aberta pelos comandos acima, sobre um banco novo:
 
 1. Crie o primeiro operador na tela inicial. Em **Operadores**, use
    **Cadastrar operador** para criar um segundo.
@@ -319,7 +333,7 @@ Na primeira execução, a janela abre sobre um ginásio de exemplo já montado
 ([SampleGym](src/main/java/br/edu/unipampa/varzinho/bootstrap/SampleGym.java)): a
 quadra 1 tem uma câmera fixa e uma PTZ, a quadra 2 tem uma câmera fixa, e todas
 já estão gravando. Depois disso, ela abre sobre o ginásio salvo em
-`data/gym.csv` (ou no banco, se `VARZINHO_DATABASE_URL` estiver definida), com as
+banco (ou em `data/gym.csv`, no modo CSV), com as
 quadras, câmeras, estados e posições deixados na execução anterior. Um relógio de um segundo alimenta os buffers enquanto a
 janela está aberta.
 
@@ -396,8 +410,8 @@ Caminhos relativos a `src/main/java/br/edu/unipampa/varzinho/`.
 | [`OperatorAccess`](src/main/java/br/edu/unipampa/varzinho/application/OperatorAccess.java) | `application` | Caso de uso da entrada: cria o primeiro operador, confere usuário e senha e redefine uma senha esquecida |
 | [`DomainException`](src/main/java/br/edu/unipampa/varzinho/exception/DomainException.java), [`RepositoryException`](src/main/java/br/edu/unipampa/varzinho/application/port/RepositoryException.java) | `exception`, `application.port` | Raízes das exceções próprias do domínio e da persistência |
 | [`FfmpegRecorder`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/FfmpegRecorder.java), [`FfmpegClipAssembler`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/FfmpegClipAssembler.java) | `infrastructure.stream` | Usam o FFmpeg: um grava o celular em segmentos de 1 segundo que se sobrescrevem; o outro junta os segmentos do lance num `.mp4` |
-| [`Storage`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Storage.java) | `bootstrap` | Escolhe onde a execução guarda tudo: os três adaptadores CSV, ou os três PostgreSQL quando `VARZINHO_DATABASE_URL` está definida. Um banco que não responde impede a abertura em vez de cair para o CSV |
-| [`Launcher`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java) | `bootstrap` | Monta a aplicação: os repositórios e os operadores (CSV, ou PostgreSQL se `VARZINHO_DATABASE_URL` estiver definida), a entrada do operador, o ginásio salvo, os casos de uso e, se `VARZINHO_STREAM_URL` estiver definida, o celular. É o único lugar que conhece cada adaptador concreto |
+| [`Storage`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Storage.java) | `bootstrap` | Escolhe onde a execução guarda tudo: os três adaptadores PostgreSQL, por padrão no banco do `docker-compose.yml`, ou os três CSV quando `VARZINHO_STORAGE=csv`. Um banco que não responde impede a abertura em vez de cair para o CSV |
+| [`Launcher`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java) | `bootstrap` | Monta a aplicação: os repositórios e os operadores (PostgreSQL, ou CSV se `VARZINHO_STORAGE=csv`), a entrada do operador, o ginásio salvo, os casos de uso e, se `VARZINHO_STREAM_URL` estiver definida, o celular. É o único lugar que conhece cada adaptador concreto |
 | [`PhoneConnection`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/PhoneConnection.java) | `infrastructure.stream` | Liga o celular pelo FFmpeg e entrega a câmera e o feed dos segmentos. É a única classe que sabe que o celular chega pelo FFmpeg |
 | [`SignInDialog`](src/main/java/br/edu/unipampa/varzinho/ui/SignInDialog.java) | `ui` | A entrada antes da janela: `SignInPanel` para quem já tem conta, ou `FirstOperatorPanel` quando nenhum operador existe. Só repassa o que `OperatorAccess` decide — o erro de login nunca diz se foi o usuário ou a senha |
 | [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) | `ui` | A janela. Recebe os casos de uso prontos do `Launcher`, monta `CourtPanel`, `CapturePanel` e `ArchivePanel` e mostra os erros. Não importa nada de `domain` nem de `infrastructure`: o `ArchitectureTest` confere |

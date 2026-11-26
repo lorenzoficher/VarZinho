@@ -126,9 +126,10 @@ names a phone stream, on that phone as well.</div>
 <div class="block">Asks for an operator to sign in — or to be created, on the first run — and then
 opens the window on the simulated cameras, or, when "VARZINHO_STREAM_URL"
 names a phone stream, on that phone as well. Everything, operators included, is kept
-in the CSV files unless "VARZINHO_DATABASE_URL" names a database; when that
-database cannot be reached, or the sign-in is closed without an operator, no window
-opens and the application exits.</div>
+in PostgreSQL — the <code>docker-compose.yml</code> database unless
+"VARZINHO_DATABASE_URL" names another — or in the CSV files when
+"VARZINHO_STORAGE" is <code>csv</code>. When the storage cannot be opened, or
+the sign-in is closed without an operator, no window opens and the application exits.</div>
 </div>
 </section>
 </li>

@@ -64,7 +64,7 @@ and the operator accounts. Each has its own port in `application/port/`, and
 each port has two adapters a run can store in — a CSV file and a PostgreSQL
 table — plus an in-memory one for tests and for a damaged gym file:
 
-| Port | CSV (default) | PostgreSQL | In memory |
+| Port | CSV (offline mode) | PostgreSQL (default) | In memory |
 |---|---|---|---|
 | `HighlightRepository` | `CsvHighlightRepository`, `data/highlights.csv` | `PostgresHighlightRepository`, table `highlight` | `InMemoryHighlightRepository` |
 | `GymRepository` | `CsvGymRepository`, `data/gym.csv` | `PostgresGymRepository`, tables `gym`, `court`, `camera` | `InMemoryGymRepository` |
@@ -92,12 +92,17 @@ The choice is made once per run, for all three ports together, in
 `bootstrap/Storage.fromEnvironment`, which `bootstrap/Launcher` calls before
 anything else:
 
-- `VARZINHO_DATABASE_URL` unset or blank: the three CSV adapters, under `data/`.
-- `VARZINHO_DATABASE_URL` set: the three PostgreSQL adapters, opened with
-  `VARZINHO_DATABASE_USER` and `VARZINHO_DATABASE_PASSWORD`. A missing user is
-  refused before any connection is tried.
+- `VARZINHO_STORAGE` unset, blank or `postgresql`: the three PostgreSQL adapters.
+  With `VARZINHO_DATABASE_URL` unset they open the database `docker-compose.yml`
+  starts (`jdbc:postgresql://localhost:5432/varzinho`, user and password
+  `varzinho`); with it set, they open that one with `VARZINHO_DATABASE_USER` and
+  `VARZINHO_DATABASE_PASSWORD`, and a missing user is refused before any
+  connection is tried.
+- `VARZINHO_STORAGE=csv`: the three CSV adapters, under `data/` — the offline
+  mode for a machine without Docker. Naming a database as well is refused.
+- Any other `VARZINHO_STORAGE` value is refused.
 
-A database that is named but unreachable stops the application before any
+A database that cannot be reached stops the application before any
 window opens; it never falls back to CSV, because highlights written to a file
 would look lost from the database. The error message names the database but
 masks its password.
