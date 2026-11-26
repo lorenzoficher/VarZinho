@@ -21,7 +21,7 @@ final class VarZinhoIcons {
     static Icon archive(Color color) { return icon("archive", SIZE, color); }
     static Icon settings(Color color) { return icon("settings", SIZE, color); }
     static Icon archive() { return icon("archive"); }
-    static Icon operators() { return icon("users"); }
+    static Icon operators() { return icon("users", SIZE, VarZinhoTheme.SIDEBAR_MUTED); }
     static Icon record() { return icon("player-record"); }
     static Icon stop() { return icon("player-stop"); }
     static Icon maintenance() { return icon("tool"); }

@@ -33,7 +33,7 @@ O objetivo é a **modelagem do domínio** — classes, relacionamentos,
 encapsulamento, herança, polimorfismo e tratamento de exceções. O sistema é
 operado por uma interface gráfica em Swing, exigida pelo enunciado, e
 verificado por testes automatizados. A interface começou mínima; no segundo
-trabalho ganhou navegação lateral, dashboard e temas claro e escuro, sem
+trabalho ganhou navegação lateral, Painel e temas claro e escuro, sem
 assumir nenhuma regra de negócio.
 
 Na versão 2.0, um celular pode servir de câmera: o lance capturado por ele vira
@@ -137,10 +137,10 @@ Para usar o mesmo celular nas próximas inicializações, coloque o endereço co
 `data/stream-url.txt` (uma linha). Esse arquivo fica só na sua máquina. Se estiver definida,
 a variável `VARZINHO_STREAM_URL` tem prioridade.
 
-Também é possível conectar durante a sessão. No dashboard, clique em **Abrir transmissão ao vivo**,
+Também é possível conectar durante a sessão. No **Painel**, clique em **Abrir transmissão ao vivo**,
 logo abaixo de **Salvar Melhor Momento**, e cole o endereço completo do IP Webcam. Quando o
 FFmpeg receber o primeiro trecho, o VarZinho selecionará a quadra do celular automaticamente.
-Confira **phone-1 · grava vídeo MP4** e aguarde o buffer. Uma câmera cadastrada manualmente como
+Confira **phone-1 · grava vídeo MP4** e aguarde a indicação de segundos disponíveis. Uma câmera cadastrada manualmente como
 **Fixa** ou **PTZ** é simulada, mesmo que receba um nome como `phone01`. No histórico,
 **Sem MP4** identifica os registros cujo arquivo de vídeo não está disponível.
 
@@ -338,16 +338,20 @@ usuário e senha:
 - Depois de entrar, a página **Operadores** cadastra outro operador, que poderá
   entrar na próxima execução.
 
-![Entrada do operador](docs/screenshots/01-entrada-do-operador-claro.png)
+![Entrada do operador](docs/screenshots/02-entrada-do-operador-claro.png)
 
 *Entrada do operador: usuário e senha antes da janela principal.*
 
+
 O **Painel** abre após o login. Escolha a quadra no cabeçalho ou em **Suas quadras**. O painel mostra as câmeras dessa quadra e quantos segundos já chegaram ao buffer. A modalidade escolhida nos botões fica salva na quadra e continua lá quando o sistema é reaberto.
+
 
 - Em **Quadras**, informe o número para cadastrar uma quadra. Ela passa a aparecer no painel e nos filtros.
 - Para instalar várias câmeras, selecione a quadra, preencha o formulário e clique em **Cadastrar câmera**. Para a próxima, informe outro ID e ajuste os demais campos se necessário. A página lista as câmeras da quadra. Cada nova câmera começa parada e pode ser iniciada em **Câmeras**.
 - Em **Câmeras**, use **Iniciar**, **Parar** ou **Liberar** na linha da câmera. O menu **Ações** permite movê-la para outra quadra, configurá-la, enviá-la para manutenção ou removê-la. Em **Movimento PTZ**, selecione uma câmera compatível para ajustar panorâmica, inclinação e zoom.
+
 - Quando o buffer atingir 30 segundos, clique em **Salvar Melhor Momento** no painel ou em **Salvar lance (F2)** na página **Melhores momentos**. A tecla **F2** salva o lance da quadra selecionada de qualquer ponto da janela. O histórico mostra a quadra, a câmera, a data e a duração do lance confirmado.
+
 - Selecione uma gravação no histórico e use **Renomear gravação** para dar um nome como “Lance Fernando Costa”. O nome fica salvo no acervo e aparece na busca. **Excluir gravação** pede confirmação e abre com **Cancelar** selecionado. Ao confirmar, o sistema remove o registro e o MP4 original em `clips/`, quando existir. Cópias exportadas ficam com quem as salvou.
 - **Melhores momentos** reúne captura e histórico. Em **Arquivos**, use a busca, a quadra e o filtro **Dia** para localizar uma gravação. O filtro **Dia** oferece **Todos os dias**, **Hoje**, **Ontem** e **Escolher data**; nesta última, digite a data como dd/mm/aaaa e tecle **Enter**. O dia é o do fuso do ginásio, não o de UTC.
 - Para abrir um clipe, clique em **Assistir** na linha do lance (ou selecione-o e tecle **Ctrl+Enter**). Abre-se a janela do lance, com **Reproduzir vídeo**, que abre o MP4 no player do sistema, e **Baixar vídeo**, que salva uma cópia onde você escolher. **Assistir ao vídeo**, acima da tabela, abre o arquivo do lance selecionado direto no player. Só os lances do celular têm MP4: as câmeras simuladas geram registros sem vídeo, e a linha mostra **Sem MP4**.
@@ -510,59 +514,82 @@ o fluxo inteiro sem abrir nenhuma janela.
 
 ## Capturas de tela
 
-Cada tela aparece nos temas claro e escuro, alternados pelo botão **Alternar
-tema**. A tela de entrada, mostrada em [O que a interface faz](#o-que-a-interface-faz),
-só existe no tema claro: o VarZinho sempre abre no claro, e o botão de tema só
-aparece depois de entrar.
+Capturas dos componentes reais da interface Swing, renderizados com dados de demonstração. As duas variantes mostram o tema claro e o escuro. Os formulários anteriores ao acesso são apresentados no tema claro, usado ao iniciar a aplicação.
 
-**Dashboard.** A quadra 1 com o buffer de simulação cheio (30 de 30 segundos),
-o botão **Salvar Melhor Momento**, o controle rápido da câmera PTZ, os cartões
-das quadras e as câmeras da quadra selecionada.
+A página pública foi capturada em Chromium isolado, recebendo um padrão de teste transmitido pelo FFmpeg. Essa página oferece apenas o tema claro.
 
-| Claro | Escuro |
-|---|---|
-| ![Dashboard, tema claro](docs/screenshots/02-dashboard-claro.png) | ![Dashboard, tema escuro](docs/screenshots/02-dashboard-escuro.png) |
+A evidência PostgreSQL foi obtida com um banco temporário PostgreSQL 16.15. Uma JVM gravou os dados de demonstração da academia. A consulta exibida comprova o nome e a modalidade das quadras. Depois de encerrar essa JVM, outra execução carregou os mesmos dados por meio de Storage, com `VARZINHO_DATABASE_URL` configurada. A imagem reúne a interface carregada e a saída real da consulta psql em um painel de leitura.
 
-**Câmeras da quadra.** Na página **Câmeras**, a `fixed-1` está gravando e a
-`ptz-1` está parada; cada linha oferece **Parar** ou **Iniciar** e o menu
-**Ações**. Abaixo ficam **Mover câmera** e **Controle PTZ**.
+**Painel.** Demonstra a organização da interface, a navegação e os controles de captura e PTZ, relacionados aos critérios 6, 7 e 8.
 
 | Claro | Escuro |
 |---|---|
-| ![Câmeras da quadra, tema claro](docs/screenshots/03-cameras-da-quadra-claro.png) | ![Câmeras da quadra, tema escuro](docs/screenshots/03-cameras-da-quadra-escuro.png) |
+| ![Painel no tema claro](docs/screenshots/06-painel-claro.png) | ![Painel no tema escuro](docs/screenshots/06-painel-escuro.png) |
 
-**Lance salvo.** Na página **Melhores momentos**, depois de **F2**: a
-confirmação "Salvo: quadra 1 · câmera fixed-1 · … · 30 s" aparece abaixo do
-botão, e o lance entra no histórico. Como a câmera é simulada, a linha mostra
-**Sem MP4**, e a barra de mensagens explica que só a quadra do celular grava vídeo.
+**Lance registrado.** Demonstra o registro de um lance de câmera simulada e o retorno da operação ao usuário. O histórico identifica a ausência de MP4 na simulação.
 
 | Claro | Escuro |
 |---|---|
-| ![Lance salvo, tema claro](docs/screenshots/04-lance-salvo-claro.png) | ![Lance salvo, tema escuro](docs/screenshots/04-lance-salvo-escuro.png) |
+| ![Lance registrado no tema claro](docs/screenshots/12-lance-registrado-claro.png) | ![Lance registrado no tema escuro](docs/screenshots/12-lance-registrado-escuro.png) |
 
-**Acervo filtrado.** Na página **Arquivos**, o histórico filtrado por
-**Quadra 1** e **Dia: Hoje**, com a busca, **Assistir ao vídeo**, **Renomear
-gravação** e **Excluir gravação**.
+**Erro de domínio.** A tentativa de captura em uma quadra sem câmera ativa apresenta a mensagem de erro na barra inferior. Demonstra tratamento de exceções e feedback ao usuário, conforme a seção 2.8 do Trabalho 1 e o critério 8 do Trabalho 2.
 
 | Claro | Escuro |
 |---|---|
-| ![Acervo filtrado, tema claro](docs/screenshots/05-acervo-filtrado-claro.png) | ![Acervo filtrado, tema escuro](docs/screenshots/05-acervo-filtrado-escuro.png) |
+| ![Erro de domínio no tema claro](docs/screenshots/13-erro-quadra-sem-camera-ativa-claro.png) | ![Erro de domínio no tema escuro](docs/screenshots/13-erro-quadra-sem-camera-ativa-escuro.png) |
 
-**Erro: quadra sem câmera ativa.** A quadra 2 tem só a `fixed-2`, parada. Ao
-salvar um lance nela, a exceção de domínio chega à interface como uma mensagem
-na barra inferior: "Não há câmera ativa na quadra 2." Demonstra a seção 2.8 do
-enunciado (tratamento de exceções).
+**Acervo.** Demonstra a consulta do histórico por quadra e os dados das gravações.
 
 | Claro | Escuro |
 |---|---|
-| ![Erro de quadra sem câmera ativa, tema claro](docs/screenshots/06-erro-quadra-sem-camera-ativa-claro.png) | ![Erro de quadra sem câmera ativa, tema escuro](docs/screenshots/06-erro-quadra-sem-camera-ativa-escuro.png) |
+| ![Acervo no tema claro](docs/screenshots/14-acervo-claro.png) | ![Acervo no tema escuro](docs/screenshots/14-acervo-escuro.png) |
 
-**Configurações.** **Alternar tema**, o nome de exibição da quadra selecionada,
-salvo junto com a academia, e o guia **Como conectar a câmera** do celular.
+**Cadastro de operador.** Demonstra o formulário e a confirmação de cadastro. As capturas de validação na tabela mostram senha inválida e confirmação divergente.
 
 | Claro | Escuro |
 |---|---|
-| ![Configurações, tema claro](docs/screenshots/07-configuracoes-claro.png) | ![Configurações, tema escuro](docs/screenshots/07-configuracoes-escuro.png) |
+| ![Cadastro de operador no tema claro](docs/screenshots/19-operador-cadastrado-claro.png) | ![Cadastro de operador no tema escuro](docs/screenshots/19-operador-cadastrado-escuro.png) |
+
+**Persistência PostgreSQL.** A interface de uma segunda JVM apresenta o nome e a modalidade persistidos. A saída real do psql consulta as mesmas quadras. Evidencia a persistência entre execuções do critério 9.
+
+| Claro | Escuro |
+|---|---|
+| ![Persistência PostgreSQL no tema claro](docs/screenshots/28-postgresql-apos-reinicio-claro.png) | ![Persistência PostgreSQL no tema escuro](docs/screenshots/28-postgresql-apos-reinicio-escuro.png) |
+
+**Espectador.** Página pública com reprodução de um padrão de teste transmitido pelo FFmpeg. Demonstra o fluxo de visualização no navegador.
+
+![Página pública do espectador](docs/screenshots/27-espectador-claro.png)
+
+| Tela ou estado | Claro | Escuro |
+|---|---|---|
+| Primeiro operador | [Abrir](docs/screenshots/01-primeiro-operador-claro.png) | Tema de entrada |
+| Entrada do operador | [Abrir](docs/screenshots/02-entrada-do-operador-claro.png) | Tema de entrada |
+| Recuperar senha | [Abrir](docs/screenshots/03-recuperar-senha-claro.png) | Tema de entrada |
+| Recuperação enviada | [Abrir](docs/screenshots/04-recuperacao-enviada-claro.png) | Tema de entrada |
+| Nova senha | [Abrir](docs/screenshots/05-nova-senha-claro.png) | Tema de entrada |
+| Painel | [Abrir](docs/screenshots/06-painel-claro.png) | [Abrir](docs/screenshots/06-painel-escuro.png) |
+| Quadras | [Abrir](docs/screenshots/07-quadras-claro.png) | [Abrir](docs/screenshots/07-quadras-escuro.png) |
+| Câmeras | [Abrir](docs/screenshots/08-cameras-claro.png) | [Abrir](docs/screenshots/08-cameras-escuro.png) |
+| Instalar câmera | [Abrir](docs/screenshots/09-instalar-camera-claro.png) | [Abrir](docs/screenshots/09-instalar-camera-escuro.png) |
+| Configurar câmera | [Abrir](docs/screenshots/10-configurar-camera-claro.png) | [Abrir](docs/screenshots/10-configurar-camera-escuro.png) |
+| Melhores momentos | [Abrir](docs/screenshots/11-melhores-momentos-claro.png) | [Abrir](docs/screenshots/11-melhores-momentos-escuro.png) |
+| Lance registrado | [Abrir](docs/screenshots/12-lance-registrado-claro.png) | [Abrir](docs/screenshots/12-lance-registrado-escuro.png) |
+| Erro de quadra sem câmera ativa | [Abrir](docs/screenshots/13-erro-quadra-sem-camera-ativa-claro.png) | [Abrir](docs/screenshots/13-erro-quadra-sem-camera-ativa-escuro.png) |
+| Acervo | [Abrir](docs/screenshots/14-acervo-claro.png) | [Abrir](docs/screenshots/14-acervo-escuro.png) |
+| Renomear gravação | [Abrir](docs/screenshots/15-renomear-gravacao-claro.png) | [Abrir](docs/screenshots/15-renomear-gravacao-escuro.png) |
+| Operadores | [Abrir](docs/screenshots/16-operadores-claro.png) | [Abrir](docs/screenshots/16-operadores-escuro.png) |
+| Erro de confirmação | [Abrir](docs/screenshots/17-erro-confirmacao-claro.png) | [Abrir](docs/screenshots/17-erro-confirmacao-escuro.png) |
+| Erro de senha | [Abrir](docs/screenshots/18-erro-senha-claro.png) | [Abrir](docs/screenshots/18-erro-senha-escuro.png) |
+| Operador cadastrado | [Abrir](docs/screenshots/19-operador-cadastrado-claro.png) | [Abrir](docs/screenshots/19-operador-cadastrado-escuro.png) |
+| Configurações | [Abrir](docs/screenshots/20-configuracoes-claro.png) | [Abrir](docs/screenshots/20-configuracoes-escuro.png) |
+| Conectar celular | [Abrir](docs/screenshots/21-conectar-celular-claro.png) | [Abrir](docs/screenshots/21-conectar-celular-escuro.png) |
+| Guia da câmera | [Abrir](docs/screenshots/22-guia-camera-claro.png) | [Abrir](docs/screenshots/22-guia-camera-escuro.png) |
+| Confirmar remoção da quadra | [Abrir](docs/screenshots/23-confirmar-remocao-quadra-claro.png) | [Abrir](docs/screenshots/23-confirmar-remocao-quadra-escuro.png) |
+| Confirmar exclusão | [Abrir](docs/screenshots/24-confirmar-exclusao-claro.png) | [Abrir](docs/screenshots/24-confirmar-exclusao-escuro.png) |
+| Reproduzir vídeo | [Abrir](docs/screenshots/25-reproduzir-video-claro.png) | [Abrir](docs/screenshots/25-reproduzir-video-escuro.png) |
+| Baixar vídeo | [Abrir](docs/screenshots/26-baixar-video-claro.png) | [Abrir](docs/screenshots/26-baixar-video-escuro.png) |
+| Espectador | [Abrir](docs/screenshots/27-espectador-claro.png) | Tema único |
+| PostgreSQL após reinício | [Abrir](docs/screenshots/28-postgresql-apos-reinicio-claro.png) | [Abrir](docs/screenshots/28-postgresql-apos-reinicio-escuro.png) |
 
 ## Documentação
 
