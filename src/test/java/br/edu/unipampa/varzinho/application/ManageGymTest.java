@@ -89,7 +89,125 @@ class ManageGymTest {
 
         assertEquals("cannot store a value with a comma", failure.getMessage());
         assertInstanceOf(IllegalArgumentException.class, failure.getCause());
+        assertEquals(List.of(1), courtNumbers(management.courts()));
+    }
+
+    @Test
+    void courtsAddedOrRemovedWhileTheStorageIsDownAreUndone() throws Exception {
+        Gym gym = gymWithCourts(1, 2);
+        UnpluggableStorage storage = new UnpluggableStorage();
+        ManageGym management = new ManageGym(gym, storage);
+        management.renameCourt(2, "Quadra coberta");
+        storage.unplug();
+
+        assertThrows(RepositoryException.class, () -> management.addCourt(3));
+        assertThrows(RepositoryException.class, () -> management.removeCourt(2));
+
         assertEquals(List.of(1, 2), courtNumbers(management.courts()));
+        assertEquals(Optional.of("Quadra coberta"), management.court(2).getDisplayName());
+    }
+
+    @Test
+    void camerasInstalledOrRemovedWhileTheStorageIsDownAreUndone() throws Exception {
+        Gym gym = gymWithCourts(1);
+        UnpluggableStorage storage = new UnpluggableStorage();
+        ManageGym management = new ManageGym(gym, storage);
+        management.installCamera(1, spec("fixed-1", CameraKind.FIXED, 45));
+        management.startRecording(1, "fixed-1");
+        storage.unplug();
+
+        assertThrows(RepositoryException.class,
+                () -> management.installCamera(1, spec("ptz-1", CameraKind.PTZ, 0)));
+        assertThrows(RepositoryException.class, () -> management.installSimulatedPtz(1, 10, 10, 2));
+        assertThrows(RepositoryException.class, () -> management.removeCamera(1, "fixed-1"));
+
+        CourtView court = management.court(1);
+        assertEquals(List.of("fixed-1"), cameraIds(court));
+        assertTrue(court.getCameras().get(0).isRecording());
+    }
+
+    @Test
+    void aCameraMovedWhileTheStorageIsDownIsBackOnItsCourtStillRecording() throws Exception {
+        Gym gym = gymWithCourts(1, 2);
+        gym.installCamera(1, fixedCamera("fixed-1"));
+        UnpluggableStorage storage = new UnpluggableStorage();
+        ManageGym management = new ManageGym(gym, storage);
+        management.startRecording(1, "fixed-1");
+        storage.unplug();
+
+        assertThrows(RepositoryException.class, () -> management.moveCamera(1, "fixed-1", 2));
+
+        assertEquals(List.of("fixed-1"), cameraIds(management.court(1)));
+        assertTrue(management.court(2).getCameras().isEmpty());
+        assertTrue(management.court(1).getCameras().get(0).isRecording());
+    }
+
+    @Test
+    void aCameraStateChangedWhileTheStorageIsDownIsUndone() throws Exception {
+        Gym gym = gymWithCourts(1);
+        gym.installCamera(1, fixedCamera("fixed-1"));
+        gym.installCamera(1, fixedCamera("fixed-2"));
+        UnpluggableStorage storage = new UnpluggableStorage();
+        ManageGym management = new ManageGym(gym, storage);
+        management.startRecording(1, "fixed-1");
+        management.sendToMaintenance(1, "fixed-2");
+        storage.unplug();
+
+        assertThrows(RepositoryException.class, () -> management.stopRecording(1, "fixed-1"));
+        assertThrows(RepositoryException.class, () -> management.sendToMaintenance(1, "fixed-1"));
+        assertThrows(RepositoryException.class, () -> management.releaseFromMaintenance(1, "fixed-2"));
+
+        List<CameraView> cameras = management.court(1).getCameras();
+        assertTrue(cameras.get(0).isRecording());
+        assertTrue(cameras.get(1).isUnderMaintenance());
+    }
+
+    @Test
+    void aCameraSwitchedOnWhileTheStorageIsDownStaysOff() throws Exception {
+        Gym gym = gymWithCourts(1);
+        gym.installCamera(1, fixedCamera("fixed-1"));
+        UnpluggableStorage storage = new UnpluggableStorage();
+        ManageGym management = new ManageGym(gym, storage);
+        storage.unplug();
+
+        assertThrows(RepositoryException.class, () -> management.startRecording(1, "fixed-1"));
+
+        assertFalse(management.court(1).getCameras().get(0).isRecording());
+    }
+
+    @Test
+    void anAimChangedWhileTheStorageIsDownIsUndone() throws Exception {
+        Gym gym = gymWithCourts(1);
+        gym.installCamera(1, ptzCamera("ptz-1"));
+        UnpluggableStorage storage = new UnpluggableStorage();
+        ManageGym management = new ManageGym(gym, storage);
+        management.aimCamera(1, "ptz-1", 30, -10, 2);
+        storage.unplug();
+
+        assertThrows(RepositoryException.class, () -> management.aimCamera(1, "ptz-1", 200, 20, 5));
+
+        CameraView camera = management.court(1).getCameras().get(0);
+        assertEquals(30, camera.getPan().orElseThrow());
+        assertEquals(-10, camera.getTilt().orElseThrow());
+        assertEquals(2, camera.getZoom().orElseThrow());
+    }
+
+    private static final class UnpluggableStorage implements GymRepository {
+        private boolean unplugged;
+
+        void unplug() {
+            unplugged = true;
+        }
+
+        @Override
+        public void save(Gym gym) throws RepositoryException {
+            if (unplugged) throw new RepositoryException("disk unplugged");
+        }
+
+        @Override
+        public Optional<Gym> load() {
+            return Optional.empty();
+        }
     }
 
     @Test
