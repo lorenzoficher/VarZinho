@@ -4,8 +4,8 @@
 
 Sistema de captura de lances para ginásios esportivos. As câmeras gravam
 continuamente em um buffer circular de 30 segundos; quando acontece um gol ou
-uma jogada bonita, o atleta aciona um botão e aquele trecho é salvo como vídeo
-permanente. Depois é só pedir o vídeo ao operador, que tem o acervo inteiro.
+uma jogada bonita, o atleta aciona um botão e aquele trecho é salvo como vídeo,
+guardado por 7 dias. Nesse prazo é só pedir o vídeo ao operador, que tem o acervo inteiro.
 
 O foco é futebol, mas o sistema não conhece esporte nem tipo de jogada: serve a
 qualquer modalidade que o ginásio jogue.
@@ -313,6 +313,24 @@ banco direto:
 docker compose exec postgres psql -U varzinho -d varzinho -c "SELECT username FROM operator_account" -c "SELECT court_number, id, kind FROM camera" -c "SELECT title, court_number FROM highlight"
 ```
 
+### Prazo dos vídeos
+
+Para não lotar o disco, cada lance é apagado **7 dias depois da captura**: o registro
+no acervo e o `.mp4` em `clips/` saem juntos, pelo mesmo caminho do botão **Excluir
+gravação**, então nunca sobra registro sem vídeo nem vídeo sem registro. A limpeza
+roda ao abrir a janela e depois a cada hora, numa thread separada, e o acervo se
+atualiza sozinho. Vale igual para o PostgreSQL e para o CSV.
+
+| `VARZINHO_RETENTION_DAYS` | Efeito |
+|---|---|
+| ausente | 7 dias |
+| número inteiro positivo | esse número de dias |
+| `0` | nada é apagado |
+| qualquer outro valor | nada é apagado, e a janela avisa |
+
+Um valor inválido desliga a limpeza em vez de cair no padrão, para que um erro de
+digitação nunca apague mais do que se queria.
+
 ### O que a interface faz
 
 Na primeira execução, a janela abre sobre um ginásio de exemplo já montado
@@ -446,6 +464,9 @@ O que torna o sistema mais do que um cadastro:
 12. **A senha nunca é guardada.** O construtor de `Operator` exige 8 caracteres,
     com maiúscula, minúscula, dígito e símbolo, e guarda só um hash PBKDF2 com
     sal. `Operator.checksPassword()` confere uma tentativa contra esse hash.
+13. **O vídeo fica guardado por 7 dias.** [`ExpireRecordings`](src/main/java/br/edu/unipampa/varzinho/application/ExpireRecordings.java)
+    apaga os lances capturados há 7 dias ou mais, com o arquivo `.mp4` junto, ao abrir a
+    janela e depois a cada hora. Veja [Prazo dos vídeos](#prazo-dos-vídeos).
 
 ## Checklist de avaliação
 
@@ -471,7 +492,7 @@ cada conceito foi usado e por que faz sentido no domínio.
 | Enum | [`CameraStatus`](src/main/java/br/edu/unipampa/varzinho/enums/CameraStatus.java) (`ACTIVE`, `INACTIVE`, `MAINTENANCE`) com `canRecord()`. [`Resolution`](src/main/java/br/edu/unipampa/varzinho/enums/Resolution.java) (`HD`, `FULL_HD`, `ULTRA_HD`) com largura, altura e `label()` | Uma câmera só pode estar num desses três estados, e a regra "só `ACTIVE` grava" fica no próprio enum. A resolução carrega as dimensões usadas para estimar o tamanho do clipe |
 | Tratamento de exceções | Exceções próprias em [`exception/`](src/main/java/br/edu/unipampa/varzinho/exception/): `DomainException` (não verificada), com `NoActiveCameraException`, `EmptyBufferException`, `DuplicateCameraException` e `ClipAssemblyException`, e `RepositoryException` (verificada), estendida por `CorruptedRecordException`, ambas em `application/port/`. São lançadas em `Court.triggerCapture()`, `CircularBuffer.extractLastSeconds()`, `Gym.installCamera()`, `FfmpegClipAssembler` e nos adaptadores CSV e PostgreSQL, como `CsvHighlightRepository` e `PostgresHighlightRepository`. São tratadas em [`CapturePanel`](src/main/java/br/edu/unipampa/varzinho/ui/CapturePanel.java), [`GymChangeReporter`](src/main/java/br/edu/unipampa/varzinho/ui/GymChangeReporter.java) (usado pelos painéis da quadra e das câmeras), [`ArchivePanel`](src/main/java/br/edu/unipampa/varzinho/ui/ArchivePanel.java), [`OperatorsPanel`](src/main/java/br/edu/unipampa/varzinho/ui/OperatorsPanel.java), [`SignInPanel`](src/main/java/br/edu/unipampa/varzinho/ui/SignInPanel.java) e [`GymSession`](src/main/java/br/edu/unipampa/varzinho/application/GymSession.java). A janela mostra a mensagem na [`MessageBar`](src/main/java/br/edu/unipampa/varzinho/ui/MessageBar.java), a barra no rodapé | Apertar o botão sem câmera ativa é um erro que o atleta precisa ver, não um lance vazio salvo em silêncio. Um arquivo danificado é recuperável: por isso a exceção é verificada e carrega os lances que puderam ser lidos |
 | Interface gráfica com Swing | [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) (`JFrame`), com a navegação lateral em [`SidebarPanel`](src/main/java/br/edu/unipampa/varzinho/ui/SidebarPanel.java) (`JToggleButton`) e as páginas montadas por [`ArenaWorkspace`](src/main/java/br/edu/unipampa/varzinho/ui/ArenaWorkspace.java): o [`DashboardPanel`](src/main/java/br/edu/unipampa/varzinho/ui/DashboardPanel.java); a quadra, em [`CourtPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CourtPanel.java), que junta [`CourtSelectionPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CourtSelectionPanel.java) (`JComboBox`, `JTextField`), [`CameraInstallPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CameraInstallPanel.java) (`JList`, `JSpinner`), [`CameraListPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CameraListPanel.java) (`JTable`, `JPopupMenu`) e [`CameraPositionPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CameraPositionPanel.java); o [`CapturePanel`](src/main/java/br/edu/unipampa/varzinho/ui/CapturePanel.java) (`JButton`); o acervo, em [`ArchivePanel`](src/main/java/br/edu/unipampa/varzinho/ui/ArchivePanel.java) (`JTable`); e os operadores, em [`OperatorsPanel`](src/main/java/br/edu/unipampa/varzinho/ui/OperatorsPanel.java). Os erros aparecem na [`MessageBar`](src/main/java/br/edu/unipampa/varzinho/ui/MessageBar.java). O `JOptionPane` fica para confirmar uma remoção ou um novo nome, pedir o endereço do celular, mostrar o guia de conexão pelo Wi-Fi e avisar, no `Launcher`, o erro que impede a janela de abrir. O `javax.swing.Timer` serve de relógio | O usuário cria quadras, instala câmeras digitando os dados, muda a câmera de estado e de quadra, aponta a PTZ, salva o lance, vê o acervo e cadastra operadores (ver [O que a interface faz](#o-que-a-interface-faz)). Um dado inválido é recusado pelo construtor da câmera, e a mensagem aparece na `MessageBar`, sem janela para fechar. A interface não contém regra: chama os casos de uso e mostra o resultado |
-| Data e hora (`java.time`) | `Instant` em `Frame` e `Highlight`. `LocalDate`, `Clock` e `ZoneId` em [`BrowseArchive`](src/main/java/br/edu/unipampa/varzinho/application/BrowseArchive.java) (`byDay()` e `todaySummary()`), que converte o instante ao fuso do ginásio antes de comparar o dia. `Duration` como limite de espera do FFmpeg em `FfmpegClipAssembler`. `ZoneId` e `DateTimeFormatter` em `ArchivePanel` e `CapturePanel`. `Instant.parse()` e `DateTimeParseException` em `CsvHighlightRepository`. As classes `Date` e `Calendar` não são usadas | O lance é procurado pelo horário em que aconteceu, então o instante da captura é o dado central. O acervo guarda o `Instant` em UTC, e a tabela e a confirmação do lance o exibem no fuso local. O filtro **Hoje** usa o dia local do ginásio, não o dia em UTC |
+| Data e hora (`java.time`) | `Instant` em `Frame` e `Highlight`. `Clock` e `Duration` em [`ExpireRecordings`](src/main/java/br/edu/unipampa/varzinho/application/ExpireRecordings.java), que apaga os lances com 7 dias ou mais. `LocalDate`, `Clock` e `ZoneId` em [`BrowseArchive`](src/main/java/br/edu/unipampa/varzinho/application/BrowseArchive.java) (`byDay()` e `todaySummary()`), que converte o instante ao fuso do ginásio antes de comparar o dia. `Duration` como limite de espera do FFmpeg em `FfmpegClipAssembler`. `ZoneId` e `DateTimeFormatter` em `ArchivePanel` e `CapturePanel`. `Instant.parse()` e `DateTimeParseException` em `CsvHighlightRepository`. As classes `Date` e `Calendar` não são usadas | O lance é procurado pelo horário em que aconteceu, então o instante da captura é o dado central. O acervo guarda o `Instant` em UTC, e a tabela e a confirmação do lance o exibem no fuso local. O filtro **Hoje** usa o dia local do ginásio, não o dia em UTC |
 
 ## Trabalho 2: SOLID e Clean Architecture
 

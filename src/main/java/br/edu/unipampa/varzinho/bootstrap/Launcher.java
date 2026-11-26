@@ -4,12 +4,14 @@ import br.edu.unipampa.varzinho.application.BrowseArchive;
 import br.edu.unipampa.varzinho.application.CaptureHighlight;
 import br.edu.unipampa.varzinho.application.ConnectStreamCamera;
 import br.edu.unipampa.varzinho.application.CourtView;
+import br.edu.unipampa.varzinho.application.ExpireRecordings;
 import br.edu.unipampa.varzinho.application.Feed;
 import br.edu.unipampa.varzinho.application.GymSession;
 import br.edu.unipampa.varzinho.application.ManageRecordings;
 import br.edu.unipampa.varzinho.application.OperatorAccess;
 import br.edu.unipampa.varzinho.application.SignedInOperator;
 import br.edu.unipampa.varzinho.application.port.HighlightRepository;
+import br.edu.unipampa.varzinho.application.port.RecordingEditor;
 import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
 import br.edu.unipampa.varzinho.infrastructure.persistence.StoredRecordingEditor;
@@ -26,9 +28,14 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,6 +51,8 @@ public final class Launcher {
     private static final Path DATA_FOLDER = Path.of("data");
     private static final Path SEGMENT_FOLDER = Path.of("buffer");
     private static final int BUFFER_SECONDS = 30;
+    private static final Path CLIP_FOLDER = Path.of("clips");
+    private static final long EXPIRY_INTERVAL_HOURS = 1;
 
     private Launcher() { }
 
@@ -54,6 +63,10 @@ public final class Launcher {
      * in the CSV files unless {@value Storage#URL_VARIABLE} names a database; when that
      * database cannot be reached, or the sign-in is closed without an operator, no window
      * opens and the application exits.
+     *
+     * <p>Recordings expire {@value RetentionSetting#DEFAULT_DAYS} days after their capture
+     * unless {@value RetentionSetting#VARIABLE} says otherwise: the expired ones are removed,
+     * video file included, when the window opens and then every hour.
      */
     public static void launch() {
         SwingUtilities.invokeLater(() -> {
@@ -105,11 +118,62 @@ public final class Launcher {
                 }
                 return () -> attachPhone(window, session.gym(), simulation, phone, spectators);
             });
+            Optional<Duration> retention = retention(warnings);
             window.showStartupWarnings(warnings);
-            window.enableRecordingEditing(new ManageRecordings(new StoredRecordingEditor(
-                    repository, Path.of("clips"))));
+            StoredRecordingEditor recordings = new StoredRecordingEditor(repository, CLIP_FOLDER);
+            window.enableRecordingEditing(new ManageRecordings(recordings));
+            retention.ifPresent(period -> scheduleExpiry(repository, recordings, period, window));
             window.setVisible(true);
         });
+    }
+
+    private static Optional<Duration> retention(List<String> warnings) {
+        try {
+            return RetentionSetting.parse(System.getenv(RetentionSetting.VARIABLE));
+        } catch (IllegalArgumentException invalid) {
+            // A typo must never delete more than intended, so an unreadable period keeps everything.
+            LOGGER.warning(invalid.getMessage());
+            warnings.add("O prazo de " + RetentionSetting.VARIABLE + " não é um número de dias válido. "
+                    + "Nenhum vídeo antigo será apagado nesta execução.");
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Removes the expired recordings now and then every hour, on a thread of its own so the
+     * window never waits for the disk or the database.
+     */
+    private static void scheduleExpiry(HighlightRepository archive, RecordingEditor editor, Duration retention,
+                                       VarZinhoWindow window) {
+        ExpireRecordings expiry = new ExpireRecordings(archive, editor, Clock.systemUTC(), retention);
+        ScheduledExecutorService schedule = Executors.newSingleThreadScheduledExecutor(task -> {
+            Thread thread = new Thread(task, "recording-expiry");
+            thread.setDaemon(true);
+            return thread;
+        });
+        schedule.scheduleWithFixedDelay(() -> expireOnce(expiry, retention, window),
+                0, EXPIRY_INTERVAL_HOURS, TimeUnit.HOURS);
+    }
+
+    private static void expireOnce(ExpireRecordings expiry, Duration retention, VarZinhoWindow window) {
+        try {
+            int removed = expiry.expire();
+            if (removed > 0) {
+                LOGGER.log(Level.INFO, "Removed {0} recordings older than {1} days",
+                        new Object[]{removed, retention.toDays()});
+                SwingUtilities.invokeLater(window::recordingsExpired);
+            }
+        } catch (RepositoryException failure) {
+            LOGGER.log(Level.WARNING, "Could not remove every expired recording: " + failure.getMessage(), failure);
+            SwingUtilities.invokeLater(() -> {
+                window.recordingsExpired();
+                window.showStartupWarnings(List.of("Alguns vídeos com mais de " + retention.toDays()
+                        + " dias não puderam ser apagados."));
+            });
+        } catch (RuntimeException unexpected) {
+            // An exception that escapes cancels every later run of the schedule.
+            LOGGER.log(Level.SEVERE, "Recording expiry failed", unexpected);
+        }
     }
 
     static Optional<String> phoneAddress(String override, Path file) throws IOException {

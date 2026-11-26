@@ -12,7 +12,7 @@ already ended.
 
 So the cameras never stop recording. Each one keeps the most recent 30 seconds
 in memory and throws away everything older. When the button is pressed, those
-30 seconds are frozen and written to disk as a permanent clip, so every clip
+30 seconds are frozen and written to disk as a clip kept for seven days, so every clip
 lasts 30 seconds. A camera switched on less than 30 seconds ago has no clip to
 give yet.
 
@@ -169,6 +169,21 @@ the seconds before the stop off as the present.
 Removing a broken camera must not delete the goals it recorded last month.
 Once persisted, a highlight has its own life. The camera is recorded on the
 highlight as its origin — an association, not ownership.
+
+### Recordings expire after seven days
+
+**Decided on 2026-11-26 by the team (#257).** A clip used to be permanent. A gym
+that records every day fills its disk that way, so a recording is now removed
+seven days after its capture, on by default; `VARZINHO_RETENTION_DAYS` changes
+the period, and `0` turns expiry off. Seven days is long enough for an athlete
+to ask the operator for the clip.
+
+The database is not the place for it: it holds the entry, not the `.mp4`, and
+deleting rows would leave the videos behind — and the CSV mode would have no
+expiry at all. `ExpireRecordings`, a use case, removes each one through the
+`RecordingEditor` an operator's delete already uses, so the entry and its file
+leave together or not at all. An unreadable period turns expiry off rather than
+falling back to seven days: a typo must never delete more than intended.
 
 ### Persistence hides behind an interface
 
