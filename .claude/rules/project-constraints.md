@@ -37,10 +37,11 @@
 - **All persistence goes through the ports in `application/port/`:**
   `HighlightRepository`, `GymRepository` and `OperatorStore`. Each has a CSV and a
   PostgreSQL adapter (`CsvHighlightRepository` and `PostgresHighlightRepository`,
-  and so on); neither is the contract. `bootstrap/Storage` picks one per run: CSV
-  under `data/` by default, PostgreSQL when `VARZINHO_DATABASE_URL` names a
-  database, and an unreachable database stops the application rather than falling
-  back to CSV.
+  and so on); neither is the contract. `bootstrap/Storage` picks one per run:
+  PostgreSQL by default (the `docker-compose.yml` database unless
+  `VARZINHO_DATABASE_URL` names another), CSV under `data/` only when
+  `VARZINHO_STORAGE=csv`, and an unreachable database stops the application rather
+  than falling back to CSV.
 - **FFmpeg is a runtime dependency, never a build one.** It is an external program
   on the `PATH`, used only when `VARZINHO_STREAM_URL` names a phone stream. `mvn
   compile` and `mvn test` must keep passing on a machine without it.

@@ -40,8 +40,9 @@ through DroidCam: the ring kept one segment per second, every capture wrote a
 playable 30-second `.mp4`, and closing the window left no FFmpeg process behind.
 The phone dropping mid-session has not been exercised yet.
 
-Storage follows the same pattern: CSV under `data/` unless `VARZINHO_DATABASE_URL`
-names a PostgreSQL database, in which case an unreachable database stops the
+Storage is PostgreSQL by default: the database `docker-compose.yml` starts, unless
+`VARZINHO_DATABASE_URL` names another. `VARZINHO_STORAGE=csv` is the offline mode
+that keeps everything in CSV under `data/`. An unreachable database stops the
 application instead of falling back to CSV. `bootstrap/Storage` makes that choice
 once for the three ports — `HighlightRepository`, `GymRepository` and
 `OperatorStore` — each of which has a CSV and a PostgreSQL adapter. The local
