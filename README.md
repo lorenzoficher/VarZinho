@@ -33,7 +33,7 @@ O objetivo é a **modelagem do domínio** — classes, relacionamentos,
 encapsulamento, herança, polimorfismo e tratamento de exceções. O sistema é
 operado por uma interface gráfica em Swing, exigida pelo enunciado, e
 verificado por testes automatizados. A interface começou mínima; no segundo
-trabalho ganhou navegação lateral, dashboard e temas claro e escuro, sem
+trabalho ganhou navegação lateral, Painel e temas claro e escuro, sem
 assumir nenhuma regra de negócio.
 
 Na versão 2.0, um celular pode servir de câmera: o lance capturado por ele vira
@@ -137,10 +137,10 @@ Para usar o mesmo celular nas próximas inicializações, coloque o endereço co
 `data/stream-url.txt` (uma linha). Esse arquivo fica só na sua máquina. Se estiver definida,
 a variável `VARZINHO_STREAM_URL` tem prioridade.
 
-Também é possível conectar durante a sessão. No dashboard, clique em **Abrir transmissão ao vivo**,
+Também é possível conectar durante a sessão. No **Painel**, clique em **Abrir transmissão ao vivo**,
 logo abaixo de **Salvar Melhor Momento**, e cole o endereço completo do IP Webcam. Quando o
 FFmpeg receber o primeiro trecho, o VarZinho selecionará a quadra do celular automaticamente.
-Confira **phone-1 · grava vídeo MP4** e aguarde o buffer. Uma câmera cadastrada manualmente como
+Confira **phone-1 · grava vídeo MP4** e aguarde a indicação de segundos disponíveis. Uma câmera cadastrada manualmente como
 **Fixa** ou **PTZ** é simulada, mesmo que receba um nome como `phone01`. No histórico,
 **Sem MP4** identifica os registros cujo arquivo de vídeo não está disponível.
 
@@ -342,12 +342,12 @@ usuário e senha:
 
 *Entrada do operador: usuário e senha antes da janela principal.*
 
-O **Painel** abre após o login. Escolha a quadra no cabeçalho ou em **Suas quadras**. O painel mostra as câmeras dessa quadra e quantos segundos já chegaram ao buffer. A modalidade escolhida nos botões fica salva na quadra e continua lá quando o sistema é reaberto.
+O **Painel** abre após o login. Escolha a quadra no cabeçalho ou em **Suas quadras**. O painel mostra as câmeras dessa quadra e quantos segundos estão disponíveis para salvar. A modalidade escolhida nos botões fica salva na quadra e continua lá quando o sistema é reaberto.
 
 - Em **Quadras**, informe o número para cadastrar uma quadra. Ela passa a aparecer no painel e nos filtros.
 - Para instalar várias câmeras, selecione a quadra, preencha o formulário e clique em **Cadastrar câmera**. Para a próxima, informe outro ID e ajuste os demais campos se necessário. A página lista as câmeras da quadra. Cada nova câmera começa parada e pode ser iniciada em **Câmeras**.
 - Em **Câmeras**, use **Iniciar**, **Parar** ou **Liberar** na linha da câmera. O menu **Ações** permite movê-la para outra quadra, configurá-la, enviá-la para manutenção ou removê-la. Em **Movimento PTZ**, selecione uma câmera compatível para ajustar panorâmica, inclinação e zoom.
-- Quando o buffer atingir 30 segundos, clique em **Salvar Melhor Momento** no painel ou em **Salvar lance (F2)** na página **Melhores momentos**. A tecla **F2** salva o lance da quadra selecionada de qualquer ponto da janela. O histórico mostra a quadra, a câmera, a data e a duração do lance confirmado.
+- Quando houver 30 segundos disponíveis, clique em **Salvar Melhor Momento** no painel ou em **Salvar lance (F2)** na página **Melhores momentos**. A tecla **F2** salva o lance da quadra selecionada de qualquer ponto da janela. O histórico mostra a quadra, a câmera, a data e a duração do lance confirmado.
 - Selecione uma gravação no histórico e use **Renomear gravação** para dar um nome como “Lance Fernando Costa”. O nome fica salvo no acervo e aparece na busca. **Excluir gravação** pede confirmação e abre com **Cancelar** selecionado. Ao confirmar, o sistema remove o registro e o MP4 original em `clips/`, quando existir. Cópias exportadas ficam com quem as salvou.
 - **Melhores momentos** reúne captura e histórico. Em **Arquivos**, use a busca, a quadra e o filtro **Dia** para localizar uma gravação. O filtro **Dia** oferece **Todos os dias**, **Hoje**, **Ontem** e **Escolher data**; nesta última, digite a data como dd/mm/aaaa e tecle **Enter**. O dia é o do fuso do ginásio, não o de UTC.
 - Para abrir um clipe, clique em **Assistir** na linha do lance (ou selecione-o e tecle **Ctrl+Enter**). Abre-se a janela do lance, com **Reproduzir vídeo**, que abre o MP4 no player do sistema, e **Baixar vídeo**, que salva uma cópia onde você escolher. **Assistir ao vídeo**, acima da tabela, abre o arquivo do lance selecionado direto no player. Só os lances do celular têm MP4: as câmeras simuladas geram registros sem vídeo, e a linha mostra **Sem MP4**.
@@ -510,11 +510,11 @@ o fluxo inteiro sem abrir nenhuma janela.
 
 ## Capturas de tela
 
-Capturas dos componentes reais da interface Swing, renderizados com dados de demonstração após os ajustes da auditoria. As duas variantes mostram o tema claro e o escuro. Os formulários anteriores ao acesso são apresentados no tema claro, usado ao iniciar a aplicação.
+Capturas dos componentes reais da interface Swing, renderizados com dados de demonstração. As duas variantes mostram o tema claro e o escuro. Os formulários anteriores ao acesso são apresentados no tema claro, usado ao iniciar a aplicação.
 
 A página pública foi capturada em Chromium isolado, recebendo um padrão de teste transmitido pelo FFmpeg. Essa página oferece apenas o tema claro.
 
-A evidência PostgreSQL foi obtida com um banco temporário PostgreSQL 16.15. Uma JVM gravou os dados de demonstração da academia. A consulta exibida comprova o nome e a modalidade das quadras. Depois de encerrar essa JVM, outra execução carregou os mesmos dados por meio de Storage, com VARZINHO_DATABASE_URL configurada. A imagem reúne a interface carregada e a saída real da consulta psql em um painel de leitura.
+A evidência PostgreSQL foi obtida com um banco temporário PostgreSQL 16.15. Uma JVM gravou os dados de demonstração da academia. A consulta exibida comprova o nome e a modalidade das quadras. Depois de encerrar essa JVM, outra execução carregou os mesmos dados por meio de Storage, com `VARZINHO_DATABASE_URL` configurada. A imagem reúne a interface carregada e a saída real da consulta psql em um painel de leitura.
 
 **Painel.** Demonstra a organização da interface, a navegação e os controles de captura e PTZ, relacionados aos critérios 6, 7 e 8.
 
