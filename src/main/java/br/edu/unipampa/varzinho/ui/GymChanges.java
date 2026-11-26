@@ -20,10 +20,13 @@ import java.util.logging.Logger;
 final class GymChanges {
     private static final Logger LOGGER = Logger.getLogger(GymChanges.class.getName());
     private static final String PROGRESS = "Salvando a academia…";
+    static final String NOT_SAVED =
+            "Não foi possível salvar a academia. A alteração foi desfeita; verifique o armazenamento.";
     private final CaptureActivity activity;
     private final Runnable pause;
     private final Runnable resume;
 
+    /** How a change ended. Only a saved change is still in the gym: the rest left it as it was. */
     enum Result { SAVED, NOT_PERSISTED, REFUSED }
 
     @FunctionalInterface
@@ -68,10 +71,10 @@ final class GymChanges {
         });
     }
 
-    /** Like {@link #apply}, for a panel that only cares whether the gym took the change. */
-    void attempt(Component trigger, Change change, Consumer<String> errorSink, Runnable onAccepted) {
+    /** Like {@link #apply}, for a panel that only cares whether the gym kept the change. */
+    void attempt(Component trigger, Change change, Consumer<String> errorSink, Runnable onSaved) {
         apply(trigger, change, errorSink, result -> {
-            if (result != Result.REFUSED) onAccepted.run();
+            if (result == Result.SAVED) onSaved.run();
         });
     }
 
@@ -83,7 +86,7 @@ final class GymChanges {
     private static Result report(Throwable failure, Consumer<String> errorSink) {
         if (failure instanceof RepositoryException) {
             LOGGER.log(Level.WARNING, "Could not persist the gym change", failure);
-            errorSink.accept("Não foi possível salvar a academia. Verifique o armazenamento.");
+            errorSink.accept(NOT_SAVED);
             return Result.NOT_PERSISTED;
         }
         if (failure instanceof IllegalStateException || failure instanceof IllegalArgumentException
@@ -91,9 +94,8 @@ final class GymChanges {
             errorSink.accept(PortugueseText.message(failure.getMessage()));
             return Result.REFUSED;
         }
-        // Not knowing what the gym kept, the panel redraws it as it is.
         LOGGER.log(Level.SEVERE, "A gym change failed unexpectedly", failure);
-        errorSink.accept("Falha inesperada ao salvar a academia.");
+        errorSink.accept("Falha inesperada ao salvar a academia. A alteração foi desfeita.");
         return Result.NOT_PERSISTED;
     }
 }

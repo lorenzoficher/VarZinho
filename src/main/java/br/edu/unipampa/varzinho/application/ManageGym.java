@@ -5,6 +5,7 @@ import br.edu.unipampa.varzinho.application.port.RepositoryException;
 import br.edu.unipampa.varzinho.domain.capture.Aimable;
 import br.edu.unipampa.varzinho.domain.capture.Camera;
 import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
+import br.edu.unipampa.varzinho.enums.CameraStatus;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 import br.edu.unipampa.varzinho.domain.structure.Gym;
@@ -21,10 +22,9 @@ import java.util.stream.Collectors;
  * Changes the gym's structure and exposes only immutable views of it.
  *
  * <p>Every change is applied to the gym first and stored after. When storing fails the
- * change has still happened in this run, and the {@link RepositoryException} says it was
- * not kept — a value the storage cannot hold is reported that way too, never as a refusal.
- * A court's display name and sport are the exception: a label the storage cannot hold is
- * undone, or every later change would fail to be stored along with it.
+ * change is undone before the {@link RepositoryException} reaches the caller, so the window
+ * never shows a court or a camera that a restart would take away. A value the storage
+ * cannot hold is reported the same way, as a failure to keep the change, never as a refusal.
  */
 public final class ManageGym {
 
@@ -75,12 +75,12 @@ public final class ManageGym {
      * @return a view of the new court
      * @throws IllegalArgumentException if the number is not positive or already taken;
      *     nothing changes
-     * @throws RepositoryException if the gym cannot be stored; the change stays in this run
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public CourtView addCourt(int courtNumber) throws RepositoryException {
         Court court = new Court(courtNumber);
         gym.addCourt(court);
-        keep();
+        keepOrUndo(() -> gym.removeCourt(courtNumber));
         return CourtView.from(court);
     }
 
@@ -92,15 +92,15 @@ public final class ManageGym {
      * @throws IllegalArgumentException if the gym has no court with that number
      * @throws IllegalStateException if it is the only court or still holds a camera;
      *     nothing is removed or stored
-     * @throws RepositoryException if the gym cannot be stored; the change stays in this run
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public void removeCourt(int courtNumber) throws RepositoryException {
-        requireCourt(courtNumber);
+        Court court = requireCourt(courtNumber);
         if (gym.getCourts().size() == 1) {
             throw new IllegalStateException("court " + courtNumber + " is the only court");
         }
         gym.removeCourt(courtNumber);
-        keep();
+        keepOrUndo(() -> gym.addCourt(court));
     }
 
     /**
@@ -113,14 +113,13 @@ public final class ManageGym {
      *     court with that number
      * @throws br.edu.unipampa.varzinho.exception.DuplicateCameraException if a camera with
      *     the same id is already installed anywhere in the gym
-     * @throws RepositoryException if the gym cannot be stored; the change stays in this run
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public CourtView installCamera(int courtNumber, CameraSpec spec) throws RepositoryException {
         if (spec == null) {
             throw new IllegalArgumentException("installing a camera needs its specification");
         }
-        gym.installCamera(courtNumber, spec.getKind().build(spec));
-        keep();
+        install(courtNumber, spec.getKind().build(spec));
         return court(courtNumber);
     }
 
@@ -132,7 +131,7 @@ public final class ManageGym {
      * @return a view of the court after the change
      * @throws IllegalArgumentException if the court is unknown or the camera is not on it
      * @throws IllegalStateException if the camera is under maintenance
-     * @throws RepositoryException if the gym cannot be stored; the change stays in this run
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public CourtView startRecording(int courtNumber, String cameraId) throws RepositoryException {
         return changeCamera(courtNumber, cameraId, Camera::startRecording);
@@ -148,7 +147,7 @@ public final class ManageGym {
      * @param zoom the zoom level to aim at
      * @throws IllegalArgumentException if the gym has no court with that number, or a
      *     coordinate is outside its range; nothing is installed
-     * @throws RepositoryException if the gym cannot be stored; the change stays in this run
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public void installSimulatedPtz(int courtNumber, int pan, int tilt, int zoom) throws RepositoryException {
         String prefix = "ptz-" + courtNumber;
@@ -158,8 +157,7 @@ public final class ManageGym {
         for (int suffix = 2; installed.contains(id); suffix++) id = prefix + "-" + suffix;
         var camera = new PtzCamera(id, "PTZ", Resolution.HD, Court.DEFAULT_CAPTURE_SECONDS);
         camera.moveTo(pan, tilt, zoom);
-        gym.installCamera(courtNumber, camera);
-        keep();
+        install(courtNumber, camera);
     }
 
     /**
@@ -170,7 +168,7 @@ public final class ManageGym {
      * @return a view of the court after the change
      * @throws IllegalArgumentException if the court is unknown or the camera is not on it
      * @throws IllegalStateException if the camera is under maintenance
-     * @throws RepositoryException if the gym cannot be stored; the change stays in this run
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public CourtView stopRecording(int courtNumber, String cameraId) throws RepositoryException {
         return changeCamera(courtNumber, cameraId, Camera::stopRecording);
@@ -183,7 +181,7 @@ public final class ManageGym {
      * @param cameraId the camera to change
      * @return a view of the court after the change
      * @throws IllegalArgumentException if the court is unknown or the camera is not on it
-     * @throws RepositoryException if the gym cannot be stored; the change stays in this run
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public CourtView sendToMaintenance(int courtNumber, String cameraId)
             throws RepositoryException {
@@ -198,7 +196,7 @@ public final class ManageGym {
      * @return a view of the court after the change
      * @throws IllegalArgumentException if the court is unknown or the camera is not on it
      * @throws IllegalStateException if the camera is not under maintenance
-     * @throws RepositoryException if the gym cannot be stored; the change stays in this run
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public CourtView releaseFromMaintenance(int courtNumber, String cameraId) throws RepositoryException {
         return changeCamera(courtNumber, cameraId, Camera::releaseFromMaintenance);
@@ -211,12 +209,13 @@ public final class ManageGym {
      * @param cameraId the camera to remove
      * @return a view of the court without it
      * @throws IllegalArgumentException if the court is unknown or the camera is not on it
-     * @throws RepositoryException if the gym cannot be stored; the change stays in this run
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public CourtView removeCamera(int courtNumber, String cameraId) throws RepositoryException {
         Court court = requireCourt(courtNumber);
-        court.removeCamera(requireCamera(court, cameraId));
-        keep();
+        Camera camera = requireCamera(court, cameraId);
+        court.removeCamera(camera);
+        keepOrUndo(() -> court.installCamera(camera));
         return CourtView.from(court);
     }
 
@@ -230,13 +229,18 @@ public final class ManageGym {
      * @return a view of the court it left
      * @throws IllegalArgumentException if either court is unknown, the camera is not on the
      *     first one, or both are the same court; nothing moves
-     * @throws RepositoryException if the gym cannot be stored; the change stays in this run
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public CourtView moveCamera(int fromCourtNumber, String cameraId, int toCourtNumber)
             throws RepositoryException {
         Court from = requireCourt(fromCourtNumber);
-        gym.moveCamera(requireCamera(from, cameraId), toCourtNumber);
-        keep();
+        Camera camera = requireCamera(from, cameraId);
+        CameraStatus before = camera.getStatus();
+        gym.moveCamera(camera, toCourtNumber);
+        keepOrUndo(() -> {
+            gym.moveCamera(camera, fromCourtNumber);
+            restoreStatus(camera, before);
+        });
         return CourtView.from(from);
     }
 
@@ -251,7 +255,7 @@ public final class ManageGym {
      * @return a view of the court after the change
      * @throws IllegalArgumentException if the court is unknown, the camera is not on it,
      *     cannot be aimed, or a coordinate is outside its range
-     * @throws RepositoryException if the gym cannot be stored; the change stays in this run
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public CourtView aimCamera(int courtNumber, String cameraId, int pan, int tilt, int zoom)
             throws RepositoryException {
@@ -260,8 +264,10 @@ public final class ManageGym {
         if (!(camera instanceof Aimable aimable)) {
             throw new IllegalArgumentException("camera " + cameraId + " cannot be aimed");
         }
+        CameraView before = CameraView.from(camera);
         aimable.moveTo(pan, tilt, zoom);
-        keep();
+        keepOrUndo(() -> aimable.moveTo(before.getPan().orElseThrow(),
+                before.getTilt().orElseThrow(), before.getZoom().orElseThrow()));
         return CourtView.from(court);
     }
 
@@ -273,7 +279,7 @@ public final class ManageGym {
      * @return a view of the court with its new name
      * @throws IllegalArgumentException if the court is unknown or {@link Court#rename}
      *     refuses the name; nothing changes
-     * @throws RepositoryException if the gym cannot be stored; the previous name is back
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public CourtView renameCourt(int courtNumber, String displayName) throws RepositoryException {
         return relabel(courtNumber, displayName, Court::getDisplayName, Court::rename);
@@ -288,7 +294,7 @@ public final class ManageGym {
      * @return a view of the court with its new sport
      * @throws IllegalArgumentException if the court is unknown or {@link Court#assignSport}
      *     refuses the sport; nothing changes
-     * @throws RepositoryException if the gym cannot be stored; the previous sport is back
+     * @throws RepositoryException if the gym cannot be stored; nothing changes
      */
     public CourtView chooseSport(int courtNumber, String sport) throws RepositoryException {
         return relabel(courtNumber, sport, Court::getSport, Court::assignSport);
@@ -299,26 +305,65 @@ public final class ManageGym {
         Court court = requireCourt(courtNumber);
         String previous = current.apply(court).orElse("");
         change.accept(court, label);
-        try {
-            keep();
-        } catch (RepositoryException notKept) {
-            change.accept(court, previous);
-            throw notKept;
-        }
+        keepOrUndo(() -> change.accept(court, previous));
         return CourtView.from(court);
     }
 
     private CourtView changeCamera(int courtNumber, String cameraId, Consumer<Camera> change)
             throws RepositoryException {
         Court court = requireCourt(courtNumber);
-        change.accept(requireCamera(court, cameraId));
-        keep();
+        Camera camera = requireCamera(court, cameraId);
+        CameraStatus before = camera.getStatus();
+        change.accept(camera);
+        keepOrUndo(() -> restoreStatus(camera, before));
         return CourtView.from(court);
     }
 
+    private void install(int courtNumber, Camera camera) throws RepositoryException {
+        gym.installCamera(courtNumber, camera);
+        keepOrUndo(() -> requireCourt(courtNumber).removeCamera(camera));
+    }
+
     /**
-     * Stores the gym after a change it already took. A value the storage cannot hold is
-     * a failure to keep the change, not a refusal of it, so it is reported as one.
+     * Puts a camera back in a status it had. One that goes back to recording starts on an
+     * empty buffer, as every start does: footage from before the failed change is not
+     * passed off as the present.
+     */
+    private static void restoreStatus(Camera camera, CameraStatus previous) {
+        if (camera.getStatus() == previous) {
+            return;
+        }
+        if (camera.getStatus() == CameraStatus.MAINTENANCE) {
+            camera.releaseFromMaintenance();
+        }
+        switch (previous) {
+            case ACTIVE:
+                camera.startRecording();
+                break;
+            case MAINTENANCE:
+                camera.sendToMaintenance();
+                break;
+            default:
+                camera.stopRecording();
+        }
+    }
+
+    /**
+     * Stores the gym after a change it already took, or takes the change back when it
+     * cannot be stored, so memory never runs ahead of what a restart would load.
+     */
+    private void keepOrUndo(Runnable undo) throws RepositoryException {
+        try {
+            keep();
+        } catch (RepositoryException | RuntimeException notKept) {
+            undo.run();
+            throw notKept;
+        }
+    }
+
+    /**
+     * Stores the gym. A value the storage cannot hold is a failure to keep the change,
+     * not a refusal of it, so it is reported as one.
      */
     private void keep() throws RepositoryException {
         try {
