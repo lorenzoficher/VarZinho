@@ -168,7 +168,6 @@ final class RecordingActions {
             manageRecordings.delete(id);
             return null;
         }, deleted -> {
-            recordings.forgetCategory(id);
             recount.run();
         }, failure -> {
             LOGGER.log(failure instanceof RepositoryException ? Level.WARNING : Level.SEVERE,

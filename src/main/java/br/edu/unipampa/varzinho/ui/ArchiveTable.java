@@ -6,17 +6,13 @@ import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
-import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -30,6 +26,7 @@ import javax.swing.table.TableRowSorter;
 
 /** Presents recordings and keeps selection stable across searches and reloads. */
 final class ArchiveTable extends JPanel {
+    private static final int CLIP_COLUMN = 4;
     private final HighlightTableModel rows;
     private final JTable table;
     private final TableRowSorter<HighlightTableModel> sorter;
@@ -45,8 +42,6 @@ final class ArchiveTable extends JPanel {
         sorter.setSortsOnUpdates(true);
         for (int column = 0; column < rows.getColumnCount(); column++) sorter.setSortable(column, false);
         table.setRowSorter(sorter);
-        table.getColumnModel().getColumn(4).setCellEditor(new DefaultCellEditor(
-                new JComboBox<>(new String[]{"Lance", "Defesa", "Gol", "Ponto"})));
         table.getAccessibleContext().setAccessibleName("Histórico de melhores momentos");
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setPreferredScrollableViewportSize(new Dimension(640, 160));
@@ -56,7 +51,7 @@ final class ArchiveTable extends JPanel {
         table.setFillsViewportHeight(true);
         table.getTableHeader().setReorderingAllowed(false);
         table.getTableHeader().setPreferredSize(new Dimension(0, 36));
-        table.getColumnModel().getColumn(5).setCellRenderer((grid, value, selected, focus, row, column) -> {
+        table.getColumnModel().getColumn(CLIP_COLUMN).setCellRenderer((grid, value, selected, focus, row, column) -> {
             boolean available = rows.hasVideo(table.convertRowIndexToModel(row));
             JButton play = new JButton(available ? "Assistir" : "Sem MP4");
             if (available) play.setIcon(VarZinhoIcons.arena("play-video", 18, VarZinhoTheme.ON_ACCENT));
@@ -82,7 +77,7 @@ final class ArchiveTable extends JPanel {
                 int column = table.columnAtPoint(e.getPoint());
                 int row = table.rowAtPoint(e.getPoint());
                 if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 1
-                        && column >= 0 && table.convertColumnIndexToModel(column) == 5 && row >= 0) {
+                        && column >= 0 && table.convertColumnIndexToModel(column) == CLIP_COLUMN && row >= 0) {
                     table.setRowSelectionInterval(row, row);
                     preview.run();
                 }
@@ -115,7 +110,6 @@ final class ArchiveTable extends JPanel {
     int count() { return rows.getRowCount(); }
     void addActions(JPanel actions) { footer.add(actions, BorderLayout.EAST); }
     HighlightView selectedRecording() { return rows.highlights.get(table.convertRowIndexToModel(table.getSelectedRow())); }
-    void forgetCategory(String id) { rows.categories.remove(id); }
 
     void show(List<HighlightView> highlights) {
         if (table.isEditing() && !table.getCellEditor().stopCellEditing()) table.getCellEditor().cancelCellEditing();
@@ -134,18 +128,7 @@ final class ArchiveTable extends JPanel {
     }
 
     private static final class HighlightTableModel extends AbstractTableModel {
-        private static final String[] COLUMNS = {"Data e hora", "Quadra", "Câmera", "Duração", "Categoria", "Clipe", "Nome"};
-        private final Map<String,String> categories = new HashMap<>();
-
-        @Override public boolean isCellEditable(int row, int column) { return column == 4; }
-
-        @Override public void setValueAt(Object value, int row, int column) {
-            if (column == 4 && value instanceof String category) {
-                categories.put(highlights.get(row).getId(), category);
-                fireTableCellUpdated(row, column);
-            }
-        }
-
+        private static final String[] COLUMNS = {"Data e hora", "Quadra", "Câmera", "Duração", "Clipe", "Nome"};
         private final DateTimeFormatter timeFormat;
         private List<HighlightView> highlights = List.of();
         private Set<String> playablePaths = Set.of();
@@ -184,9 +167,8 @@ final class ArchiveTable extends JPanel {
                 case 1: return highlight.getCourtNumber();
                 case 2: return highlight.getCameraId();
                 case 3: return highlight.getDurationSeconds() + " s";
-                case 4: return categories.getOrDefault(highlight.getId(), "Lance");
-                case 5: return highlight.getClipPath();
-                case 6: return highlight.getTitle().isEmpty() ? "Sem nome" : highlight.getTitle();
+                case CLIP_COLUMN: return highlight.getClipPath();
+                case 5: return highlight.getTitle().isEmpty() ? "Sem nome" : highlight.getTitle();
                 default: throw new IndexOutOfBoundsException("no column " + column);
             }
         }
