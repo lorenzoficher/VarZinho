@@ -21,7 +21,7 @@ import java.util.List;
 final class SidebarPanel extends JPanel {
     enum Page { DASHBOARD, COURTS, CAMERAS, HIGHLIGHTS, ARCHIVE, OPERATORS, SETTINGS }
 
-    private final JToggleButton dashboard = navigation("Dashboard", "dashboard");
+    private final JToggleButton dashboard = navigation("Painel", "dashboard");
     private final JToggleButton courts = navigation("Quadras", "courts");
     private final JToggleButton cameras = navigation("Câmeras", "cameras");
     private final JToggleButton highlights = navigation("Melhores momentos", "highlights");
@@ -32,7 +32,7 @@ final class SidebarPanel extends JPanel {
     private final JProgressBar cameraProgress = new JProgressBar();
 
     SidebarPanel(String gymName, OperatorView operator, Consumer<Page> onPageChange) {
-        super(new MigLayout("insets 24 18, fillx, wrap 1", "[grow,fill]", "[]8[]6[][][][][][][]push[]8[]10[][]"));
+        super(new MigLayout("insets 12 18, fillx, wrap 1", "[grow,fill]", "[]8[]6[][][][][][][]push[]8[]10[][]"));
         if (gymName == null || gymName.isBlank()) throw new IllegalArgumentException("a sidebar needs the gym name");
         if (operator == null) throw new IllegalArgumentException("a sidebar needs the signed-in operator");
         if (onPageChange == null) throw new IllegalArgumentException("a sidebar needs a page destination");
@@ -54,7 +54,7 @@ final class SidebarPanel extends JPanel {
         arena.setToolTipText(gymName);
         VarZinhoTheme.styleEyebrow(arena, "accent");
         identity.add(arena, "cell 1 1");
-        add(identity, "gapy 0 22");
+        add(identity, "gapy 0 12");
 
         JLabel menu = sidebarLabel("MENU PRINCIPAL");
         VarZinhoTheme.styleEyebrow(menu, "sidebarMuted");
