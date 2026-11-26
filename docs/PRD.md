@@ -96,9 +96,9 @@ highlight, because no identity exists at the moment the button is pressed.
 
 Highlights, the gym's structure and the operator accounts survive between
 executions. Each goes through its own abstraction — `HighlightRepository`,
-`GymRepository` and `OperatorStore` — and is written to CSV files under
-`data/` by default, or to PostgreSQL when `VARZINHO_DATABASE_URL` names a
-database. No other class knows the storage format.
+`GymRepository` and `OperatorStore` — and is written to PostgreSQL by
+default, or to CSV files under `data/` when `VARZINHO_STORAGE=csv` asks for
+the offline mode. No other class knows the storage format.
 
 ### FR-5 — Retrieval
 

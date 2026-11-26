@@ -206,7 +206,8 @@ no business rule.
 
 A real database left that list on 2026-11-11, for the second assignment:
 PostgreSQL in Docker, reached through plain JDBC, alongside CSV rather than
-replacing it. The reasoning is in `CONTEXT.md`.
+replacing it. Since 2026-11-26 it is the default, and CSV is the offline mode
+(`VARZINHO_STORAGE=csv`). The reasoning is in `CONTEXT.md`.
 
 The brief is the contract. Where it and these conventions disagree, the brief
 wins, and the disagreement gets fixed here rather than worked around in a

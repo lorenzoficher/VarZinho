@@ -305,6 +305,18 @@ When the database is chosen but unreachable, the application refuses to open
 instead of falling back to CSV: highlights quietly written to a file would
 look lost from the database.
 
+**PostgreSQL became the default on 2026-11-26 (#255).** The assignment asks
+the application to persist through a DBMS, and with CSV as the default the
+shortest path — `mvn exec:java` — never reached one. A run with no variable
+now connects to the database `docker-compose.yml` starts, with its defaults;
+`VARZINHO_DATABASE_*` still override them. The CSV adapters stay, for the
+same two reasons as before — they are the open/closed example
+(`CameraCsvFormat`) and one of the adapters the contract tests substitute —
+but only as an explicit offline mode, `VARZINHO_STORAGE=csv`, for a machine
+without Docker. Asking for CSV while also naming a database is refused, for
+the same reason a fallback is: the operator must never wonder where the
+highlights went.
+
 ## Constraints
 
 | | |

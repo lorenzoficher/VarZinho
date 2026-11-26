@@ -98,10 +98,9 @@ loadScripts(document, 'script');</script>
 <div class="block">Changes the gym's structure and exposes only immutable views of it.
 
 <p>Every change is applied to the gym first and stored after. When storing fails the
-change has still happened in this run, and the <a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port"><code>RepositoryException</code></a> says it was
-not kept — a value the storage cannot hold is reported that way too, never as a refusal.
-A court's display name and sport are the exception: a label the storage cannot hold is
-undone, or every later change would fail to be stored along with it.</div>
+change is undone before the <a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port"><code>RepositoryException</code></a> reaches the caller, so the window
+never shows a court or a camera that a restart would take away. A value the storage
+cannot hold is reported the same way, as a failure to keep the change, never as a refusal.</div>
 </div>
 </section>
 <section class="summary">
@@ -313,7 +312,7 @@ undone, or every later change would fail to be stored along with it.</div>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the number is not positive or already taken;
     nothing changes</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the change stays in this run</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>
@@ -333,7 +332,7 @@ a selected court, so the only court is kept even though a <a href="../domain/str
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the gym has no court with that number</dd>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if it is the only court or still holds a camera;
     nothing is removed or stored</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the change stays in this run</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>
@@ -357,7 +356,7 @@ a selected court, so the only court is kept even though a <a href="../domain/str
     court with that number</dd>
 <dd><code><a href="../exception/DuplicateCameraException.html" title="class in br.edu.unipampa.varzinho.exception">DuplicateCameraException</a></code> - if a camera with
     the same id is already installed anywhere in the gym</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the change stays in this run</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>
@@ -379,7 +378,7 @@ a selected court, so the only court is kept even though a <a href="../domain/str
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the court is unknown or the camera is not on it</dd>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if the camera is under maintenance</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the change stays in this run</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>
@@ -404,7 +403,7 @@ a selected court, so the only court is kept even though a <a href="../domain/str
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the gym has no court with that number, or a
     coordinate is outside its range; nothing is installed</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the change stays in this run</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>
@@ -426,7 +425,7 @@ a selected court, so the only court is kept even though a <a href="../domain/str
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the court is unknown or the camera is not on it</dd>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if the camera is under maintenance</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the change stays in this run</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>
@@ -447,7 +446,7 @@ a selected court, so the only court is kept even though a <a href="../domain/str
 <dd>a view of the court after the change</dd>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the court is unknown or the camera is not on it</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the change stays in this run</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>
@@ -469,7 +468,7 @@ a selected court, so the only court is kept even though a <a href="../domain/str
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the court is unknown or the camera is not on it</dd>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if the camera is not under maintenance</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the change stays in this run</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>
@@ -490,7 +489,7 @@ a selected court, so the only court is kept even though a <a href="../domain/str
 <dd>a view of the court without it</dd>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the court is unknown or the camera is not on it</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the change stays in this run</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>
@@ -515,7 +514,7 @@ switched off, so no highlight on its new court holds the old court's footage.</d
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if either court is unknown, the camera is not on the
     first one, or both are the same court; nothing moves</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the change stays in this run</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>
@@ -543,7 +542,7 @@ switched off, so no highlight on its new court holds the old court's footage.</d
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the court is unknown, the camera is not on it,
     cannot be aimed, or a coordinate is outside its range</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the change stays in this run</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>
@@ -565,7 +564,7 @@ switched off, so no highlight on its new court holds the old court's footage.</d
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the court is unknown or <a href="../domain/structure/Court.html#rename(java.lang.String)"><code>Court.rename(String)</code></a>
     refuses the name; nothing changes</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the previous name is back</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>
@@ -588,7 +587,7 @@ A blank sport clears it.</div>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the court is unknown or <a href="../domain/structure/Court.html#assignSport(java.lang.String)"><code>Court.assignSport(String)</code></a>
     refuses the sport; nothing changes</dd>
-<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; the previous sport is back</dd>
+<dd><code><a href="port/RepositoryException.html" title="class in br.edu.unipampa.varzinho.application.port">RepositoryException</a></code> - if the gym cannot be stored; nothing changes</dd>
 </dl>
 </div>
 </section>

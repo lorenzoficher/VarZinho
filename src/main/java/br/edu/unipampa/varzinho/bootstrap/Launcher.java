@@ -60,9 +60,10 @@ public final class Launcher {
      * Asks for an operator to sign in — or to be created, on the first run — and then
      * opens the window on the simulated cameras, or, when {@value #STREAM_URL_VARIABLE}
      * names a phone stream, on that phone as well. Everything, operators included, is kept
-     * in the CSV files unless {@value Storage#URL_VARIABLE} names a database; when that
-     * database cannot be reached, or the sign-in is closed without an operator, no window
-     * opens and the application exits.
+     * in PostgreSQL — the {@code docker-compose.yml} database unless
+     * {@value Storage#URL_VARIABLE} names another — or in the CSV files when
+     * {@value Storage#MODE_VARIABLE} is {@code csv}. When the storage cannot be opened, or
+     * the sign-in is closed without an operator, no window opens and the application exits.
      *
      * <p>Recordings expire {@value RetentionSetting#DEFAULT_DAYS} days after their capture
      * unless {@value RetentionSetting#VARIABLE} says otherwise: the expired ones are removed,
@@ -77,7 +78,10 @@ public final class Launcher {
             } catch (RepositoryException unreachable) {
                 // Storage masks the password in this message; the JDBC cause can repeat the raw URL.
                 LOGGER.log(Level.SEVERE, "Database startup failed: {0}", unreachable.getMessage());
-                refuseToOpen("não foi possível conectar ao banco de dados", "Banco de dados indisponível");
+                refuseToOpen("não foi possível abrir o banco de dados. Suba o PostgreSQL com "
+                        + "\"docker compose up -d --wait\" e abra de novo, ou defina "
+                        + Storage.MODE_VARIABLE + "=" + Storage.CSV_MODE
+                        + " para guardar nos arquivos de data/", "Banco de dados indisponível");
                 return;
             }
             Optional<SignedInOperator> signedIn = signIn(storage);
