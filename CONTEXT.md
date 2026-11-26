@@ -112,6 +112,17 @@ preserved window of footage; what happened inside it is for whoever watches.
 `CameraStatus` and `Resolution` stay, because those are properties of the
 equipment and do not vary by sport.
 
+**Partly reversed on 2026-11-25 (#240).** A court now carries a display name
+and a sport, because the window offered both and kept them only in panel
+memory: they vanished on restart, and that state lived in the presentation
+layer. Both are free labels the operator types or picks, at most
+`Court.MAX_LABEL_LENGTH` characters on one line. No rule reads them, there is
+no enum of sports, and a highlight still records none, so the reasoning
+above stands: the system stores what the gym calls its court and its game,
+and classifies nothing. The four sport buttons on the dashboard are
+suggestions the window draws; any other label is kept and shown with the
+court's own icon.
+
 ### Operators are accounts, apart from the gym
 
 **Reversed on 2026-11-11, for the second assignment.** The gym used to keep a

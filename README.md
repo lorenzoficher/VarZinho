@@ -342,7 +342,7 @@ usuário e senha:
 
 *Entrada do operador: usuário e senha antes da janela principal.*
 
-O **Dashboard** abre após o login. Escolha a quadra no cabeçalho ou em **Suas quadras**. O painel mostra as câmeras dessa quadra e quantos segundos já chegaram ao buffer. A modalidade escolhida nos botões vale para a quadra durante a sessão.
+O **Dashboard** abre após o login. Escolha a quadra no cabeçalho ou em **Suas quadras**. O painel mostra as câmeras dessa quadra e quantos segundos já chegaram ao buffer. A modalidade escolhida nos botões fica salva na quadra e continua lá quando o sistema é reaberto.
 
 - Em **Quadras**, informe o número para cadastrar uma quadra. Ela passa a aparecer no dashboard e nos filtros.
 - Para instalar várias câmeras, selecione a quadra, preencha o formulário e clique em **Cadastrar câmera**. Para a próxima, informe outro ID e ajuste os demais campos se necessário. A página lista as câmeras da quadra. Cada nova câmera começa parada e pode ser iniciada em **Câmeras**.
@@ -353,7 +353,7 @@ O **Dashboard** abre após o login. Escolha a quadra no cabeçalho ou em **Suas 
 - Para abrir um clipe, clique em **Assistir** na linha do lance (ou selecione-o e tecle **Ctrl+Enter**). Abre-se a janela do lance, com **Reproduzir vídeo**, que abre o MP4 no player do sistema, e **Baixar vídeo**, que salva uma cópia onde você escolher. **Assistir ao vídeo**, acima da tabela, abre o arquivo do lance selecionado direto no player. Só os lances do celular têm MP4: as câmeras simuladas geram registros sem vídeo, e a linha mostra **Sem MP4**.
 - No histórico, **Ctrl+F** leva à busca. Digite, por exemplo, o ID de uma câmera, uma data ou a categoria **Defesa**. **Enter** seleciona o primeiro resultado. Use as setas para escolher outro lance e **Ctrl+Enter** na tabela para abrir o selecionado. **Esc** no campo de busca limpa o texto.
 - Tudo isso funciona sem o mouse, com o foco sempre visível nos dois temas. **Tab** e **Shift+Tab** passam pelos controles; na barra lateral, **↑** e **↓** trocam de página. **Enter** envia o formulário em que o cursor está e **Esc** fecha qualquer janela de diálogo. Nas tabelas, as setas andam entre as linhas e o Tab segue para o próximo controle.
-- Em **Configurações**, alterne entre os temas claro e escuro ou escolha um nome de exibição para a quadra durante a sessão. A barra de mensagens e o sino do cabeçalho mostram o retorno das operações.
+- Em **Configurações**, alterne entre os temas claro e escuro ou escolha um nome de exibição para a quadra, que fica salvo junto com a academia. A barra de mensagens e o sino do cabeçalho mostram o retorno das operações.
 
 #### Tamanhos de janela suportados
 
@@ -557,8 +557,8 @@ enunciado (tratamento de exceções).
 |---|---|
 | ![Erro de quadra sem câmera ativa, tema claro](docs/screenshots/06-erro-quadra-sem-camera-ativa-claro.png) | ![Erro de quadra sem câmera ativa, tema escuro](docs/screenshots/06-erro-quadra-sem-camera-ativa-escuro.png) |
 
-**Configurações.** **Alternar tema**, o nome de exibição da quadra selecionada
-durante a sessão e o guia **Como conectar a câmera** do celular.
+**Configurações.** **Alternar tema**, o nome de exibição da quadra selecionada,
+salvo junto com a academia, e o guia **Como conectar a câmera** do celular.
 
 | Claro | Escuro |
 |---|---|

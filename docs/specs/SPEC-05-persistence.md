@@ -50,18 +50,22 @@ h-001,2026-09-12T20:14:33Z,3,cam-a1,clips/h-001.mp4,30,FULL_HD,42.5
 ```csv
 kind,values
 gym,VarZinho Arena,100 Sports Avenue
-court,1
+court,1,Quadra Coberta,Futsal
+court,2
 fixed,1,fixed-1,Fixed Pro,FULL_HD,30,ACTIVE,45
 ptz,1,ptz-1,PTZ Pro,HD,30,ACTIVE,0,0,1
 ```
 
 - `load()` returns empty when no file exists.
 - Saving again replaces the previous snapshot.
-- Loading restores the gym name and address, court numbers, both camera kinds,
+- Loading restores the gym name and address, court numbers, display names and
+  sports, both camera kinds,
   model, resolution, buffer length, status, fixed angle and PTZ aim.
 - Loading rebuilds the model through domain methods. An invalid line, missing
   header, undeclared court or duplicate camera fails the whole load with the
   offending line number; half a gym is never returned.
+- A court line written before labels existed (`court,1`) still loads, and a
+  court without labels is still written that way.
 - Unsupported text is rejected before the existing file changes.
 - People are intentionally absent because the Swing interface does not
   register them. Highlights remain in their separate archive.
