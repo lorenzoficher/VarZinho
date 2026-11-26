@@ -37,6 +37,9 @@ public final class CsvGymRepository implements GymRepository {
     private static final String SEPARATOR = ",";
     private static final String GYM = "gym";
     private static final String COURT = "court";
+    // A court line once held only the number, and an unlabelled court is still written so.
+    private static final int UNLABELLED_COURT_COLUMNS = 2;
+    private static final int COURT_COLUMNS = 4;
     private static final int COMMON_COLUMNS = 7;
 
     private final Path file;
@@ -109,7 +112,7 @@ public final class CsvGymRepository implements GymRepository {
         courts.removeIf(CsvGymRepository::holdsOnlyStreams);
         courts.sort(Comparator.comparingInt(Court::getNumber));
         for (Court court : courts) {
-            lines.add(line(COURT, String.valueOf(court.getNumber())));
+            lines.add(courtLine(court));
         }
         for (Court court : courts) {
             for (Camera camera : court.getCameras()) {
@@ -162,8 +165,7 @@ public final class CsvGymRepository implements GymRepository {
                 } else if (gym == null) {
                     throw unreadable(lineNumber, "a court or camera before the gym line");
                 } else if (COURT.equals(fields[0])) {
-                    require(fields, 2, lineNumber);
-                    gym.addCourt(new Court(Integer.parseInt(fields[1])));
+                    gym.addCourt(court(fields, lineNumber));
                 } else {
                     install(gym, fields, lineNumber);
                 }
@@ -177,6 +179,28 @@ public final class CsvGymRepository implements GymRepository {
             throw new RepositoryException("the gym file " + file + " has no gym line");
         }
         return Optional.of(gym);
+    }
+
+    // A court without labels keeps the line it always had, so saving a file written before
+    // labels existed leaves it exactly as it was.
+    private static String courtLine(Court court) {
+        String number = String.valueOf(court.getNumber());
+        if (court.getDisplayName().isEmpty() && court.getSport().isEmpty()) {
+            return line(COURT, number);
+        }
+        return line(COURT, number, court.getDisplayName().orElse(""), court.getSport().orElse(""));
+    }
+
+    private static Court court(String[] fields, int lineNumber) throws RepositoryException {
+        if (fields.length != UNLABELLED_COURT_COLUMNS) {
+            require(fields, COURT_COLUMNS, lineNumber);
+        }
+        Court court = new Court(Integer.parseInt(fields[1]));
+        if (fields.length == COURT_COLUMNS) {
+            court.rename(fields[2]);
+            court.assignSport(fields[3]);
+        }
+        return court;
     }
 
     private void install(Gym gym, String[] fields, int lineNumber) throws RepositoryException {

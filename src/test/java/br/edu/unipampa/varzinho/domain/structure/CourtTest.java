@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -149,6 +150,78 @@ class CourtTest {
     void rejectsAMissingClockOrIdSource() {
         assertThrows(IllegalArgumentException.class, () -> new Court(1, null, () -> "h-1"));
         assertThrows(IllegalArgumentException.class, () -> new Court(1, Clock.systemUTC(), null));
+    }
+
+    @Test
+    void aNewCourtHasNeitherDisplayNameNorSport() {
+        Court court = new Court(1);
+
+        assertEquals(Optional.empty(), court.getDisplayName());
+        assertEquals(Optional.empty(), court.getSport());
+    }
+
+    @Test
+    void renamingKeepsTheNameWithoutSurroundingSpaces() {
+        Court court = new Court(1);
+
+        court.rename("  Quadra coberta ");
+
+        assertEquals(Optional.of("Quadra coberta"), court.getDisplayName());
+    }
+
+    @Test
+    void renamingToBlankClearsTheName() {
+        Court court = new Court(1);
+        court.rename("Quadra coberta");
+
+        court.rename("   ");
+
+        assertEquals(Optional.empty(), court.getDisplayName());
+    }
+
+    @Test
+    void assigningASportKeepsWhateverLabelTheOperatorChose() {
+        Court court = new Court(1);
+
+        court.assignSport(" Futsal ");
+
+        assertEquals(Optional.of("Futsal"), court.getSport());
+    }
+
+    @Test
+    void assigningABlankSportClearsIt() {
+        Court court = new Court(1);
+        court.assignSport("Vôlei");
+
+        court.assignSport("");
+
+        assertEquals(Optional.empty(), court.getSport());
+    }
+
+    @Test
+    void refusesALabelThatIsMissingSpansLinesOrIsTooLong() {
+        Court court = new Court(1);
+        String tooLong = "x".repeat(Court.MAX_LABEL_LENGTH + 1);
+
+        assertThrows(IllegalArgumentException.class, () -> court.rename(null));
+        assertThrows(IllegalArgumentException.class, () -> court.rename("Quadra\ncoberta"));
+        assertThrows(IllegalArgumentException.class, () -> court.rename(tooLong));
+        assertThrows(IllegalArgumentException.class, () -> court.assignSport(null));
+        assertThrows(IllegalArgumentException.class, () -> court.assignSport("Vôlei\rde praia"));
+        assertThrows(IllegalArgumentException.class, () -> court.assignSport(tooLong));
+    }
+
+    @Test
+    void aRefusedLabelLeavesThePreviousOneInPlace() {
+        Court court = new Court(1);
+        court.rename("Quadra coberta");
+        court.assignSport("Futsal");
+
+        assertThrows(IllegalArgumentException.class, () -> court.rename("x".repeat(Court.MAX_LABEL_LENGTH + 1)));
+        assertThrows(IllegalArgumentException.class, () -> court.assignSport(null));
+
+        assertEquals(Optional.of("Quadra coberta"), court.getDisplayName());
+        assertEquals(Optional.of("Futsal"), court.getSport());
     }
 
     private Court recordingCourtWithBufferedFrames(int number) {

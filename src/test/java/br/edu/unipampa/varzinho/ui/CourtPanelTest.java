@@ -228,6 +228,48 @@ class CourtPanelTest {
     }
 
     @Test
+    void aCourtsNameAndSportAreStoredInTheGymNotKeptByThePanel() {
+        List<String> saved = new ArrayList<>();
+        panel.selectCourt(2);
+
+        panel.renameSelected(panel.addCourtButton(), " Quadra Azul ", () -> saved.add("name"));
+        awaitRepositoryWork();
+        panel.chooseSport(panel.addCourtButton(), "Vôlei", () -> saved.add("sport"));
+        awaitRepositoryWork();
+
+        Court court = gym.findCourt(2).orElseThrow();
+        assertEquals(java.util.Optional.of("Quadra Azul"), court.getDisplayName());
+        assertEquals(java.util.Optional.of("Vôlei"), court.getSport());
+        assertEquals("Quadra Azul", panel.nameOf(2));
+        assertEquals("Vôlei", panel.sportOf(2));
+        assertEquals(List.of("name", "sport"), saved);
+        assertEquals(2, gymRepository.saves());
+    }
+
+    @Test
+    void aNameTheStorageCouldNotKeepIsReportedAndNotShown() {
+        List<String> saved = new ArrayList<>();
+        gymRepository.failFromNowOn();
+
+        panel.renameSelected(panel.addCourtButton(), "Quadra Azul", () -> saved.add("name"));
+        awaitRepositoryWork();
+
+        assertEquals("Quadra " + panel.selectedCourtNumber(), panel.nameOf(panel.selectedCourtNumber()));
+        assertTrue(saved.isEmpty());
+        assertEquals(1, errors.size());
+    }
+
+    @Test
+    void aSportOutsideTheDashboardChoicesStillShowsOnTheCourtCard() {
+        gym.findCourt(1).orElseThrow().assignSport("Futsal");
+
+        panel.refreshCourtOverview();
+
+        assertEquals("Futsal", panel.sportOf(1));
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
     void enterInTheAngleInstallsTheCamera() {
         panel.selectCourt(2);
         panel.idField().setText("fixed-3");

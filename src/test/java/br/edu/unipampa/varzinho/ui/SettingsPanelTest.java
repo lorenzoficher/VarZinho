@@ -25,6 +25,7 @@ class SettingsPanelTest {
 
         name.setText("Quadra Azul");
         name.postActionEvent();
+        SwingWork.awaitRepositoryWork();
 
         assertEquals("Quadra Azul", courts.nameOf(courts.selectedCourtNumber()));
         assertEquals(List.of("Nome de exibição atualizado."), messages);

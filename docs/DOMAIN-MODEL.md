@@ -23,6 +23,8 @@ classDiagram
     class Court {
         -int number
         -List~Camera~ cameras
+        -String displayName
+        -String sport
         +installCamera(Camera)
         +removeCamera(Camera)
         +record(Frame)
@@ -30,6 +32,10 @@ classDiagram
         +hasCamera(String) boolean
         +hasActiveCamera() boolean
         +secondsRecorded() int
+        +rename(String)
+        +assignSport(String)
+        +getDisplayName() Optional~String~
+        +getSport() Optional~String~
     }
 
     class Camera {
@@ -250,7 +256,8 @@ the application never runs with half a gym.
 
 ## Deliberate omissions
 
-There is no play type, sport, match or highlight author. The physical capture
+There is no play type, match or highlight author, and no sport the system
+classifies: a court's sport is a free label the operator chooses, read by no rule. The physical capture
 button carries no identity, so the saved highlight contains only the instant,
 court, camera and clip. Operators sign in to open the window, but that account
 never reaches a highlight. Decoding video in Java and scheduling are outside

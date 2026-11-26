@@ -3,6 +3,7 @@ package br.edu.unipampa.varzinho.application;
 import br.edu.unipampa.varzinho.domain.structure.Court;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -14,23 +15,37 @@ public final class CourtView {
     private final int number;
     private final List<CameraView> cameras;
     private final int secondsRecorded;
+    private final String displayName;
+    private final String sport;
 
-    private CourtView(int number, List<CameraView> cameras, int secondsRecorded) {
-        this.number = number;
+    private CourtView(Court court, List<CameraView> cameras) {
+        this.number = court.getNumber();
         this.cameras = List.copyOf(cameras);
-        this.secondsRecorded = secondsRecorded;
+        this.secondsRecorded = court.secondsRecorded();
+        this.displayName = court.getDisplayName().orElse(null);
+        this.sport = court.getSport().orElse(null);
     }
 
     static CourtView from(Court court) {
         List<CameraView> cameras = court.getCameras().stream()
                 .map(CameraView::from)
                 .collect(Collectors.toList());
-        return new CourtView(court.getNumber(), cameras, court.secondsRecorded());
+        return new CourtView(court, cameras);
     }
 
     /** {@return the court's number in the gym} */
     public int getNumber() {
         return number;
+    }
+
+    /** {@return the name the operator gave the court, or empty when it had none} */
+    public Optional<String> getDisplayName() {
+        return Optional.ofNullable(displayName);
+    }
+
+    /** {@return the sport the operator recorded for the court, or empty when it had none} */
+    public Optional<String> getSport() {
+        return Optional.ofNullable(sport);
     }
 
     /** {@return the court's cameras as they were, unmodifiable} */

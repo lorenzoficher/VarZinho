@@ -65,6 +65,26 @@ class CsvGymRepositoryTest extends GymRepositoryContractTest {
     }
 
     @Test
+    void aFileWrittenBeforeCourtsHadLabelsStillLoads() throws IOException, RepositoryException {
+        Files.write(directory.resolve("gym.csv"), List.of(CsvGymRepository.HEADER, "gym,Arena,Rua A", "court,1"));
+
+        Court court = repository().load().orElseThrow().findCourt(1).orElseThrow();
+
+        assertTrue(court.getDisplayName().isEmpty());
+        assertTrue(court.getSport().isEmpty());
+    }
+
+    @Test
+    void aCourtLineWithAnUnexpectedNumberOfColumnsIsReportedWithItsNumber() throws IOException {
+        Files.write(directory.resolve("gym.csv"),
+                List.of(CsvGymRepository.HEADER, "gym,Arena,Rua A", "court,1,Quadra Coberta"));
+
+        RepositoryException damage = assertThrows(RepositoryException.class, () -> repository().load());
+
+        assertTrue(damage.getMessage().contains("line 3"), damage.getMessage());
+    }
+
+    @Test
     void aFileThatLostItsHeaderIsRefused() throws IOException {
         Files.write(directory.resolve("gym.csv"), List.of("gym,Arena,Rua A"));
 

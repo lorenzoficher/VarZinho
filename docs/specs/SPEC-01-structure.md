@@ -28,12 +28,18 @@ public class Court {
     public int secondsRecorded();
     public boolean hasActiveCamera();
     public Highlight triggerCapture();
+    public void rename(String displayName);  // blank clears it
+    public void assignSport(String sport);   // blank clears it
+    public Optional<String> getDisplayName();
+    public Optional<String> getSport();
     public List<Camera> getCameras();        // unmodifiable
 }
 ```
 
-A court has no sport. The system serves whatever the gym plays — see
-[CONTEXT.md](../../CONTEXT.md), *The system does not classify the play*.
+A court's sport is a free label the operator chooses, never a category the
+system reads. The system serves whatever the gym plays — see
+[CONTEXT.md](../../CONTEXT.md), *The system does not classify the play*, and
+its 2026-11-25 reversal.
 
 ## Behaviours
 
@@ -94,6 +100,15 @@ court and the camera.
 - **AC-6.3** A rejected move leaves the camera on its original court
 - **AC-6.4** A moved camera arrives inactive
 - **AC-6.5** A moved camera starts with an empty buffer when recording resumes
+
+### B-7 — A court carries the operator's labels
+
+- **AC-7.1** A new court has neither display name nor sport
+- **AC-7.2** `rename` and `assignSport` keep the label without surrounding spaces
+- **AC-7.3** A blank label clears it
+- **AC-7.4** A null label, one that spans lines or one longer than
+  `MAX_LABEL_LENGTH` (40) characters is refused, and the previous label stays
+- **AC-7.5** Both labels survive a restart, through every `GymRepository`
 
 ## Errors
 

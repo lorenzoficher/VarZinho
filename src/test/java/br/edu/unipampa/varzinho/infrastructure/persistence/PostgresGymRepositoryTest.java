@@ -20,6 +20,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -59,6 +60,25 @@ class PostgresGymRepositoryTest extends GymRepositoryContractTest {
         GymRepository reopened = open();
 
         assertEquals("Arena", reopened.load().orElseThrow().getName());
+    }
+
+    @Test
+    void aDatabaseCreatedBeforeCourtsHadLabelsKeepsItsGymAndThenStoresThem() throws RepositoryException {
+        createRepository();
+        execute("DROP TABLE camera, court, gym CASCADE");
+        execute("CREATE TABLE gym (singleton BOOLEAN PRIMARY KEY DEFAULT TRUE CHECK (singleton), "
+                + "name TEXT NOT NULL, address TEXT NOT NULL)");
+        execute("CREATE TABLE court (number INTEGER PRIMARY KEY)");
+        execute("INSERT INTO gym (name, address) VALUES ('Arena', 'Rua A')");
+        execute("INSERT INTO court (number) VALUES (1)");
+
+        GymRepository reopened = open();
+        Gym gym = reopened.load().orElseThrow();
+        gym.findCourt(1).orElseThrow().rename("Quadra Coberta");
+        reopened.save(gym);
+
+        assertEquals(Optional.of("Quadra Coberta"),
+                open().load().orElseThrow().findCourt(1).orElseThrow().getDisplayName());
     }
 
     @Test

@@ -13,6 +13,7 @@ import br.edu.unipampa.varzinho.enums.Resolution;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -67,6 +68,27 @@ abstract class GymRepositoryContractTest {
         assertEquals(List.of(120, -15, 4), List.of(loadedPtz.getPan(), loadedPtz.getTilt(), loadedPtz.getZoom()));
         assertEquals(CameraStatus.INACTIVE, loadedPtz.getStatus());
         assertEquals(CameraStatus.MAINTENANCE, loaded.findCourt(4).orElseThrow().getCameras().get(0).getStatus());
+    }
+
+    @Test
+    void aCourtsDisplayNameAndSportLoadBackAndACourtWithoutThemStaysWithout() throws RepositoryException {
+        Gym gym = new Gym("Arena Norte", "Rua das Flores 12");
+        Court named = new Court(1);
+        named.rename("Quadra Coberta");
+        named.assignSport("Vôlei");
+        gym.addCourt(named);
+        gym.addCourt(new Court(2));
+        GymRepository repository = createRepository();
+
+        repository.save(gym);
+        Gym loaded = repository.load().orElseThrow();
+
+        Court loadedNamed = loaded.findCourt(1).orElseThrow();
+        assertEquals(Optional.of("Quadra Coberta"), loadedNamed.getDisplayName());
+        assertEquals(Optional.of("Vôlei"), loadedNamed.getSport());
+        Court unnamed = loaded.findCourt(2).orElseThrow();
+        assertEquals(Optional.empty(), unnamed.getDisplayName());
+        assertEquals(Optional.empty(), unnamed.getSport());
     }
 
     @Test

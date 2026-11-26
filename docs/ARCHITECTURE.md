@@ -179,12 +179,15 @@ Courts and cameras created in the window are kept by a second interface,
 ```csv
 kind,values
 gym,VarZinho Arena,100 Sports Avenue
-court,1
+court,1,Quadra Coberta,Futsal
+court,2
 fixed,1,fixed-1,Fixed Pro,FULL_HD,30,ACTIVE,45
 ptz,1,ptz-1,PTZ Pro,HD,30,ACTIVE,0,0,1
 ```
 
-A camera line holds its court, id, model, resolution, buffer length and status,
+A court line holds its number, then its display name and sport when it has
+either; a court without labels keeps the two-column line, so files written
+before labels existed load and save unchanged. A camera line holds its court, id, model, resolution, buffer length and status,
 then the angle (fixed) or pan, tilt and zoom (PTZ). Loading rebuilds the gym
 only through the domain's own behaviour (`addCourt`, `installCamera`,
 `startRecording`, `sendToMaintenance`, `moveTo`), so the file cannot produce a
@@ -217,6 +220,9 @@ for someone to repair instead of overwriting it.
 
 `PostgresGymRepository` keeps the same structure in three tables it creates
 when they are missing: `gym` (one row at most), `court` and `camera`, where a
+court row's nullable `display_name` and `sport` columns are added with
+`ALTER TABLE ... ADD COLUMN IF NOT EXISTS` so a database created before them
+keeps its rows, and a
 `position` column keeps the order cameras were installed in and a check lets
 each kind fill only its own aim columns. Saving deletes and rewrites the three
 tables inside one transaction, so a save that fails part-way rolls back and
@@ -317,6 +323,7 @@ Each camera view carries its id, `CameraKind`, `Resolution`, `CameraStatus` and
 aiming capability as data. PTZ pan, tilt and zoom are `OptionalInt` values:
 they are present for a PTZ and empty for other kinds. A court view reports
 its total camera count and its recording count from the captured statuses,
+and the court's display name and sport as `Optional<String>`,
 so a previous view never changes when the gym is modified. The existing
 description remains available for the current camera list; status badges can
 use `getStatus()` directly without comparing that text or importing domain types.

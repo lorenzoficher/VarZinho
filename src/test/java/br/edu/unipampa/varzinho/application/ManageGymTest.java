@@ -93,6 +93,69 @@ class ManageGymTest {
     }
 
     @Test
+    void namesACourtAndRecordsItsSportThenSavesTheGymAndShowsBoth() throws Exception {
+        Gym gym = gymWithCourts(1, 2);
+        InMemoryGymRepository repository = new InMemoryGymRepository();
+        ManageGym management = new ManageGym(gym, repository);
+
+        management.renameCourt(2, " Quadra coberta ");
+        CourtView court = management.chooseSport(2, "Futsal");
+
+        assertEquals(Optional.of("Quadra coberta"), court.getDisplayName());
+        assertEquals(Optional.of("Futsal"), court.getSport());
+        assertEquals(Optional.empty(), management.court(1).getDisplayName());
+        assertSame(gym, repository.load().orElseThrow());
+    }
+
+    @Test
+    void aRefusedLabelOrAnUnknownCourtChangesAndSavesNothing() {
+        Gym gym = gymWithCourts(1);
+        InMemoryGymRepository repository = new InMemoryGymRepository();
+        ManageGym management = new ManageGym(gym, repository);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> management.renameCourt(1, "x".repeat(Court.MAX_LABEL_LENGTH + 1)));
+        assertThrows(IllegalArgumentException.class, () -> management.chooseSport(9, "Futsal"));
+
+        assertEquals(Optional.empty(), management.court(1).getDisplayName());
+        assertTrue(repository.load().isEmpty());
+    }
+
+    @Test
+    void aLabelTheStorageCannotHoldIsUndoneSoLaterChangesStillSave() throws Exception {
+        Gym gym = gymWithCourts(1);
+        RefusingCommasInLabels storage = new RefusingCommasInLabels();
+        ManageGym management = new ManageGym(gym, storage);
+        management.renameCourt(1, "Quadra coberta");
+        management.chooseSport(1, "Futsal");
+
+        assertThrows(RepositoryException.class, () -> management.renameCourt(1, "Quadra 1, coberta"));
+        assertThrows(RepositoryException.class, () -> management.chooseSport(1, "Vôlei, praia"));
+        management.addCourt(2);
+
+        assertEquals(Optional.of("Quadra coberta"), management.court(1).getDisplayName());
+        assertEquals(Optional.of("Futsal"), management.court(1).getSport());
+        assertEquals(3, storage.saves);
+    }
+
+    private static final class RefusingCommasInLabels implements GymRepository {
+        private int saves;
+
+        @Override
+        public void save(Gym gym) {
+            boolean comma = gym.getCourts().stream().anyMatch(court ->
+                    court.getDisplayName().orElse("").contains(",") || court.getSport().orElse("").contains(","));
+            if (comma) throw new IllegalArgumentException("cannot store a value with a comma");
+            saves++;
+        }
+
+        @Override
+        public Optional<Gym> load() {
+            return Optional.empty();
+        }
+    }
+
+    @Test
     void anUnknownCourtIsRefusedWithoutExposingANull() {
         ManageGym management = new ManageGym(gymWithCourts(1), new InMemoryGymRepository());
 

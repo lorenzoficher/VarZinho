@@ -25,7 +25,7 @@ final class SettingsPanel extends JPanel {
         label.setLabelFor(name);
         Runnable refresh = () -> {
             int number = courts.selectedCourtNumber();
-            label.setText("Nome de exibição da quadra " + number + " nesta sessão");
+            label.setText("Nome de exibição da quadra " + number);
             name.setText(courts.nameOf(number));
         };
         courts.onCourtChange(refresh);
@@ -33,11 +33,10 @@ final class SettingsPanel extends JPanel {
         add(label);
         add(name, "growx 0, w 360!, " + VarZinhoTheme.CONTROL_SIZE);
         javax.swing.JButton apply = new javax.swing.JButton("Salvar nome");
-        apply.addActionListener(event -> {
-            courts.renameSelected(name.getText());
+        apply.addActionListener(event -> courts.renameSelected(apply, name.getText(), () -> {
             refresh.run();
             messages.accept("Nome de exibição atualizado.");
-        });
+        }));
         EnterKey.submits(apply, name);
         VarZinhoTheme.styleButton(apply, ButtonRole.PRIMARY);
         add(apply, "growx 0, " + VarZinhoTheme.CONTROL_SIZE);
