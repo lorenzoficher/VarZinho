@@ -82,7 +82,7 @@ public final class Launcher {
             try {
                 streamUrl = phoneAddress(System.getenv(STREAM_URL_VARIABLE), DATA_FOLDER.resolve("stream-url.txt"));
             } catch (IOException unreadable) {
-                warnings.add("Não foi possível ler data/stream-url.txt. Conecte o celular pelo dashboard.");
+                warnings.add("Não foi possível ler data/stream-url.txt. Conecte o celular pelo painel.");
             }
             LiveFeed simulation = new LiveFeed(session.gym());
             VarZinhoWindow window = window(session, signedIn.get(), repository, simulation);

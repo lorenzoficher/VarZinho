@@ -135,7 +135,7 @@ public final class VarZinhoWindow extends JFrame {
             openLiveView(publicUrl == null ? streamUrl : publicUrl);
         }, copy, publicUrl == null ? "Abrir a câmera na rede local e selecionar a quadra do celular"
                 : "Abrir a página dos espectadores e selecionar a quadra do celular");
-        messages.show("Vídeo recebido na quadra " + phoneCourt + ". Aguarde o buffer antes de salvar o lance. "
+        messages.show("Vídeo recebido na quadra " + phoneCourt + ". Aguarde os primeiros segundos de gravação antes de salvar o lance. "
                 + (publicUrl == null ? "Transmissão disponível na rede local." : "Link da partida disponível para copiar."));
     }
 

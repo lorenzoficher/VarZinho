@@ -281,6 +281,10 @@ public final class VarZinhoTheme {
         UIManager.put("Panel.background", new javax.swing.plaf.ColorUIResource(content));
         // The lime accent vanishes on the light page, so the light theme rings focus in
         // emerald; both clear WCAG's 3:1 for a focus indicator on pages and cards.
+        Color heading = dark ? SIDEBAR_FOREGROUND : ON_ACCENT;
+        UIManager.put("Label.foreground", new javax.swing.plaf.ColorUIResource(heading));
+        UIManager.put("TitlePane.foreground", new javax.swing.plaf.ColorUIResource(heading));
+        UIManager.put("TitlePane.background", new javax.swing.plaf.ColorUIResource(content));
         Color focus = dark ? ACCENT : EMERALD;
         UIManager.put("Component.focusColor", focus);
         UIManager.put("Component.focusedBorderColor", focus);

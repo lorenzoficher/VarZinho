@@ -197,7 +197,7 @@ final class ArenaWorkspace extends JPanel {
 
     void refreshStatus() {
         CourtView court = management.court(courtPanel.selectedCourtNumber());
-        bufferStatus.setText("Buffer da quadra " + court.getNumber() + ": "
+        bufferStatus.setText("Gravação recente da quadra " + court.getNumber() + ": "
                 + court.getSecondsRecorded() + " de " + bufferSeconds + " segundos.");
         sidebar.updateStatus(management.courts());
         dashboard.tick(court);

@@ -48,7 +48,7 @@ final class SignInPanel extends JPanel {
 
     SignInPanel(OperatorAccess access, Consumer<String> errorSink, Consumer<SignedInOperator> onSignedIn,
                 PasswordRecovery recovery) {
-        super(new MigLayout("insets 28, fillx, wrap 1", VarZinhoTheme.FORM_COLUMN, "[][]18[][]12[][]24[]8[]"));
+        super(new MigLayout("insets 28, fillx, wrap 1", VarZinhoTheme.FORM_COLUMN, "[]4[]4[]18[]4[]12[]4[]18[]8[]"));
         if (access == null) throw new IllegalArgumentException("signing in needs operator access");
         if (errorSink == null) throw new IllegalArgumentException("signing in needs an error destination");
         if (onSignedIn == null) throw new IllegalArgumentException("signing in needs somewhere to go next");
