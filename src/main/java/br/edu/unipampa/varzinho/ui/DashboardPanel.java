@@ -121,7 +121,7 @@ final class DashboardPanel extends JPanel {
         int recorded = Math.min(required, selected.getSecondsRecorded());
         buffer.setMaximum(required);
         buffer.setValue(recorded);
-        recording.setText(recorded + " de " + required + " segundos no buffer");
+        recording.setText(recorded + " de " + required + " segundos disponíveis");
         int live = selected.getRecordingCameraCount();
         String sport = courtPanel.sportOf(selected.getNumber());
         var capturingCamera = selected.getCameras().stream().filter(CameraView::isRecording).findFirst();
@@ -130,8 +130,8 @@ final class DashboardPanel extends JPanel {
                         ? camera.getId() + " · grava vídeo MP4" : "Simulação · sem vídeo MP4").orElse("Sem câmera ativa");
         courtDetails.setText((sport == null ? "" : sport + " · ") + source);
         if (live == 0) status.setText("Gravação parada");
-        else if (recorded < required) status.setText("Preenchendo o buffer");
-        else status.setText(capturesVideo ? "Pronto para salvar vídeo" : "Buffer de simulação cheio");
+        else if (recorded < required) status.setText("Reunindo os últimos segundos");
+        else status.setText(capturesVideo ? "Pronto para salvar vídeo" : "Simulação pronta para salvar");
     }
 
     void refresh() {
@@ -162,7 +162,7 @@ final class DashboardPanel extends JPanel {
         recording.setForeground(VarZinhoTheme.ON_DARK);
         buffer.setForeground(VarZinhoTheme.ACCENT);
         buffer.setBackground(VarZinhoTheme.SIDEBAR);
-        buffer.getAccessibleContext().setAccessibleName("Preenchimento do buffer de captura");
+        buffer.getAccessibleContext().setAccessibleName("Tempo de gravação disponível");
         VarZinhoTheme.styleDisplay(courtName);
         hero.add(status, "cell 0 0");
         hero.add(courtName, "cell 0 1");
@@ -170,7 +170,7 @@ final class DashboardPanel extends JPanel {
         hero.add(recording, "cell 0 3");
         hero.add(buffer, "cell 0 4, w 80:170:200, h 6!");
         save.setText("Salvar Melhor Momento");
-        save.setToolTipText("Salvar o trecho mais recente do buffer da quadra selecionada");
+        save.setToolTipText("Salvar o trecho mais recente da gravação da quadra selecionada");
         save.setIcon(VarZinhoIcons.arena("replay", 40, VarZinhoTheme.EMERALD));
         save.setIconTextGap(12);
         JPanel actions = new JPanel(new MigLayout("insets 0, fillx, wrap 2", "[grow,fill][grow,fill]", "[]6[]"));

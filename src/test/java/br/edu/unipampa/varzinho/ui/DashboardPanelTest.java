@@ -245,8 +245,8 @@ class DashboardPanelTest {
                 if (i == 11 || i == 29) {
                     var labels = descendants(dashboard).filter(javax.swing.JLabel.class::isInstance)
                             .map(javax.swing.JLabel.class::cast).map(javax.swing.JLabel::getText).toList();
-                    assertTrue(labels.contains((i + 1) + " de 30 segundos no buffer"));
-                    assertTrue(labels.contains(i == 11 ? "Preenchendo o buffer" : "Buffer de simulação cheio"));
+                    assertTrue(labels.contains((i + 1) + " de 30 segundos disponíveis"));
+                    assertTrue(labels.contains(i == 11 ? "Reunindo os últimos segundos" : "Simulação pronta para salvar"));
                 }
             }
             assertEquals(2, dashboard.selector().getSelectedItem());
