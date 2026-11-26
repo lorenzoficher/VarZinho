@@ -128,6 +128,7 @@
                 <configuration>
                     <release>17</release>
                     <show>protected</show>
+                    <overview>${project.basedir}/src/main/javadoc/overview.html</overview>
                     <!-- The submission ships the HTML and target/ is not versioned, so it lands in docs/apidocs (the plugin appends apidocs). -->
                     <outputDirectory>${project.basedir}/docs</outputDirectory>
                     <!-- Without it every regeneration rewrites every page with a new date, and the diff hides the real changes. -->
