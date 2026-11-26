@@ -114,7 +114,7 @@ final class CameraInstallPanel extends JPanel {
     private void installed(CameraKind kind, GymChanges.Result result) {
         if (result == GymChanges.Result.SAVED) {
             feedback.setText(kind == CameraKind.PTZ
-                    ? "PTZ cadastrada. Teste o movimento no Dashboard."
+                    ? "PTZ cadastrada. Teste o movimento no painel."
                     : "Câmera cadastrada. Informe outro ID para adicionar mais uma.");
             idField.setText("");
             idField.requestFocusInWindow();
