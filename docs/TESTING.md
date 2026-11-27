@@ -56,7 +56,7 @@ void overwritesOldestFrameWhenBufferIsFull() { }
 void throwsWhenCourtHasNoActiveCamera() { }
 
 @Test
-void rejectsPersonWhoseDocumentIsAlreadyRegistered() { }
+void aDuplicateUsernameInAnotherCaseIsRefusedWithoutReplacingTheFirst() { }
 ```
 
 Never `test1()`, `testBuffer()`, or `shouldWork()`.
@@ -125,3 +125,12 @@ A spec criterion with no test is an incomplete issue.
 
 `src/test/java/`, mirroring the main package structure. A test class sits in
 the same package as its subject, named `<Class>Test`.
+
+## Architecture
+
+`ArchitectureTest` scans imports under `src/main/java` and enforces the
+dependency boundaries of domain, application, infrastructure and exceptions.
+It replaces `ExceptionPackageDependencyTest`. Adding an import from
+`application.port` to `Gym` must fail the domain rule, even if the import is
+unused. Static imports are checked as well. The UI rule belongs to the
+subsequent use-case work item.

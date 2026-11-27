@@ -1,0 +1,92 @@
+package br.edu.unipampa.varzinho.infrastructure.simulation;
+
+import br.edu.unipampa.varzinho.application.Feed;
+import br.edu.unipampa.varzinho.domain.capture.Frame;
+import br.edu.unipampa.varzinho.domain.structure.Court;
+import br.edu.unipampa.varzinho.domain.structure.Gym;
+
+import java.time.Instant;
+
+/**
+ * The gym's clock as the window sees it: every tick is one second of footage handed
+ * to every court at once, except a court whose footage comes from somewhere else.
+ *
+ * <p>It holds no capture rule. Whether a camera keeps the second is the camera's
+ * decision; this class only produces the seconds, so the window can drive it from a
+ * Swing timer and a test can drive it from fixed instants.
+ */
+public final class LiveFeed implements Feed {
+
+    private static final int ONE_SECOND_MILLIS = 1000;
+    private static final int NO_COURT = 0;
+
+    private final Gym gym;
+    private int leftOutCourtNumber;
+    private int sequence;
+
+    /**
+     * A feed for every court of {@code gym}, including courts added later.
+     *
+     * @param gym the gym whose courts receive each second
+     * @throws IllegalArgumentException if the gym is missing
+     */
+    public LiveFeed(Gym gym) {
+        if (gym == null) throw new IllegalArgumentException("a live feed needs a gym");
+        this.gym = gym;
+        // Court numbers start at 1, so no court is ever left out.
+        this.leftOutCourtNumber = NO_COURT;
+    }
+
+    /**
+     * A feed for every court but the one numbered {@code leftOutCourtNumber}, which
+     * another feed records. Courts added to the gym later are fed too.
+     *
+     * @param gym the gym whose courts receive each second
+     * @param leftOutCourtNumber the court another feed records
+     * @throws IllegalArgumentException if the gym is missing or the number is not positive
+     */
+    public LiveFeed(Gym gym, int leftOutCourtNumber) {
+        this(gym);
+        excludeCourt(leftOutCourtNumber);
+    }
+
+    /**
+     * Stops feeding the court numbered {@code leftOutCourtNumber}, because another feed now
+     * records it. Only one court is left out at a time: this replaces any earlier one.
+     *
+     * @param leftOutCourtNumber the court another feed records
+     * @throws IllegalArgumentException if the number is not positive
+     */
+    public void excludeCourt(int leftOutCourtNumber) {
+        if (leftOutCourtNumber <= NO_COURT) {
+            throw new IllegalArgumentException("a live feed cannot leave out court " + leftOutCourtNumber);
+        }
+        this.leftOutCourtNumber = leftOutCourtNumber;
+    }
+
+    @Override
+    public int periodMillis() {
+        return ONE_SECOND_MILLIS;
+    }
+
+    /**
+     * Records one second, captured at {@code now}, into every court of the gym it feeds.
+     */
+    @Override
+    public void tick(Instant now) {
+        Frame frame = new Frame(now, sequence++);
+        for (Court court : gym.getCourts()) {
+            if (court.getNumber() != leftOutCourtNumber) {
+                court.record(frame);
+            }
+        }
+    }
+
+    /**
+     * @return how many seconds the court could capture from right now, as the court
+     *     itself counts them
+     */
+    int secondsHeld(Court court) {
+        return court.secondsRecorded();
+    }
+}

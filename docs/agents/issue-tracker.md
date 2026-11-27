@@ -34,7 +34,7 @@ from `git remote -v`.
 | `structure` | `Gym`, `Court` |
 | `capture` | `Camera`, `CircularBuffer`, `Frame` |
 | `highlight` | `Highlight`, `VideoClip` |
-| `people` | `Person`, `Athlete`, `Operator` |
+| `people` | `Operator` |
 | `persistence` | `HighlightRepository`, CSV storage |
 | `shared` | enums, exceptions, cross-cutting code |
 | `console` | `Main` and integration |

@@ -2,9 +2,8 @@
 
 **Aggregate:** `Gym`, `Court` · **Milestone:** Phase 1 — Domain
 
-The physical layout of the venue: a gym containing courts and holding the
-register of the people around it, each court holding the cameras installed on
-it and exposing the capture trigger.
+The physical layout of the venue: a gym containing courts, each court holding
+the cameras installed on it and exposing the capture trigger.
 
 ## Contract
 
@@ -14,15 +13,14 @@ public class Gym {
     public void addCourt(Court court);
     public void installCamera(int courtNumber, Camera camera);
     public void moveCamera(Camera camera, int toCourt);
-    public Court findCourt(int number);
+    public void removeCourt(int number);
+    public Optional<Court> findCourt(int number);  // empty for an unknown number
     public List<Court> getCourts();             // unmodifiable
-    public void registerPerson(Person person);
-    public Optional<Person> findPerson(String document);
-    public List<Person> getPeople();            // unmodifiable
 }
 
 public class Court {
-    public Court(int number);
+    public Court(int number);                // system clock, random "h-<uuid>" ids
+    public Court(int number, Clock clock, Supplier<String> highlightIds);
     public void installCamera(Camera camera);
     public void removeCamera(Camera camera);
     public void record(Frame frame);
@@ -30,12 +28,18 @@ public class Court {
     public int secondsRecorded();
     public boolean hasActiveCamera();
     public Highlight triggerCapture();
+    public void rename(String displayName);  // blank clears it
+    public void assignSport(String sport);   // blank clears it
+    public Optional<String> getDisplayName();
+    public Optional<String> getSport();
     public List<Camera> getCameras();        // unmodifiable
 }
 ```
 
-A court has no sport. The system serves whatever the gym plays — see
-[CONTEXT.md](../../CONTEXT.md), *The system does not classify the play*.
+A court's sport is a free label the operator chooses, never a category the
+system reads. The system serves whatever the gym plays — see
+[CONTEXT.md](../../CONTEXT.md), *The system does not classify the play*, and
+its 2026-11-25 reversal.
 
 ## Behaviours
 
@@ -48,6 +52,15 @@ A gym is created with a name and an address, and courts are added to it.
 - **AC-1.3** Looking up a number that does not exist returns no court
 - **AC-1.4** Adding a court whose number is already taken is rejected
 - **AC-1.5** The returned court list cannot be modified from outside
+- **AC-1.6** A removed court is no longer found by its number nor listed
+- **AC-1.7** Removing a court number that is not registered is rejected
+- **AC-1.8** Removing a court that still holds a camera is rejected, and the
+  court keeps its cameras
+- **AC-1.9** A removed court's number can be added again
+
+Only an empty court is removed: its cameras are equipment that outlives it
+(B-2), so the operator removes or moves them first. Highlights captured there
+stay in the archive under the court's number.
 
 ### B-2 — A court has cameras installed and removed
 
@@ -79,25 +92,6 @@ This is aggregation: destroying the court does not destroy its cameras.
 The trigger takes no argument. Everything the highlight knows comes from the
 court and the camera.
 
-### B-5 — A gym registers the people around it
-
-Athletes who play there and operators who work there. Registration is a
-membership list and says nothing about any highlight.
-
-- **AC-5.1** A newly created gym has nobody registered
-- **AC-5.2** A registered person is retrievable by document
-- **AC-5.3** Looking up a document that is nobody's returns empty, never null
-- **AC-5.4** Registering a document that is already registered is rejected
-- **AC-5.5** An athlete and an operator are registered through the same call
-  and come back as `Person`
-- **AC-5.6** The returned people list cannot be modified from outside
-
-AC-5.5 is the polymorphism here: `Gym` stores `Person` and never asks which
-kind it is holding.
-
-This is aggregation, like the cameras and unlike the courts: a person exists
-before being registered and after being removed.
-
 ### B-6 — Camera identity belongs to the whole gym
 
 - **AC-6.1** Installing a camera through the gym rejects an id already used on
@@ -107,24 +101,33 @@ before being registered and after being removed.
 - **AC-6.4** A moved camera arrives inactive
 - **AC-6.5** A moved camera starts with an empty buffer when recording resumes
 
+### B-7 — A court carries the operator's labels
+
+- **AC-7.1** A new court has neither display name nor sport
+- **AC-7.2** `rename` and `assignSport` keep the label without surrounding spaces
+- **AC-7.3** A blank label clears it
+- **AC-7.4** A null label, one that spans lines or one longer than
+  `MAX_LABEL_LENGTH` (40) characters is refused, and the previous label stays
+- **AC-7.5** Both labels survive a restart, through every `GymRepository`
+
 ## Errors
 
 | Condition | Exception |
 |---|---|
 | Capture triggered with no active camera | `NoActiveCameraException` |
 | Duplicate court number | `IllegalArgumentException` |
-| Duplicate person document | `IllegalArgumentException` |
 | Duplicate camera identifier anywhere in the gym | `DuplicateCameraException` |
 | Moving a camera to an unknown court | `IllegalArgumentException` |
-| Null person passed to `registerPerson` | `IllegalArgumentException` |
 | Removing a camera that is not installed | `IllegalArgumentException` |
+| Removing a court that is not registered | `IllegalArgumentException` |
+| Removing a court that still holds a camera | `IllegalStateException` |
 | Null or blank gym name | `IllegalArgumentException` |
 | Court number not positive | `IllegalArgumentException` |
 
 ## Dependencies
 
-Needs `Camera` (SPEC-02), `Highlight` (SPEC-03), `Person` (SPEC-04),
-`CameraStatus`, `NoActiveCameraException`.
+Needs `Camera` (SPEC-02), `Highlight` (SPEC-03), `CameraStatus`,
+`NoActiveCameraException`.
 
 Write against the contracts above; do not wait for those classes to be
 finished, and do not edit them.
@@ -133,9 +136,6 @@ finished, and do not edit them.
 
 Scheduling, court availability, bookings, matches. A court is a place with
 cameras, nothing more.
-
-Memberships, fees, attendance and anything else about the registered people.
-The register is a list of who is known to the gym, not a management module.
 
 ## Verification
 

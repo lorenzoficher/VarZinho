@@ -1,6 +1,7 @@
 package br.edu.unipampa.varzinho.domain.capture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -45,6 +46,18 @@ class PtzCameraTest {
         assertEquals(180, camera.getPan());
         assertEquals(-45, camera.getTilt());
         assertEquals(4, camera.getZoom());
+    }
+
+    @Test
+    void takesAnAimWhileItIsNotRecording() {
+        PtzCamera camera = new PtzCamera("CAM-2", "Domo", Resolution.ULTRA_HD, 30);
+
+        camera.moveTo(270, 30, 7);
+
+        assertFalse(camera.isRecording());
+        assertEquals(270, camera.getPan());
+        assertEquals(30, camera.getTilt());
+        assertEquals(7, camera.getZoom());
     }
 
     @Test

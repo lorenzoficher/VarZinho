@@ -9,6 +9,11 @@ package br.edu.unipampa.varzinho.exception;
  */
 public final class EmptyBufferException extends DomainException {
 
+    /**
+     * Builds an exception describing the camera and the window that could not be filled.
+     *
+     * @param message the camera id and how many seconds were requested
+     */
     public EmptyBufferException(String message) {
         super(message);
     }

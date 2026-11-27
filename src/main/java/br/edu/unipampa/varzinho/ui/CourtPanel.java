@@ -1,309 +1,286 @@
 package br.edu.unipampa.varzinho.ui;
 
-import br.edu.unipampa.varzinho.domain.capture.Camera;
-import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
-import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
-import br.edu.unipampa.varzinho.domain.structure.Court;
-import br.edu.unipampa.varzinho.domain.structure.Gym;
+import br.edu.unipampa.varzinho.application.CameraKind;
+import br.edu.unipampa.varzinho.application.CameraView;
+import br.edu.unipampa.varzinho.application.CourtView;
+import br.edu.unipampa.varzinho.application.ManageGym;
 import br.edu.unipampa.varzinho.enums.Resolution;
-import br.edu.unipampa.varzinho.exception.DuplicateCameraException;
 
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JList;
+import javax.swing.JTable;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
-import javax.swing.SpinnerNumberModel;
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
+import java.awt.Component;
+import java.awt.Container;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.IntPredicate;
 
-/**
- * The top of the window: picks a court, shows the cameras installed on it and
- * installs new ones.
- *
- * <p>It keeps no list of its own. Every refresh asks the selected court for its
- * cameras, so what is shown is what the court holds.
- */
+/** Arranges the four independent parts of the court area. */
 final class CourtPanel extends JPanel {
-    static final String FIXED = "Fixed";
-    static final String PTZ = "PTZ";
-
-    private final Gym gym;
+    private final List<Component> pausedControls = new ArrayList<>();
+    private Runnable releaseInput;
+    private final CourtSelectionPanel courtSelection;
+    private final CameraListPanel cameraList;
+    private final CameraInstallPanel cameraInstallation;
+    private final CameraPositionPanel cameraPosition;
+    private final JPanel cameraForms;
+    private final CourtOverviewPanel courtOverview;
+    private final JLabel installedTitle = new JLabel();
+    private final JTable installedCameras;
+    private final ManageGym management;
+    private final List<Runnable> identityListeners = new ArrayList<>();
+    private final GymChanges changes;
     private final int bufferSeconds;
     private final Consumer<String> errorSink;
-    private final JComboBox<Integer> courtSelector = new JComboBox<>();
-    private final DefaultListModel<String> cameraLines = new DefaultListModel<>();
-    private final JList<String> cameraList = new JList<>(cameraLines);
-    private final JButton start = new JButton("Start");
-    private final JButton stop = new JButton("Stop");
-    private final JButton maintenance = new JButton("Send to maintenance");
-    private final JButton remove = new JButton("Remove camera");
-    private final JTextField idField = new JTextField(8);
-    private final JTextField modelField = new JTextField(8);
-    private final JComboBox<String> typeSelector = new JComboBox<>(new String[] {FIXED, PTZ});
-    private final JComboBox<Resolution> resolutionSelector = new JComboBox<>(Resolution.values());
-    private final JSpinner angleSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 359, 1));
-    private final JButton install = new JButton("Install camera");
-    private final JTextField courtNumberField = new JTextField(4);
-    private final JButton addCourt = new JButton("Add court");
-    private final List<Runnable> courtAddedListeners = new ArrayList<>();
-    private final List<Runnable> gymChangedListeners = new ArrayList<>();
-    // Wider than the head reaches, so an impossible aim reaches the camera and is refused there.
-    private final JSpinner panSpinner = new JSpinner(new SpinnerNumberModel(0, -999, 999, 5));
-    private final JSpinner tiltSpinner = new JSpinner(new SpinnerNumberModel(0, -999, 999, 5));
-    private final JSpinner zoomSpinner = new JSpinner(new SpinnerNumberModel(1, -99, 99, 1));
-    private final JButton move = new JButton("Move");
-    private final JComboBox<Integer> moveTargetSelector = new JComboBox<>();
-    private final JButton moveToCourt = new JButton("Move to court");
 
-    CourtPanel(Gym gym, int bufferSeconds, Consumer<String> errorSink) {
-        super(new BorderLayout(8, 8));
-        if (gym == null) throw new IllegalArgumentException("a court panel needs a gym");
-        if (gym.getCourts().isEmpty()) throw new IllegalArgumentException("a court panel needs a gym with a court");
-        if (bufferSeconds <= 0) {
-            throw new IllegalArgumentException("a buffer holds at least one second, not " + bufferSeconds);
-        }
-        if (errorSink == null) throw new IllegalArgumentException("a court panel needs somewhere to report errors");
-        this.gym = gym;
+    CourtPanel(ManageGym management, int bufferSeconds, Consumer<String> errorSink) {
+        this(management, bufferSeconds, errorSink, new CaptureActivity());
+    }
+
+    /** @param activity the loan of the model this panel's changes share with captures */
+    CourtPanel(ManageGym management, int bufferSeconds, Consumer<String> errorSink, CaptureActivity activity) {
+        super(new BorderLayout(12, 12));
+        this.management = management;
         this.bufferSeconds = bufferSeconds;
         this.errorSink = errorSink;
-        listCourts();
-        courtSelector.addActionListener(event -> showCameras());
-        add(buildCourtRow(), BorderLayout.NORTH);
-        add(new JScrollPane(cameraList), BorderLayout.CENTER);
-        cameraList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        start.addActionListener(event -> onSelectedCamera(Camera::startRecording));
-        stop.addActionListener(event -> onSelectedCamera(Camera::stopRecording));
-        maintenance.addActionListener(event -> onSelectedCamera(Camera::sendToMaintenance));
-        // Its highlights stay in the archive: a camera does not own what it recorded.
-        remove.addActionListener(event -> onSelectedCamera(camera -> selectedCourt().removeCamera(camera)));
-        JPanel buttons = new JPanel(new GridLayout(0, 1, 4, 4));
-        buttons.add(start); buttons.add(stop); buttons.add(maintenance); buttons.add(remove);
-        add(buttons, BorderLayout.EAST);
-        JPanel forms = new JPanel();
-        forms.setLayout(new BoxLayout(forms, BoxLayout.Y_AXIS));
-        forms.add(buildMoveRow());
-        forms.add(buildAimRow());
-        forms.add(buildInstallForm());
-        add(forms, BorderLayout.SOUTH);
-        cameraList.addListSelectionListener(event -> offerAimingForSelection());
-        showCameras();
-        offerAimingForSelection();
+        changes = new GymChanges(activity, this::pauseChanges, this::resumeChanges);
+        courtSelection = new CourtSelectionPanel(management, changes, errorSink);
+        cameraList = new CameraListPanel(management, changes, courtSelection::selectedCourtNumber, errorSink);
+        installedCameras = cameraList.summaryTable();
+        cameraInstallation = new CameraInstallPanel(management, changes, courtSelection::selectedCourtNumber,
+                bufferSeconds, errorSink, () -> {
+                    cameraList.refresh();
+                    refreshCourtOverview();
+                });
+        cameraPosition = new CameraPositionPanel(management, changes, courtSelection::selectedCourtNumber,
+                cameraList::selectedCamera, errorSink, cameraList::refreshKeepingSelection);
+        cameraList.onPosition(() -> cameraPosition.moveTargetSelector().requestFocusInWindow());
+        courtOverview = new CourtOverviewPanel(this::selectCourt, this::sportOf, this::nameOf, null);
+        refreshCourtOverview();
+        cameraList.onConfigure(() -> cameraList.selectedCamera()
+                .ifPresent(camera -> configureDialog(camera).setVisible(true)));
+        cameraList.onAdd(() -> installDialog().setVisible(true));
+
+        courtSelection.onCourtChange(() -> {
+            cameraList.refresh();
+            cameraPosition.updateAimAvailability();
+            cameraInstallation.showDestination();
+            refreshCourtOverview();
+        });
+        courtSelection.onCourtAdded(() -> {
+            cameraPosition.addCourt(courtSelection.selectedCourtNumber());
+            refreshCourtOverview();
+        });
+        courtSelection.onCourtRemoved(number -> {
+            cameraPosition.removeCourt(number);
+            refreshCourtOverview();
+        });
+        cameraList.onSelectionChange(cameraPosition::updateAimAvailability);
+
+        cameraForms = new JPanel(new net.miginfocom.swing.MigLayout(
+                "insets 0, fillx, wrap 1", "[grow,fill]", "[][]"));
+        cameraForms.putClientProperty("FlatLaf.style", "background: $VarZinho.contentBackground");
+        cameraForms.add(cameraPosition, "growx");
+        cameraForms.add(cameraInstallation, "growx");
+        add(courtSelection, BorderLayout.NORTH);
+        add(cameraList, BorderLayout.CENTER);
+        add(cameraForms, BorderLayout.SOUTH);
     }
 
-    Court selectedCourt() {
-        return gym.findCourt((Integer) courtSelector.getSelectedItem());
+    JPanel courtPage() {
+        JPanel installed = new JPanel(new BorderLayout(0, 12));
+        VarZinhoTheme.styleCard(installed);
+        VarZinhoTheme.styleTitle(installedTitle);
+        installedTitle.setLabelFor(installedCameras);
+        installed.add(installedTitle, BorderLayout.NORTH);
+        installedCameras.setRowHeight(32);
+        installedCameras.setPreferredScrollableViewportSize(new java.awt.Dimension(360, 160));
+        installed.add(new JScrollPane(installedCameras), BorderLayout.CENTER);
+        JPanel body = new JPanel(new net.miginfocom.swing.MigLayout(
+                "insets 0, fillx, wrap 1", "[0:pref,grow,fill]", "[]16[]"));
+        body.add(courtOverview);
+        AdaptivePair cameras = new AdaptivePair(860, "[0:pref,grow,fill][0:pref,grow,fill]");
+        cameras.add(cameraInstallation, "aligny top");
+        cameras.add(installed, "growy");
+        body.add(cameras);
+        JPanel page = new JPanel(new BorderLayout());
+        page.add(courtSelection, BorderLayout.NORTH);
+        page.add(ScrollablePage.around(body), BorderLayout.CENTER);
+        return page;
     }
 
-    void selectCourt(int number) {
-        courtSelector.setSelectedItem(number);
-    }
-
-    void onCourtChange(Runnable listener) {
-        courtSelector.addActionListener(event -> listener.run());
-    }
-
-    void onCourtAdded(Runnable listener) {
-        courtAddedListeners.add(listener);
-    }
-
-    /** Runs the listener after every change the gym accepted: a court, a camera, a state, an aim. */
-    void onGymChanged(Runnable listener) {
-        gymChangedListeners.add(listener);
-    }
-
-    void selectCamera(int index) {
-        cameraList.setSelectedIndex(index);
-    }
-
-    List<String> cameraLines() {
-        return Collections.list(cameraLines.elements());
-    }
-
-    JButton startButton() { return start; }
-    JButton stopButton() { return stop; }
-    JButton maintenanceButton() { return maintenance; }
-    JButton removeCameraButton() { return remove; }
-    JTextField idField() { return idField; }
-    JTextField modelField() { return modelField; }
-    JComboBox<String> typeSelector() { return typeSelector; }
-    JComboBox<Resolution> resolutionSelector() { return resolutionSelector; }
-    JSpinner angleSpinner() { return angleSpinner; }
-    JButton installButton() { return install; }
-    JTextField courtNumberField() { return courtNumberField; }
-    JButton addCourtButton() { return addCourt; }
-    JSpinner panSpinner() { return panSpinner; }
-    JSpinner tiltSpinner() { return tiltSpinner; }
-    JSpinner zoomSpinner() { return zoomSpinner; }
-    JButton moveButton() { return move; }
-    JComboBox<Integer> moveTargetSelector() { return moveTargetSelector; }
-    JButton moveToCourtButton() { return moveToCourt; }
-
-    private JPanel buildCourtRow() {
-        JPanel adder = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-        adder.add(new JLabel("New court number"));
-        adder.add(courtNumberField);
-        adder.add(addCourt);
-        addCourt.addActionListener(event -> addCourt());
-        JPanel row = new JPanel(new BorderLayout(8, 0));
-        row.add(courtSelector, BorderLayout.CENTER);
-        row.add(adder, BorderLayout.EAST);
-        return row;
-    }
-
-    private void addCourt() {
-        int number;
-        try {
-            number = Integer.parseInt(courtNumberField.getText().trim());
-        } catch (NumberFormatException notANumber) {
-            // Reading digits is the form's job; whether the number is acceptable is the gym's.
-            errorSink.accept("Type the court number as digits.");
+    void pauseChanges() {
+        javax.swing.JRootPane root = javax.swing.SwingUtilities.getRootPane(cameraList);
+        if (root != null) {
+            releaseInput = CaptureInputGuard.pause(root);
             return;
         }
-        try {
-            gym.addCourt(new Court(number));
-        } catch (IllegalArgumentException refusal) {
-            errorSink.accept(refusal.getMessage());
-            return;
-        }
-        insertInOrder(courtSelector, number);
-        insertInOrder(moveTargetSelector, number);
-        courtSelector.setSelectedItem(number);
-        courtNumberField.setText("");
-        courtAddedListeners.forEach(Runnable::run);
-        gymChangedListeners.forEach(Runnable::run);
+        Component workspace = javax.swing.SwingUtilities.getAncestorOfClass(ArenaWorkspace.class, cameraList);
+        pause(workspace == null ? this : workspace);
+        pause(cameraList.startButton());
+        pause(cameraList.stopButton());
+        pause(cameraList.maintenanceButton());
+        pause(cameraList.removeCameraButton());
     }
 
-    private void listCourts() {
-        gym.getCourts().stream().map(Court::getNumber).sorted().forEach(number -> {
-            courtSelector.addItem(number);
-            moveTargetSelector.addItem(number);
+    private void pause(Component control) {
+        if (control.isEnabled()) {
+            pausedControls.add(control);
+            control.setEnabled(false);
+        }
+        if (control instanceof Container container) {
+            for (Component child : container.getComponents()) pause(child);
+        }
+    }
+
+    void resumeChanges() {
+        if (releaseInput != null) {
+            releaseInput.run();
+            releaseInput = null;
+        }
+        pausedControls.forEach(control -> control.setEnabled(true));
+        pausedControls.clear();
+    }
+
+    JPanel cameraPage() {
+        cameraForms.remove(cameraInstallation);
+        remove(cameraList);
+        remove(cameraForms);
+        JPanel page = new JPanel(new BorderLayout(12, 12));
+        page.add(cameraList, BorderLayout.CENTER);
+        page.add(cameraForms, BorderLayout.SOUTH);
+        return page;
+    }
+
+    CameraListPanel devices() { return cameraList; }
+
+    GymChanges gymChanges() { return changes; }
+
+    int selectedCourtNumber() { return courtSelection.selectedCourtNumber(); }
+    void selectCourt(int number) { courtSelection.selectCourt(number); }
+    void onCourtChange(Runnable listener) { courtSelection.onCourtChange(listener); }
+    void onCourtAdded(Runnable listener) { courtSelection.onCourtAdded(listener); }
+    void onCourtRemoved(Runnable listener) { courtSelection.onCourtRemoved(number -> listener.run()); }
+    void removeSelectedCourt(IntPredicate confirm) { courtSelection.removeSelectedCourt(confirm); }
+    List<Integer> courtNumbers() { return courtSelection.courtNumbers(); }
+    List<Integer> moveTargets() { return cameraPosition.moveTargets(); }
+    void onCamerasChanged(Runnable listener) { cameraList.onCamerasChanged(listener); }
+    /** Shows a change the panel did not make itself, such as the phone dropping. */
+    void refreshCameras() { cameraList.refreshKeepingSelection(); }
+    void refreshCourtOverview() {
+        int number = selectedCourtNumber();
+        courtOverview.refresh(management.courts(), number);
+        var cameras = management.court(number).getCameras();
+        installedTitle.setText("Câmeras da quadra " + number + " (" + cameras.size() + ")");
+    }
+    /** @return the sport the gym records for the court, or null when it has none */
+    String sportOf(int number) { return court(number).flatMap(CourtView::getSport).orElse(null); }
+    Optional<CameraView> selectedCamera() { return cameraList.selectedCamera(); }
+
+    JDialog configureDialog(CameraView camera) {
+        JDialog dialog = cameraDialog("Configurar câmera · " + camera.getId());
+        JLabel feedback = new JLabel(" ");
+        CameraPositionPanel controls = new CameraPositionPanel(management, changes, this::selectedCourtNumber,
+                cameraList::selectedCamera, message -> { feedback.setText(message); errorSink.accept(message); },
+                () -> { cameraList.refreshKeepingSelection(); dialog.dispose(); });
+        dialog.add(controls);
+        dialog.add(feedback, BorderLayout.SOUTH);
+        dialog.pack();
+        dialog.setLocationRelativeTo(cameraList);
+        return dialog;
+    }
+
+    JDialog installDialog() {
+        JDialog dialog = cameraDialog("Adicionar câmera");
+        CameraInstallPanel form = new CameraInstallPanel(management, changes, this::selectedCourtNumber, bufferSeconds,
+                errorSink, () -> { cameraList.refresh(); dialog.dispose(); });
+        JButton cancel = new JButton("Cancelar");
+        VarZinhoTheme.styleButton(cancel, ButtonRole.SECONDARY);
+        cancel.addActionListener(event -> dialog.dispose());
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.add(cancel, BorderLayout.EAST);
+        dialog.add(form);
+        dialog.add(footer, BorderLayout.SOUTH);
+        dialog.getRootPane().setDefaultButton(form.installButton());
+        dialog.pack();
+        dialog.setLocationRelativeTo(cameraList);
+        return dialog;
+    }
+
+    private JDialog cameraDialog(String title) {
+        JDialog dialog = new JDialog(javax.swing.SwingUtilities.getWindowAncestor(cameraList), title,
+                java.awt.Dialog.ModalityType.DOCUMENT_MODAL);
+        dialog.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        EscapeKey.closes(dialog);
+        return dialog;
+    }
+
+    String nameOf(int number) {
+        return court(number).flatMap(CourtView::getDisplayName).orElse("Quadra " + number);
+    }
+
+    // A selector may still offer a court another change just removed, so a missing court
+    // reads as an unnamed one instead of failing the repaint.
+    private Optional<CourtView> court(int number) {
+        return management.courts().stream().filter(court -> court.getNumber() == number).findFirst();
+    }
+    void onIdentityChange(Runnable action) { identityListeners.add(action); }
+
+    /** @param onSaved runs only when the gym stored the new name; a blank name clears it */
+    void renameSelected(Component trigger, String name, Runnable onSaved) {
+        int number = selectedCourtNumber();
+        relabel(trigger, () -> management.renameCourt(number, name), onSaved);
+    }
+
+    /** @param onSaved runs only when the gym stored the new sport */
+    void chooseSport(Component trigger, String sport, Runnable onSaved) {
+        int number = selectedCourtNumber();
+        relabel(trigger, () -> management.chooseSport(number, sport), onSaved);
+    }
+
+    // A label the gym could not store is undone, so every outcome repaints what it holds.
+    private void relabel(Component trigger, GymChanges.Change change, Runnable onSaved) {
+        changes.apply(trigger, change, errorSink, result -> {
+            identityChanged();
+            if (result == GymChanges.Result.SAVED) onSaved.run();
         });
     }
 
-    private static void insertInOrder(JComboBox<Integer> selector, int number) {
-        int position = 0;
-        while (position < selector.getItemCount() && selector.getItemAt(position) < number) {
-            position++;
-        }
-        selector.insertItemAt(number, position);
+    private void identityChanged() {
+        refreshCourtOverview();
+        identityListeners.forEach(Runnable::run);
     }
-
-    private JPanel buildMoveRow() {
-        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        row.setBorder(BorderFactory.createTitledBorder("Move the selected camera"));
-        row.add(new JLabel("To court"));
-        row.add(moveTargetSelector);
-        row.add(moveToCourt);
-        moveToCourt.addActionListener(event -> onSelectedCamera(
-                camera -> gym.moveCamera(camera, (Integer) moveTargetSelector.getSelectedItem())));
-        return row;
-    }
-
-    private JPanel buildAimRow() {
-        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        row.setBorder(BorderFactory.createTitledBorder("Aim the selected PTZ camera"));
-        row.add(new JLabel("Pan")); row.add(panSpinner);
-        row.add(new JLabel("Tilt")); row.add(tiltSpinner);
-        row.add(new JLabel("Zoom")); row.add(zoomSpinner);
-        row.add(move);
-        move.addActionListener(event -> onSelectedCamera(camera -> ((PtzCamera) camera).moveTo(
-                (Integer) panSpinner.getValue(), (Integer) tiltSpinner.getValue(),
-                (Integer) zoomSpinner.getValue())));
-        return row;
-    }
-
-    private void offerAimingForSelection() {
-        boolean ptzSelected = selectedCamera().filter(PtzCamera.class::isInstance).isPresent();
-        panSpinner.setEnabled(ptzSelected);
-        tiltSpinner.setEnabled(ptzSelected);
-        zoomSpinner.setEnabled(ptzSelected);
-        move.setEnabled(ptzSelected);
-    }
-
-    private Optional<Camera> selectedCamera() {
-        int index = cameraList.getSelectedIndex();
-        List<Camera> cameras = selectedCourt().getCameras();
-        if (index < 0 || index >= cameras.size()) return Optional.empty();
-        return Optional.of(cameras.get(index));
-    }
-
-    private JPanel buildInstallForm() {
-        JPanel identity = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        identity.add(new JLabel("Id")); identity.add(idField);
-        identity.add(new JLabel("Model")); identity.add(modelField);
-        identity.add(new JLabel("Type")); identity.add(typeSelector);
-        JPanel settings = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        settings.add(new JLabel("Resolution")); settings.add(resolutionSelector);
-        settings.add(new JLabel("Angle")); settings.add(angleSpinner);
-        settings.add(install);
-        JPanel form = new JPanel(new GridLayout(2, 1));
-        form.setBorder(BorderFactory.createTitledBorder("Install camera on this court"));
-        form.add(identity);
-        form.add(settings);
-        // A PTZ points wherever it is moved, so only a fixed camera is given an angle.
-        typeSelector.addActionListener(event -> angleSpinner.setEnabled(FIXED.equals(typeSelector.getSelectedItem())));
-        install.addActionListener(event -> installCamera());
-        return form;
-    }
-
-    private void installCamera() {
-        try {
-            gym.installCamera(selectedCourt().getNumber(), buildCamera());
-        } catch (IllegalArgumentException | DuplicateCameraException refusal) {
-            // The camera constructors and the gym validate what was typed; the panel only relays it.
-            errorSink.accept(refusal.getMessage());
-            return;
-        }
-        showCameras();
-        gymChangedListeners.forEach(Runnable::run);
-    }
-
-    private Camera buildCamera() {
-        Resolution resolution = (Resolution) resolutionSelector.getSelectedItem();
-        if (PTZ.equals(typeSelector.getSelectedItem())) {
-            return new PtzCamera(idField.getText(), modelField.getText(), resolution, bufferSeconds);
-        }
-        return new FixedCamera(idField.getText(), modelField.getText(), resolution, bufferSeconds,
-                (Integer) angleSpinner.getValue());
-    }
-
-    private void onSelectedCamera(Consumer<Camera> transition) {
-        int index = cameraList.getSelectedIndex();
-        if (index < 0) {
-            errorSink.accept("Select a camera first.");
-            return;
-        }
-        boolean accepted = true;
-        try {
-            transition.accept(selectedCourt().getCameras().get(index));
-        } catch (IllegalStateException | IllegalArgumentException refusal) {
-            // The camera guards its own transitions and range; the panel only relays the refusal.
-            errorSink.accept(refusal.getMessage());
-            accepted = false;
-        }
-        showCameras();
-        cameraList.setSelectedIndex(index);
-        if (accepted) gymChangedListeners.forEach(Runnable::run);
-    }
-
-    private void showCameras() {
-        cameraLines.clear();
-        for (Camera camera : selectedCourt().getCameras()) {
-            cameraLines.addElement(camera.describe());
-        }
-    }
+    void selectCamera(int index) { cameraList.selectCamera(index); }
+    List<String> cameraLines() { return cameraList.cameraLines(); }
+    List<String> cameraColumns() { return cameraList.cameraColumns(); }
+    List<String> cameraRow(int index) { return cameraList.cameraRow(index); }
+    List<StatusBadge> statusBadges() { return cameraList.statusBadges(); }
+    JButton startButton() { return cameraList.startButton(); }
+    JButton stopButton() { return cameraList.stopButton(); }
+    JButton maintenanceButton() { return cameraList.maintenanceButton(); }
+    JButton removeCameraButton() { return cameraList.removeCameraButton(); }
+    JTextField idField() { return cameraInstallation.idField(); }
+    JTextField modelField() { return cameraInstallation.modelField(); }
+    JComboBox<CameraKind> typeSelector() { return cameraInstallation.typeSelector(); }
+    JComboBox<Resolution> resolutionSelector() { return cameraInstallation.resolutionSelector(); }
+    JSpinner angleSpinner() { return cameraInstallation.angleSpinner(); }
+    JButton installButton() { return cameraInstallation.installButton(); }
+    JTextField courtNumberField() { return courtSelection.courtNumberField(); }
+    JButton addCourtButton() { return courtSelection.addCourtButton(); }
+    JButton removeCourtButton() { return courtSelection.removeCourtButton(); }
+    JSpinner panSpinner() { return cameraPosition.panSpinner(); }
+    JSpinner tiltSpinner() { return cameraPosition.tiltSpinner(); }
+    JSpinner zoomSpinner() { return cameraPosition.zoomSpinner(); }
+    JButton moveButton() { return cameraPosition.moveButton(); }
+    JComboBox<Integer> moveTargetSelector() { return cameraPosition.moveTargetSelector(); }
+    JButton moveToCourtButton() { return cameraPosition.moveToCourtButton(); }
 }

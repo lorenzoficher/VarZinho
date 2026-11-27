@@ -4,8 +4,8 @@
 
 Sistema de captura de lances para ginásios esportivos. As câmeras gravam
 continuamente em um buffer circular de 30 segundos; quando acontece um gol ou
-uma jogada bonita, o atleta aciona um botão e aquele trecho é salvo como vídeo
-permanente. Depois é só pedir o vídeo ao operador, que tem o acervo inteiro.
+uma jogada bonita, o atleta aciona um botão e aquele trecho é salvo como vídeo,
+guardado por 7 dias. Nesse prazo é só pedir o vídeo ao operador, que tem o acervo inteiro.
 
 O foco é futebol, mas o sistema não conhece esporte nem tipo de jogada: serve a
 qualquer modalidade que o ginásio jogue.
@@ -31,17 +31,26 @@ Trabalho da disciplina **AL0330 — Programação Orientada a Objetos**
 
 O objetivo é a **modelagem do domínio** — classes, relacionamentos,
 encapsulamento, herança, polimorfismo e tratamento de exceções. O sistema é
-operado por uma interface gráfica mínima em Swing, exigida pelo enunciado, e
-verificado por testes automatizados.
+operado por uma interface gráfica em Swing, exigida pelo enunciado, e
+verificado por testes automatizados. A interface começou mínima; no segundo
+trabalho ganhou navegação lateral, Painel e temas claro e escuro, sem
+assumir nenhuma regra de negócio.
 
-Não há captura real de vídeo: o `VideoClip` guarda apenas os metadados do
-arquivo — caminho, duração, resolução e tamanho. Nenhum quadro é decodificado.
+Na versão 2.0, um celular pode servir de câmera: o lance capturado por ele vira
+um arquivo `.mp4` de verdade, que abre no player. Quem grava e corta o vídeo é o
+FFmpeg, um programa externo — o Java não decodifica nenhum quadro. As câmeras
+fixa e PTZ continuam guardando só os metadados do clipe: caminho, duração,
+resolução e tamanho.
 
 ## Tecnologias
 
 - Java 17 (LTS)
 - Maven
 - JUnit 5
+- FlatLaf, FlatLaf Extras e MigLayout Swing — interface gráfica, aprovados na [#158](https://github.com/lorenzoficher/VarZinho/issues/158)
+- Ícones [Tabler Icons](https://tabler.io/icons), licença MIT — arquivos SVG copiados para `src/main/resources/icons/tabler/`, junto com o [`LICENSE`](src/main/resources/icons/tabler/LICENSE); não são uma dependência do Maven
+- FFmpeg — opcional, só para a captura com o celular
+- PostgreSQL 16, via Docker — o banco de dados padrão; sem Docker, há o modo CSV
 
 ## Instalando o Maven
 
@@ -63,20 +72,37 @@ mvn -v          # deve mostrar a versão do Maven e o mesmo JDK
 
 ## Como executar
 
+Os dados ficam no PostgreSQL, que o Docker sobe. Com o Docker (Docker Desktop no
+Windows e no macOS) aberto, na raiz do repositório:
+
 ```bash
+docker compose up -d --wait
 mvn compile
 mvn test
 mvn exec:java
 ```
 
+Não é preciso definir nenhuma variável: sem elas, a aplicação conecta no banco
+que o [docker-compose.yml](docker-compose.yml) cria. Sem Docker, use o modo CSV,
+descrito em [Banco de dados PostgreSQL](#banco-de-dados-postgresql).
+
 `mvn exec:java` abre a janela Swing ([Main](src/main/java/br/edu/unipampa/varzinho/Main.java)
+→ [Launcher](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java)
+→ [SignInDialog](src/main/java/br/edu/unipampa/varzinho/ui/SignInDialog.java)
 → [VarZinhoWindow](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java)).
-Os lances salvos ficam em `data/highlights.csv`, e as quadras e câmeras em
-`data/gym.csv`. Os dois reaparecem na próxima execução.
+Antes da janela principal, um operador precisa entrar com usuário e senha. Na
+primeira execução, sem nenhum operador salvo, aparece o formulário que cria o
+primeiro. A senha precisa de 8 caracteres, com maiúscula, minúscula, dígito e
+símbolo. Fechar esse formulário encerra o programa; fechar a janela principal
+encerra a sessão.
+
+Os lances, as quadras, as câmeras e os operadores ficam no banco (dos operadores,
+só o hash da senha). Tudo reaparece na próxima execução.
 
 Há também uma demonstração em modo texto, sem janela, que percorre o fluxo
-inteiro — cadastra ginásio, quadras, atleta e operador, grava, captura, salva,
-recarrega do CSV e provoca o erro de quadra sem câmera ativa:
+inteiro — monta o ginásio, as quadras e as câmeras, grava, captura, salva,
+recarrega do CSV e provoca o erro de quadra sem câmera ativa. Ela não pede login
+e usa sempre o CSV:
 
 ```bash
 mvn compile exec:java -Dexec.mainClass=br.edu.unipampa.varzinho.ConsoleDemo
@@ -88,45 +114,295 @@ No PowerShell, coloque a propriedade entre aspas:
 mvn compile exec:java "-Dexec.mainClass=br.edu.unipampa.varzinho.ConsoleDemo"
 ```
 
+### Captura real com o celular
+
+Precisa do FFmpeg e de um celular na mesma rede Wi-Fi do computador.
+
+1. Instale o FFmpeg (`winget install Gyan.FFmpeg`) e **abra um terminal novo**.
+   Confira com `ffmpeg -version`. No Windows, o VarZinho também procura o executável
+   na instalação do WinGet caso o terminal ou o VS Code ainda esteja com o PATH antigo.
+2. No celular, instale um app que transmita a câmera por HTTP — *IP Webcam*
+   (Android) ou *DroidCam* (Android/iOS) — e inicie o servidor. Anote o
+   endereço, por exemplo `http://192.168.0.42:8080/video`.
+3. Teste no computador: `ffplay http://192.168.0.42:8080/video` precisa mostrar
+   a imagem. Se não abrir, confira o firewall; redes de universidade costumam
+   isolar os aparelhos — use o roteador do próprio celular.
+4. Rode com o endereço na variável `VARZINHO_STREAM_URL`:
+
+```powershell
+$env:VARZINHO_STREAM_URL = "http://192.168.0.42:8080/video"
+mvn exec:java
+```
+
+O celular aparece como a câmera `phone-1`, numa quadra só dele. Depois de 30
+segundos gravando, **Salvar Melhor Momento** grava o `.mp4` em `clips/`, e **Assistir ao vídeo**,
+no acervo, abre os detalhes. **Abrir transmissão ao vivo** mostra a imagem do celular no
+navegador. Se o celular sair da rede, a janela avisa e a quadra dele deixa de
+capturar; para reconectar, reinicie o programa.
+
+Para usar o mesmo celular nas próximas inicializações, coloque o endereço completo do vídeo em
+`data/stream-url.txt` (uma linha). Esse arquivo fica só na sua máquina. Se estiver definida,
+a variável `VARZINHO_STREAM_URL` tem prioridade.
+
+Também é possível conectar durante a sessão. No **Painel**, clique em **Abrir transmissão ao vivo**,
+logo abaixo de **Salvar Melhor Momento**, e cole o endereço completo do IP Webcam. Quando o
+FFmpeg receber o primeiro trecho, o VarZinho selecionará a quadra do celular automaticamente.
+Confira **phone-1 · grava vídeo MP4** e aguarde a indicação de segundos disponíveis. Uma câmera cadastrada manualmente como
+**Fixa** ou **PTZ** é simulada, mesmo que receba um nome como `phone01`. No histórico,
+**Sem MP4** identifica os registros cujo arquivo de vídeo não está disponível.
+
+### Transmissão para espectadores e compra de um lance (#188)
+
+O operador continua usando a janela Java. O espectador abre um link HTTPS no navegador,
+assiste à quadra do celular e pode comprar os 30 segundos que acabou de ver por **R$ 5,00**.
+O relógio usado é o do vídeo. A arena mantém cerca de 2 minutos e meio de segmentos para
+reservar um lance mesmo com atraso de reprodução. Se o trecho já expirou, o Pix não é gerado.
+
+**Teste com espectadores no 4G ou em outro Wi-Fi.** Instale o utilitário de túnel no
+Windows uma vez com `winget install --id Cloudflare.cloudflared --exact`.
+Feche a janela anterior do VarZinho. Na pasta do projeto, rode:
+
+```powershell
+$env:VARZINHO_DEMO = "public"
+mvn compile exec:java
+```
+
+Conecte a câmera e clique em **Copiar link público**. Com o aplicativo e o celular
+ligados, qualquer pessoa com esse link pode ver a quadra. O túnel temporário usa
+somente a página dos espectadores e fecha com o VarZinho.
+Se aparecer um aviso de falha do túnel, a demonstração continua disponível no computador.
+Para um teste restrito ao notebook, use `$env:VARZINHO_DEMO = "local"`.
+
+Depois de 30 segundos de partida, o espectador pode clicar em **Simular compra**
+e **Confirmar compra de teste** para assistir ao MP4 do lance. A demonstração dispensa
+CPF, e-mail e Pix. Os clipes de teste ficam em `data/spectator/demo-orders/`.
+Para voltar ao modo normal, feche o aplicativo, execute
+`Remove-Item Env:VARZINHO_DEMO` no mesmo PowerShell e reinicie.
+
+**Uso com Pix real e endereço estável**
+
+1. Configure a captura local com o celular e o FFmpeg conforme a seção anterior.
+2. Disponibilize um endereço HTTPS exclusivo para a arena. Configure o proxy reverso ou
+   túnel HTTPS desse endereço para encaminhar as requisições para `http://127.0.0.1:8787`
+   no computador da arena. Compartilhe apenas o endereço público. Exponha somente o serviço
+   do espectador; a câmera, a janela do operador e o banco ficam na rede privada.
+3. Configure o Pix na conta recebedora do Mercado Pago. Use o token de teste e os dados de
+   teste do provedor durante a homologação. No PowerShell em que o aplicativo vai rodar,
+   configure as variáveis (substitua o domínio de exemplo):
+
+   ```powershell
+   $env:VARZINHO_PUBLIC_URL = "https://arena.exemplo.com.br"
+   $credencialPix = Read-Host "Access Token do Mercado Pago" -AsSecureString
+   $env:VARZINHO_PIX_TOKEN = [System.Net.NetworkCredential]::new("", $credencialPix).Password
+   mvn compile exec:java
+   ```
+
+4. Na quadra do celular, use **Abrir transmissão ao vivo** para abrir a página e
+   **Copiar link público** para compartilhá-la. Abra o link em outro celular usando dados móveis.
+   Use um navegador com suporte a vídeo H.264 por MediaSource. Quando houver 30 segundos
+   de partida, clique em **Comprar este lance**, informe o e-mail e o CPF do pagador e gere o Pix.
+   Em homologação, preencha os dados fictícios indicados pelo provedor.
+5. Guarde o endereço privado do pedido. O servidor consulta o pagamento com a credencial
+   da arena e confere o pedido, o valor e a moeda antes de liberar a reprodução e o download.
+   Cada pessoa com esse endereço privado pode acessar o pedido. Mantenha o aplicativo e o
+   proxy ligados enquanto houver espectadores ou compradores acessando os vídeos.
+
+Os pedidos e MP4s ficam em `data/spectator/orders/`. Preserve essa pasta entre execuções
+e inclua-a no backup da arena. Reservas sem início de pagamento expiram após uma hora na
+próxima reserva. Há espaço para até 200 pedidos pendentes simultâneos. Os lances já liberados
+não consomem essa cota. Ao atingir a capacidade, novas reservas são recusadas antes da cobrança.
+Sem `VARZINHO_PUBLIC_URL`, o botão da janela abre a página dos espectadores apenas neste computador e a cópia
+do link público fica desabilitada. O endereço HTTPS também pode ser usado sem credencial
+Pix para testar a transmissão em outra rede. Nesse caso a compra fica indisponível.
+
+Para validar localmente sem movimentar dinheiro, rode
+`mvn test -Dtest=SpectatorTest,PublicMatchTest` (no PowerShell, coloque o argumento
+`-Dtest=SpectatorTest,PublicMatchTest` entre aspas). O teste com vídeo precisa de
+`ffmpeg` e `ffprobe` no PATH, gera uma partida sintética e usa um provedor Pix simulado.
+
+### Banco de dados PostgreSQL
+
+O PostgreSQL é o armazenamento padrão. Você precisa do Docker (Docker Desktop no
+Windows e no macOS) aberto. A partir de um clone novo, na raiz do repositório:
+
+1. Suba o banco e abra a janela. Os dois comandos são iguais no bash e no
+   PowerShell:
+
+   ```bash
+   docker compose up -d --wait
+   mvn compile exec:java
+   ```
+
+   O [docker-compose.yml](docker-compose.yml) sobe um PostgreSQL
+   (`postgres:16.15-alpine`) em `127.0.0.1:5432`, com banco, usuário e senha
+   `varzinho`. O `--wait` só devolve o terminal quando o banco responde; num
+   Docker Compose anterior à 2.17, que não o conhece, rode `docker compose up -d`
+   e espere `docker compose ps` mostrar o serviço como `healthy`.
+
+   Para reabrir a aplicação, rode os dois comandos de novo: com o banco já de
+   pé, o `docker compose up` não muda nada. Os dados ficam no volume `varzinho-data` e sobrevivem a reiniciar ou
+   recriar o container; só `docker compose down -v` os apaga
+   (`docker compose down` para o banco e mantém os dados).
+
+2. As tabelas são criadas sozinhas na primeira conexão — não há script para
+   rodar. Como o banco começa vazio, a primeira tela é a de criar o primeiro
+   operador, e a janela abre sobre o ginásio de exemplo. Daí em diante, as
+   quadras, as câmeras, os lances e os operadores ficam no banco.
+
+| Variável | Quem lê | Para quê |
+|---|---|---|
+| `VARZINHO_STORAGE` | aplicação | `postgresql` (padrão, quando ausente) ou `csv`, o modo sem banco que guarda tudo nos arquivos de `data/` |
+| `VARZINHO_DATABASE_URL` | aplicação | Endereço JDBC do banco. Ausente ou vazia: `jdbc:postgresql://localhost:5432/varzinho`, o banco do `docker-compose.yml` |
+| `VARZINHO_DATABASE_USER` | aplicação | Usuário do banco. Padrão `varzinho`; obrigatória quando a URL está definida |
+| `VARZINHO_DATABASE_PASSWORD` | aplicação | Senha do banco. Padrão `varzinho` quando a URL não está definida |
+| `VARZINHO_DB_NAME`, `VARZINHO_DB_USER`, `VARZINHO_DB_PASSWORD` | `docker compose` | Nome do banco, usuário e senha criados no container (padrão `varzinho` nos três) |
+| `VARZINHO_DB_PORT` | `docker compose` | Porta do computador ligada ao banco (padrão `5432`) |
+
+As variáveis `VARZINHO_DB_*` só valem para o `docker compose`; a aplicação lê
+apenas `VARZINHO_STORAGE` e as `VARZINHO_DATABASE_*`. Se você mudar uma das
+`VARZINHO_DB_*`, indique o mesmo valor à aplicação. Por
+exemplo, com a porta 5432 ocupada, suba com `VARZINHO_DB_PORT=5433 docker compose up -d`
+(no PowerShell, `$env:VARZINHO_DB_PORT = "5433"` antes do comando) e use
+`jdbc:postgresql://localhost:5433/varzinho` em `VARZINHO_DATABASE_URL`, junto com
+`VARZINHO_DATABASE_USER=varzinho` e `VARZINHO_DATABASE_PASSWORD=varzinho`. O nome, o usuário e a senha
+só são aplicados quando o volume é criado; para trocá-los depois, apague o
+volume com `docker compose down -v`.
+
+Se o banco não responder, o programa mostra o erro e não abre: ele **não** passa
+a gravar em CSV por conta própria, para que nenhum lance fique num arquivo
+enquanto você o procura no banco. A mensagem do registro mostra o endereço do
+banco, nunca a senha.
+
+#### Sem Docker: o modo CSV
+
+Numa máquina sem Docker, peça os arquivos explicitamente. Os lances ficam em
+`data/highlights.csv`, as quadras e câmeras em `data/gym.csv` e os operadores em
+`data/operators.csv`:
+
+```bash
+VARZINHO_STORAGE=csv mvn compile exec:java
+```
+
+No PowerShell:
+
+```powershell
+$env:VARZINHO_STORAGE = "csv"
+mvn compile exec:java
+```
+
+O modo CSV não usa o banco: definir `VARZINHO_STORAGE=csv` junto com
+`VARZINHO_DATABASE_URL` é recusado, para não haver dúvida sobre onde os lances
+estão. Os dados de um modo não aparecem no outro.
+
+Com o Docker instalado, `mvn test` também testa contra um PostgreSQL de verdade;
+sem ele, esses testes são pulados.
+
+#### Como conferir que os dados sobrevivem ao reinício
+
+Com a janela aberta pelos comandos acima, sobre um banco novo:
+
+1. Crie o primeiro operador na tela inicial. Em **Operadores**, use
+   **Cadastrar operador** para criar um segundo.
+2. Com a quadra 1 do ginásio de exemplo selecionada, cujas câmeras já gravam,
+   salve um lance em **Melhores momentos** (**F2**). Em **Arquivos**, selecione
+   o lance, clique em **Renomear gravação**, dê um nome e **Salvar nome**.
+3. Em **Quadras**, digite o número da nova quadra e use **Adicionar quadra**; ela
+   fica selecionada. No quadro **Adicionar câmera** da mesma página, preencha o
+   ID e o modelo e clique em **Cadastrar câmera**. Ela entra parada, por isso o
+   lance foi salvo antes, na quadra 1.
+4. Feche a janela e reinicie também o banco:
+
+   ```bash
+   docker compose restart
+   ```
+
+5. Cole o bloco do passo 1 de novo; o `--wait` dele espera o banco voltar. A tela inicial agora pede a entrada, não o
+   primeiro operador: entre com o segundo operador. A quadra nova, a câmera
+   dela e o lance com o nome novo continuam lá.
+
+Para ver que tudo isso está no PostgreSQL, e não nos CSV de `data/`, consulte o
+banco direto:
+
+```bash
+docker compose exec postgres psql -U varzinho -d varzinho -c "SELECT username FROM operator_account" -c "SELECT court_number, id, kind FROM camera" -c "SELECT title, court_number FROM highlight"
+```
+
+### Prazo dos vídeos
+
+Para não lotar o disco, cada lance é apagado **7 dias depois da captura**: o registro
+no acervo e o `.mp4` em `clips/` saem juntos, pelo mesmo caminho do botão **Excluir
+gravação**, então nunca sobra registro sem vídeo nem vídeo sem registro. A limpeza
+roda ao abrir a janela e depois a cada hora, numa thread separada, e o acervo se
+atualiza sozinho. Vale igual para o PostgreSQL e para o CSV.
+
+| `VARZINHO_RETENTION_DAYS` | Efeito |
+|---|---|
+| ausente | 7 dias |
+| número inteiro positivo | esse número de dias |
+| `0` | nada é apagado |
+| qualquer outro valor | nada é apagado, e a janela avisa |
+
+Um valor inválido desliga a limpeza em vez de cair no padrão, para que um erro de
+digitação nunca apague mais do que se queria.
+
 ### O que a interface faz
 
 Na primeira execução, a janela abre sobre um ginásio de exemplo já montado
-([SampleGym](src/main/java/br/edu/unipampa/varzinho/ui/SampleGym.java)): a
+([SampleGym](src/main/java/br/edu/unipampa/varzinho/bootstrap/SampleGym.java)): a
 quadra 1 tem uma câmera fixa e uma PTZ, a quadra 2 tem uma câmera fixa, e todas
 já estão gravando. Depois disso, ela abre sobre o ginásio salvo em
-`data/gym.csv`, com as quadras, câmeras, estados e posições deixados na
-execução anterior. Um relógio de um segundo alimenta os buffers enquanto a
+banco (ou em `data/gym.csv`, no modo CSV), com as
+quadras, câmeras, estados e posições deixados na execução anterior. Um relógio de um segundo alimenta os buffers enquanto a
 janela está aberta.
 
-Nela o usuário:
+Antes de tudo, a janela de entrada
+([SignInDialog](src/main/java/br/edu/unipampa/varzinho/ui/SignInDialog.java)) pede
+usuário e senha:
 
-- **escolhe a quadra** numa lista e vê as câmeras instaladas, cada uma com o seu
-  estado atual;
-- **cria quadras** digitando o número em *New court number*. A quadra nova
-  passa a aparecer na lista e no filtro do acervo;
-- **instala câmeras na quadra escolhida** pela seção *Install camera on this
-  court*: digita o identificador e o modelo, escolhe o tipo (fixa ou PTZ), a
-  resolução e, para a fixa, o ângulo. A câmera nova entra parada, como toda
-  câmera recém-instalada, e passa a gravar ao ser ligada;
-- **seleciona uma câmera e muda seu estado** com *Start*, *Stop* e *Send to
-  maintenance*, ou a **remove** com *Remove camera*. Os lances dela continuam no
-  acervo;
-- **muda a câmera selecionada de quadra** com *Move to court*. Ela chega parada e,
-  ao ser ligada na quadra nova, começa um buffer vazio;
-- **aponta a PTZ selecionada** com *pan*, *tilt* e *zoom*;
-- **aciona *Save highlight***, o equivalente na tela ao botão físico da quadra:
-  o lance é capturado, gravado no arquivo e confirmado abaixo do botão;
-- **consulta o acervo** numa tabela, com todos os lances ou filtrados por quadra,
-  do mais recente para o mais antigo.
+- Na primeira execução, sem nenhum operador salvo, ela pede o nome, o usuário e a
+  senha do primeiro operador. A senha precisa de 8 caracteres, com maiúscula,
+  minúscula, dígito e símbolo, e só o hash dela é guardado.
+- Nas seguintes, **Entrar** confere o usuário e a senha. Um erro nunca diz qual
+  dos dois estava errado.
+- **Esqueci minha senha** abre uma recuperação simulada: informe o usuário e um
+  e-mail, clique em **Prosseguir** no lugar do link que chegaria por e-mail e
+  escolha a nova senha. Nenhum e-mail é enviado.
+- Depois de entrar, a página **Operadores** cadastra outro operador, que poderá
+  entrar na próxima execução.
 
-Quadras e câmeras são cadastradas pela janela. O nome e o endereço do ginásio vêm
-do ginásio de exemplo, e o cadastro de pessoas aparece apenas no `ConsoleDemo`.
+![Entrada do operador](docs/screenshots/02-entrada-do-operador-claro.png)
 
-Quando o domínio recusa uma operação — capturar numa quadra sem câmera ativa,
-capturar antes de haver segundos suficientes no buffer, ligar uma câmera em
-manutenção, repetir o número de uma quadra ou o identificador de uma câmera,
-apontar a PTZ além do limite, ler um arquivo danificado — a janela mostra a mensagem num
-`JOptionPane`, sem encerrar o programa.
+*Entrada do operador: usuário e senha antes da janela principal.*
+
+
+O **Painel** abre após o login. Escolha a quadra no cabeçalho ou em **Suas quadras**. O painel mostra as câmeras dessa quadra e quantos segundos já chegaram ao buffer. A modalidade escolhida nos botões fica salva na quadra e continua lá quando o sistema é reaberto.
+
+
+- Em **Quadras**, informe o número para cadastrar uma quadra. Ela passa a aparecer no painel e nos filtros.
+- Para instalar várias câmeras, selecione a quadra, preencha o formulário e clique em **Cadastrar câmera**. Para a próxima, informe outro ID e ajuste os demais campos se necessário. A página lista as câmeras da quadra. Cada nova câmera começa parada e pode ser iniciada em **Câmeras**.
+- Em **Câmeras**, use **Iniciar**, **Parar** ou **Liberar** na linha da câmera. O menu **Ações** permite movê-la para outra quadra, configurá-la, enviá-la para manutenção ou removê-la. Em **Movimento PTZ**, selecione uma câmera compatível para ajustar panorâmica, inclinação e zoom.
+
+- Quando o buffer atingir 30 segundos, clique em **Salvar Melhor Momento** no painel ou em **Salvar lance (F2)** na página **Melhores momentos**. A tecla **F2** salva o lance da quadra selecionada de qualquer ponto da janela. O histórico mostra a quadra, a câmera, a data e a duração do lance confirmado.
+
+- Selecione uma gravação no histórico e use **Renomear gravação** para dar um nome como “Lance Fernando Costa”. O nome fica salvo no acervo e aparece na busca. **Excluir gravação** pede confirmação e abre com **Cancelar** selecionado. Ao confirmar, o sistema remove o registro e o MP4 original em `clips/`, quando existir. Cópias exportadas ficam com quem as salvou.
+- **Melhores momentos** reúne captura e histórico. Em **Arquivos**, use a busca, a quadra e o filtro **Dia** para localizar uma gravação. O filtro **Dia** oferece **Todos os dias**, **Hoje**, **Ontem** e **Escolher data**; nesta última, digite a data como dd/mm/aaaa e tecle **Enter**. O dia é o do fuso do ginásio, não o de UTC.
+- Para abrir um clipe, clique em **Assistir** na linha do lance (ou selecione-o e tecle **Ctrl+Enter**). Abre-se a janela do lance, com **Reproduzir vídeo**, que abre o MP4 no player do sistema, e **Baixar vídeo**, que salva uma cópia onde você escolher. **Assistir ao vídeo**, acima da tabela, abre o arquivo do lance selecionado direto no player. Só os lances do celular têm MP4: as câmeras simuladas geram registros sem vídeo, e a linha mostra **Sem MP4**.
+- No histórico, **Ctrl+F** leva à busca. Digite, por exemplo, o ID de uma câmera, uma data ou o nome da gravação. **Enter** seleciona o primeiro resultado. Use as setas para escolher outro lance e **Ctrl+Enter** na tabela para abrir o selecionado. **Esc** no campo de busca limpa o texto.
+- Tudo isso funciona sem o mouse, com o foco sempre visível nos dois temas. **Tab** e **Shift+Tab** passam pelos controles; na barra lateral, **↑** e **↓** trocam de página. **Enter** envia o formulário em que o cursor está e **Esc** fecha qualquer janela de diálogo. Nas tabelas, as setas andam entre as linhas e o Tab segue para o próximo controle.
+- Em **Configurações**, alterne entre os temas claro e escuro ou escolha um nome de exibição para a quadra, que fica salvo junto com a academia. A barra de mensagens e o sino do cabeçalho mostram o retorno das operações.
+
+#### Tamanhos de janela suportados
+
+A janela abre com até 1460×900 e não pode ser reduzida abaixo de **1024×640**,
+tamanho que ainda cabe numa tela de 1366×768 com a barra de tarefas. Todo tamanho
+a partir desse mínimo é suportado: nenhuma página corta texto, sobrepõe
+componentes ou mostra rolagem horizontal. Quando falta altura, a página rola na
+vertical. Quando falta largura, seções lado a lado passam a ficar uma sobre a
+outra, assim que deixam de caber. Os tamanhos são em pixels lógicos, antes da
+escala de tela do sistema.
+[SupportedWindowSizesTest](src/test/java/br/edu/unipampa/varzinho/ui/SupportedWindowSizesTest.java)
+confere as sete páginas no mínimo, em **1366×768** e em **1920×1080**, nos temas
+claro e escuro, e ainda a cada 32 pixels de largura entre o mínimo e 1920.
 
 ## Principais classes
 
@@ -134,20 +410,29 @@ Caminhos relativos a `src/main/java/br/edu/unipampa/varzinho/`.
 
 | Classe | Pacote | Papel |
 |---|---|---|
-| [`Gym`](src/main/java/br/edu/unipampa/varzinho/domain/structure/Gym.java) | `domain.structure` | O ginásio: registra quadras e pessoas, e recusa números e documentos repetidos |
+| [`Gym`](src/main/java/br/edu/unipampa/varzinho/domain/structure/Gym.java) | `domain.structure` | O ginásio: registra quadras e câmeras, e recusa números de quadra e identificadores de câmera repetidos |
 | [`Court`](src/main/java/br/edu/unipampa/varzinho/domain/structure/Court.java) | `domain.structure` | A quadra: instala e remove câmeras e dispara a captura (`triggerCapture()`) |
 | [`Camera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/Camera.java) | `domain.capture` | Abstrata. Controla o estado da câmera e o seu buffer; cada subtipo produz o clipe à sua maneira |
 | [`FixedCamera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/FixedCamera.java), [`PtzCamera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/PtzCamera.java) | `domain.capture` | Câmera fixa, com ângulo definido na instalação; câmera de cabeça móvel (*pan-tilt-zoom*), com giro, inclinação e zoom validados |
+| [`StreamCamera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/StreamCamera.java) | `domain.capture` | O celular no tripé. Grava como as outras câmeras, mas o seu lance vira um arquivo de vídeo real, escrito pelo `ClipAssembler` |
+| [`ClipAssembler`](src/main/java/br/edu/unipampa/varzinho/domain/capture/ClipAssembler.java) | `domain.capture` | Interface: transforma os segundos guardados num arquivo de vídeo. É tudo o que o domínio sabe sobre vídeo real |
 | [`CircularBuffer`](src/main/java/br/edu/unipampa/varzinho/domain/capture/CircularBuffer.java) | `domain.capture` | Memória de tamanho fixo que sobrescreve o quadro mais antigo |
 | [`Frame`](src/main/java/br/edu/unipampa/varzinho/domain/capture/Frame.java) | `domain.capture` | Um segundo de gravação: instante e posição na sequência, sem imagem |
 | [`Highlight`](src/main/java/br/edu/unipampa/varzinho/domain/highlight/Highlight.java) | `domain.highlight` | O lance salvo, imutável: quando, em que quadra, por qual câmera e qual clipe |
 | [`VideoClip`](src/main/java/br/edu/unipampa/varzinho/domain/highlight/VideoClip.java) | `domain.highlight` | Metadados do arquivo de vídeo: caminho, duração, resolução e tamanho estimado |
-| [`Person`](src/main/java/br/edu/unipampa/varzinho/domain/people/Person.java), [`Athlete`](src/main/java/br/edu/unipampa/varzinho/domain/people/Athlete.java), [`Operator`](src/main/java/br/edu/unipampa/varzinho/domain/people/Operator.java) | `domain.people` | Pessoas do ginásio. `Person` é abstrata e identificada pelo documento |
+| [`Operator`](src/main/java/br/edu/unipampa/varzinho/domain/people/Operator.java) | `domain.people` | A conta de quem opera o sistema: nome, usuário e o hash da senha. Valida a força da senha e nunca guarda a senha em texto |
 | [`CameraStatus`](src/main/java/br/edu/unipampa/varzinho/enums/CameraStatus.java), [`Resolution`](src/main/java/br/edu/unipampa/varzinho/enums/Resolution.java) | `enums` | Estado da câmera (e se ela grava); resolução e suas dimensões |
-| [`HighlightRepository`](src/main/java/br/edu/unipampa/varzinho/repository/HighlightRepository.java) | `repository` | Interface do acervo. `CsvHighlightRepository` grava em arquivo; `InMemoryHighlightRepository` guarda em memória |
-| [`GymRepository`](src/main/java/br/edu/unipampa/varzinho/repository/GymRepository.java) | `repository` | Interface da estrutura do ginásio. `CsvGymRepository` grava quadras e câmeras em arquivo; `InMemoryGymRepository` guarda em memória |
-| [`DomainException`](src/main/java/br/edu/unipampa/varzinho/exception/DomainException.java), [`RepositoryException`](src/main/java/br/edu/unipampa/varzinho/exception/RepositoryException.java) | `exception` | Raízes das exceções próprias do domínio e da persistência |
-| [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) | `ui` | A janela. Monta `CourtPanel`, `CapturePanel` e `ArchivePanel` e mostra os erros. `GymSession` carrega o ginásio salvo e grava cada mudança |
+| [`HighlightRepository`](src/main/java/br/edu/unipampa/varzinho/application/port/HighlightRepository.java) | `application.port` | Interface do acervo. `CsvHighlightRepository` grava em arquivo, `PostgresHighlightRepository` no banco; `InMemoryHighlightRepository` guarda em memória |
+| [`GymRepository`](src/main/java/br/edu/unipampa/varzinho/application/port/GymRepository.java) | `application.port` | Interface da estrutura do ginásio. `CsvGymRepository` grava quadras e câmeras em arquivo, `PostgresGymRepository` no banco; `InMemoryGymRepository` guarda em memória |
+| [`OperatorStore`](src/main/java/br/edu/unipampa/varzinho/application/port/OperatorStore.java) | `application.port` | Interface das contas de operador. `CsvOperatorStore` grava em arquivo, `PostgresOperatorStore` no banco; `InMemoryOperatorStore` guarda em memória |
+| [`OperatorAccess`](src/main/java/br/edu/unipampa/varzinho/application/OperatorAccess.java) | `application` | Caso de uso da entrada: cria o primeiro operador, confere usuário e senha e redefine uma senha esquecida |
+| [`DomainException`](src/main/java/br/edu/unipampa/varzinho/exception/DomainException.java), [`RepositoryException`](src/main/java/br/edu/unipampa/varzinho/application/port/RepositoryException.java) | `exception`, `application.port` | Raízes das exceções próprias do domínio e da persistência |
+| [`FfmpegRecorder`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/FfmpegRecorder.java), [`FfmpegClipAssembler`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/FfmpegClipAssembler.java) | `infrastructure.stream` | Usam o FFmpeg: um grava o celular em segmentos de 1 segundo que se sobrescrevem; o outro junta os segmentos do lance num `.mp4` |
+| [`Storage`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Storage.java) | `bootstrap` | Escolhe onde a execução guarda tudo: os três adaptadores PostgreSQL, por padrão no banco do `docker-compose.yml`, ou os três CSV quando `VARZINHO_STORAGE=csv`. Um banco que não responde impede a abertura em vez de cair para o CSV |
+| [`Launcher`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java) | `bootstrap` | Monta a aplicação: os repositórios e os operadores (PostgreSQL, ou CSV se `VARZINHO_STORAGE=csv`), a entrada do operador, o ginásio salvo, os casos de uso e, se `VARZINHO_STREAM_URL` estiver definida, o celular. É o único lugar que conhece cada adaptador concreto |
+| [`PhoneConnection`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/PhoneConnection.java) | `infrastructure.stream` | Liga o celular pelo FFmpeg e entrega a câmera e o feed dos segmentos. É a única classe que sabe que o celular chega pelo FFmpeg |
+| [`SignInDialog`](src/main/java/br/edu/unipampa/varzinho/ui/SignInDialog.java) | `ui` | A entrada antes da janela: `SignInPanel` para quem já tem conta, ou `FirstOperatorPanel` quando nenhum operador existe. Só repassa o que `OperatorAccess` decide — o erro de login nunca diz se foi o usuário ou a senha |
+| [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) | `ui` | A janela. Recebe os casos de uso prontos do `Launcher`, monta `CourtPanel`, `CapturePanel` e `ArchivePanel` e mostra os erros. Não importa nada de `domain` nem de `infrastructure`: o `ArchitectureTest` confere |
 
 ## Regras de negócio
 
@@ -173,14 +458,13 @@ O que torna o sistema mais do que um cadastro:
 7. **O lance não tem autor e não muda.** `Highlight` recebe tudo no construtor e
    não tem setters. Não registra quem jogou nem quem apertou o botão, porque o
    botão não carrega identidade.
-8. **Não há duplicidade.** O ginásio recusa duas quadras com o mesmo número, duas
-   câmeras com o mesmo identificador, mesmo em quadras diferentes, e duas pessoas
-   com o mesmo documento (`Gym.addCourt()`, `Gym.installCamera()`, que lança
-   `DuplicateCameraException`, e `Gym.registerPerson()`).
+8. **Não há duplicidade.** O ginásio recusa duas quadras com o mesmo número e duas
+   câmeras com o mesmo identificador, mesmo em quadras diferentes
+   (`Gym.addCourt()`, `Gym.installCamera()`, que lança `DuplicateCameraException`).
+   Dois operadores não podem ter o mesmo usuário, sem diferenciar maiúsculas
+   (`OperatorStore.save()`).
 9. **Os limites físicos são respeitados.** A PTZ gira de 0 a 359° (pan), inclina
-   de -90 a 90° (tilt) e aproxima de 1 a 10 (zoom) (`PtzCamera.moveTo()`). A
-   camisa do atleta vai de 1 a 99, e a data de nascimento não pode estar no
-   futuro.
+   de -90 a 90° (tilt) e aproxima de 1 a 10 (zoom) (`PtzCamera.moveTo()`).
 10. **Uma linha danificada não derruba o acervo.** Se uma linha do CSV não puder
     ser lida, `CorruptedRecordException` informa a linha e carrega os lances que
     foram recuperados, e a janela exibe esses lances. A escrita usa um arquivo
@@ -191,6 +475,12 @@ O que torna o sistema mais do que um cadastro:
 11. **A câmera muda de quadra, os lances não.** `Gym.moveCamera()` confere a
     quadra de destino antes de mover. A câmera chega parada, e os lances que ela
     gerou continuam registrados na quadra onde foram capturados.
+12. **A senha nunca é guardada.** O construtor de `Operator` exige 8 caracteres,
+    com maiúscula, minúscula, dígito e símbolo, e guarda só um hash PBKDF2 com
+    sal. `Operator.checksPassword()` confere uma tentativa contra esse hash.
+13. **O vídeo fica guardado por 7 dias.** [`ExpireRecordings`](src/main/java/br/edu/unipampa/varzinho/application/ExpireRecordings.java)
+    apaga os lances capturados há 7 dias ou mais, com o arquivo `.mp4` junto, ao abrir a
+    janela e depois a cada hora. Veja [Prazo dos vídeos](#prazo-dos-vídeos).
 
 ## Checklist de avaliação
 
@@ -199,42 +489,148 @@ cada conceito foi usado e por que faz sentido no domínio.
 
 | Conceito | Onde foi utilizado | Por que faz sentido no domínio |
 |---|---|---|
-| Classes e objetos | [`SampleGym.build()`](src/main/java/br/edu/unipampa/varzinho/ui/SampleGym.java) instancia `Gym`, `Court`, `FixedCamera` e `PtzCamera`. `Court.triggerCapture()` cria o `Highlight`, e `Camera.clipFrom()` cria o `VideoClip` | Cada classe é algo que existe no ginásio: prédio, quadra, câmera, lance, arquivo de vídeo, pessoa |
+| Classes e objetos | [`SampleGym.build()`](src/main/java/br/edu/unipampa/varzinho/bootstrap/SampleGym.java) instancia `Gym`, `Court`, `FixedCamera` e `PtzCamera`. `Court.triggerCapture()` cria o `Highlight`, e `Camera.clipFrom()` cria o `VideoClip` | Cada classe é algo que existe no ginásio: prédio, quadra, câmera, lance, arquivo de vídeo, conta do operador |
 | Atributos | `CircularBuffer` (`frames`, `writePosition`, `size`), `Camera` (`id`, `resolution`, `status`, `buffer`), `PtzCamera` (`pan`, `tilt`, `zoom`), `VideoClip` (`filePath`, `durationSeconds`, `resolution`, `sizeMb`) | O estado guardado é o que o equipamento tem de fato: onde o buffer está escrevendo, se a câmera grava, para onde a PTZ aponta |
-| Métodos | `Court.triggerCapture()`, `CircularBuffer.record()` e `extractLastSeconds()`, `Camera.startRecording()`, `stopRecording()` e `sendToMaintenance()`, `PtzCamera.moveTo()`, `Person.age()` | O comportamento fica no objeto que o executa: quem captura é a quadra, quem sobrescreve é o buffer, quem se move é a PTZ |
+| Métodos | `Court.triggerCapture()`, `CircularBuffer.record()` e `extractLastSeconds()`, `Camera.startRecording()`, `stopRecording()` e `sendToMaintenance()`, `PtzCamera.moveTo()`, `Operator.checksPassword()` | O comportamento fica no objeto que o executa: quem captura é a quadra, quem sobrescreve é o buffer, quem se move é a PTZ |
 | Desafio da aula | Não se aplica a este repositório: o desafio foi uma atividade feita em sala e não é um artefato deste projeto | Os mesmos fundamentos (classes, atributos, métodos e construtores) aparecem aplicados no domínio nas linhas *Classes e objetos*, *Atributos*, *Métodos* e *Construtores* deste checklist |
-| Construtores | Todos validam antes de atribuir e lançam exceção se o objeto ficaria inválido: `Camera`, `Person` (rejeita nascimento no futuro), `Athlete` (camisa de 1 a 99), `VideoClip`, `Highlight`, `CircularBuffer`, `Court`, `Gym` | Não existe câmera sem identificador nem lance sem clipe. Um objeto que existe é um objeto válido, e por isso não há setters |
-| `this` | `this.id = id` e os demais campos no construtor de [`Camera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/Camera.java). `this.pan = pan` em `PtzCamera.moveTo()`, onde o parâmetro tem o mesmo nome do atributo. `this(...)` encadeando construtores em [`CorruptedRecordException`](src/main/java/br/edu/unipampa/varzinho/repository/CorruptedRecordException.java) | O parâmetro e o atributo têm o mesmo nome porque representam a mesma coisa; `this` desfaz a ambiguidade |
-| Modificadores | Todos os atributos são `private`, quase todos `final`. Os construtores de `Camera`, `Person` e `DomainException` são `protected`. `recordedWindow()` e `clipFrom()` são `protected final`. Os painéis de `ui/` são visíveis só dentro do pacote. Classes folha são `final`. `Main` e `SampleGym` têm construtor `private` | Só as subclasses podem ler o buffer da câmera e nenhuma pode mudar essa regra. Do pacote `ui`, só a janela e o ginásio de exemplo são públicos; os painéis ficam restritos ao pacote |
-| Encapsulamento | O array de quadros de [`CircularBuffer`](src/main/java/br/edu/unipampa/varzinho/domain/capture/CircularBuffer.java) nunca sai da classe. `Camera.status` só muda por `startRecording()`, `stopRecording()` e `sendToMaintenance()`. `Court.getCameras()` e `Gym.getPeople()` devolvem cópias | A regra de sobrescrita só se mantém se ninguém de fora mexer no array. O estado da câmera só muda por operações que validam antes, como recusar ligar uma câmera em manutenção |
-| Pacotes | `domain` (com `structure`, `capture`, `highlight` e `people`), `enums`, `exception`, `repository` e `ui` | As três responsabilidades pedidas existem. As **regras de negócio** ficam nas próprias entidades de `domain` (domínio rico), em vez de numa camada de serviço separada que só repassaria chamadas. A **infraestrutura** de persistência fica em `repository`. A **interface gráfica** fica em `ui`, o único pacote que importa `javax.swing`. `domain` não importa nada de `repository`: a dependência aponta para dentro |
-| Herança | `Camera` → `FixedCamera`, `PtzCamera`. `Person` → `Athlete`, `Operator`. `DomainException` → `NoActiveCameraException`, `EmptyBufferException`, `DuplicateCameraException`. `RepositoryException` → `CorruptedRecordException` | Toda câmera tem identificador, resolução, estado e buffer; o que muda é como cada tipo produz o clipe. Atleta e operador são pessoas com nome, documento e data de nascimento |
-| Polimorfismo | `Court.triggerCapture()` chama `captureLastSeconds()` pelo tipo `Camera`, sem saber qual câmera tem em mãos. [`CourtPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CourtPanel.java) percorre a `List<Camera>` da quadra chamando `describe()`, e a PTZ acrescenta pan, tilt e zoom à sua linha. A janela usa o acervo pelo tipo `HighlightRepository` | A quadra não precisa saber o tipo de câmera instalada. Um novo tipo de câmera não exige mudar `Court`, e trocar o CSV por outro armazenamento não exige mudar a janela |
-| `super` | `super(id, model, resolution, bufferSeconds)` em `FixedCamera` e `PtzCamera`, `super(name, document, birthDate)` em `Athlete` e `Operator`, `super(message)` e `super(message, cause)` nas exceções | A validação do que é comum a toda câmera ou a toda pessoa é escrita uma vez, na superclasse, e as subclasses a reaproveitam na inicialização |
-| Abstração | [`Camera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/Camera.java) e [`Person`](src/main/java/br/edu/unipampa/varzinho/domain/people/Person.java) são `abstract`, com os métodos abstratos `captureLastSeconds()`, `describe()` e `identify()`. `DomainException` também é abstrata | Não existe "uma câmera" genérica instalada numa quadra, nem "uma pessoa" sem papel no ginásio. `DomainException` existe para ser capturada, nunca lançada |
-| Interfaces | [`HighlightRepository`](src/main/java/br/edu/unipampa/varzinho/repository/HighlightRepository.java), implementada por `CsvHighlightRepository` e `InMemoryHighlightRepository`. [`GymRepository`](src/main/java/br/edu/unipampa/varzinho/repository/GymRepository.java), implementada por `CsvGymRepository` e `InMemoryGymRepository` | O formato do acervo e da estrutura pode mudar (o PRD prevê um banco de dados no futuro) sem tocar no domínio nem na interface. As versões em memória permitem testar sem arquivo, e a do ginásio protege um arquivo danificado de ser sobrescrito |
+| Construtores | Todos validam antes de atribuir e lançam exceção se o objeto ficaria inválido: `Camera`, [`Operator`](src/main/java/br/edu/unipampa/varzinho/domain/people/Operator.java) (exige nome, usuário sem espaços e senha forte), `VideoClip`, `Highlight`, `CircularBuffer`, `Court` (número positivo), `Gym` (nome e endereço) | Não existe câmera sem identificador nem lance sem clipe. Um objeto que existe é um objeto válido, e por isso não há setters |
+| `this` | `this.id = id` e os demais campos no construtor de [`Camera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/Camera.java). `this.pan = pan` em `PtzCamera.moveTo()`, onde o parâmetro tem o mesmo nome do atributo. `this(...)` encadeando construtores em [`CorruptedRecordException`](src/main/java/br/edu/unipampa/varzinho/application/port/CorruptedRecordException.java) | O parâmetro e o atributo têm o mesmo nome porque representam a mesma coisa; `this` desfaz a ambiguidade |
+| Modificadores | Todos os atributos são `private`, quase todos `final`. Os construtores de `Camera` e `DomainException` são `protected`. `recordedWindow()` e `clipFrom()` são `protected final`. `Operator` tem um construtor `private` que recebe o hash pronto, usado só pela fábrica `Operator.restore()`. Os painéis de `ui/` são visíveis só dentro do pacote. Classes folha são `final`. `Main` e `SampleGym` têm construtor `private` | Só as subclasses podem ler o buffer da câmera e nenhuma pode mudar essa regra. Ninguém de fora cria um `Operator` com um hash qualquer sem passar pela validação. Do pacote `ui`, só `VarZinhoWindow`, `SignInDialog` e `VarZinhoTheme` são públicos, porque o `Launcher` os usa; os painéis ficam restritos ao pacote |
+| Encapsulamento | O array de quadros de [`CircularBuffer`](src/main/java/br/edu/unipampa/varzinho/domain/capture/CircularBuffer.java) nunca sai da classe. `Camera.status` só muda por `startRecording()`, `stopRecording()` e `sendToMaintenance()`. `Court.getCameras()` e `Gym.getCourts()` devolvem cópias. `Operator` guarda só o hash da senha | A regra de sobrescrita só se mantém se ninguém de fora mexer no array. O estado da câmera só muda por operações que validam antes, como recusar ligar uma câmera em manutenção |
+| Pacotes | `domain` (com `structure`, `capture`, `highlight` e `people`), `application` (com `port`), `infrastructure` (com `persistence`, `stream`, `simulation` e `spectator`), `bootstrap`, `enums`, `exception` e `ui` | As três responsabilidades pedidas existem. As **regras de negócio** ficam nas próprias entidades de `domain` (domínio rico); `application` só orquestra os casos de uso e define as interfaces de persistência em `port`. A **infraestrutura** de persistência (CSV e PostgreSQL) fica em `infrastructure.persistence`. A **interface gráfica** fica em `ui`. `domain` não importa nada de `application` nem de `infrastructure`: a dependência aponta para dentro, e o `ArchitectureTest` confere |
+| Herança | `Camera` → `FixedCamera`, `PtzCamera`, `StreamCamera`. `DomainException` → `NoActiveCameraException`, `EmptyBufferException`, `DuplicateCameraException`, `ClipAssemblyException`. `RepositoryException` → `CorruptedRecordException` | Toda câmera tem identificador, resolução, estado e buffer; o que muda é como cada tipo produz o clipe — metadados nas câmeras simuladas, um `.mp4` real no celular. Toda falha de domínio é uma `DomainException`, e a interface pode tratá-las juntas |
+| Polimorfismo | [`Court.triggerCapture()`](src/main/java/br/edu/unipampa/varzinho/domain/structure/Court.java) chama `camera.captureLastSeconds(DEFAULT_CAPTURE_SECONDS)` pelo tipo `Camera`, sem saber qual câmera tem em mãos: `FixedCamera` e `PtzCamera` devolvem só os metadados do clipe, e `StreamCamera` pede ao `ClipAssembler` um `.mp4` real. Os casos de uso usam o acervo pelo tipo `HighlightRepository`, seja CSV ou PostgreSQL | A quadra não precisa saber o tipo de câmera instalada. Um novo tipo de câmera não exige mudar `Court`, e trocar o CSV por outro armazenamento não exige mudar a janela |
+| `super` | `super(id, model, resolution, bufferSeconds)` em [`FixedCamera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/FixedCamera.java), `PtzCamera` e `StreamCamera`. `super(message)` e `super(message, cause)` nas exceções, como `ClipAssemblyException` e `RepositoryException` | A validação do que é comum a toda câmera é escrita uma vez, no construtor de `Camera`, e as subclasses a reaproveitam na inicialização. As exceções repassam a mensagem e a causa para a superclasse, que guarda o rastro do erro |
+| Abstração | [`Camera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/Camera.java) é `abstract`, com os métodos abstratos `captureLastSeconds()` e `describe()`. [`DomainException`](src/main/java/br/edu/unipampa/varzinho/exception/DomainException.java) também é abstrata | Não existe "uma câmera" genérica instalada numa quadra: ela é sempre fixa, PTZ ou o celular. `DomainException` existe para ser capturada, nunca lançada |
+| Interfaces | [`HighlightRepository`](src/main/java/br/edu/unipampa/varzinho/application/port/HighlightRepository.java), implementada por `CsvHighlightRepository`, `PostgresHighlightRepository` e `InMemoryHighlightRepository`. [`GymRepository`](src/main/java/br/edu/unipampa/varzinho/application/port/GymRepository.java), por `CsvGymRepository`, `PostgresGymRepository` e `InMemoryGymRepository`. [`OperatorStore`](src/main/java/br/edu/unipampa/varzinho/application/port/OperatorStore.java), por `CsvOperatorStore`, `PostgresOperatorStore` e `InMemoryOperatorStore`. [`ClipAssembler`](src/main/java/br/edu/unipampa/varzinho/domain/capture/ClipAssembler.java), por `FfmpegClipAssembler` | Trocar o CSV pelo PostgreSQL é só uma variável de ambiente: o `Storage` escolhe o adaptador e nada mais muda, nem o domínio nem a interface. As versões em memória permitem testar sem arquivo nem banco |
 | Enum | [`CameraStatus`](src/main/java/br/edu/unipampa/varzinho/enums/CameraStatus.java) (`ACTIVE`, `INACTIVE`, `MAINTENANCE`) com `canRecord()`. [`Resolution`](src/main/java/br/edu/unipampa/varzinho/enums/Resolution.java) (`HD`, `FULL_HD`, `ULTRA_HD`) com largura, altura e `label()` | Uma câmera só pode estar num desses três estados, e a regra "só `ACTIVE` grava" fica no próprio enum. A resolução carrega as dimensões usadas para estimar o tamanho do clipe |
-| Tratamento de exceções | Exceções próprias em [`exception/`](src/main/java/br/edu/unipampa/varzinho/exception/): `DomainException` (não verificada), com `NoActiveCameraException`, `EmptyBufferException` e `DuplicateCameraException`, e `RepositoryException` (verificada), estendida por `CorruptedRecordException` em `repository/`. São lançadas em `Court.triggerCapture()`, `CircularBuffer.extractLastSeconds()`, `Gym.installCamera()`, `CsvHighlightRepository` e `CsvGymRepository`, e tratadas em `CapturePanel`, `ArchivePanel`, `CourtPanel` e `GymSession`, que mostram a mensagem num `JOptionPane` | Apertar o botão sem câmera ativa é um erro que o atleta precisa ver, não um lance vazio salvo em silêncio. Um arquivo danificado é recuperável: por isso a exceção é verificada e carrega os lances que puderam ser lidos |
-| Interface gráfica com Swing | [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) (`JFrame`), [`CourtPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CourtPanel.java) (`JComboBox`, `JList`, `JButton`, `JTextField` e `JSpinner` para criar quadras, instalar, mover e apontar câmeras), [`CapturePanel`](src/main/java/br/edu/unipampa/varzinho/ui/CapturePanel.java) (`JButton`), [`ArchivePanel`](src/main/java/br/edu/unipampa/varzinho/ui/ArchivePanel.java) (`JTable`), `JOptionPane` para erros e `javax.swing.Timer` como relógio | O usuário cria quadras, instala câmeras digitando os dados, muda a câmera de estado e de quadra, aponta a PTZ, salva o lance e vê o acervo (ver [O que a interface faz](#o-que-a-interface-faz)). Um dado inválido é recusado pelo construtor da câmera, e a mensagem aparece num `JOptionPane`. A interface não contém regra: chama o domínio e mostra o resultado |
-| Data e hora (`java.time`) | `Instant` em `Frame` e `Highlight`. `LocalDate` e `Period` em `Person.age()`. `ZoneId` e `DateTimeFormatter` em `ArchivePanel` e `CapturePanel`. `Instant.parse()` e `DateTimeParseException` em `CsvHighlightRepository`. As classes `Date` e `Calendar` não são usadas | O lance é procurado pelo horário em que aconteceu, então o instante da captura é o dado central. O acervo guarda o `Instant` em UTC, e a tabela e a confirmação do lance o exibem no fuso local |
+| Tratamento de exceções | Exceções próprias em [`exception/`](src/main/java/br/edu/unipampa/varzinho/exception/): `DomainException` (não verificada), com `NoActiveCameraException`, `EmptyBufferException`, `DuplicateCameraException` e `ClipAssemblyException`, e `RepositoryException` (verificada), estendida por `CorruptedRecordException`, ambas em `application/port/`. São lançadas em `Court.triggerCapture()`, `CircularBuffer.extractLastSeconds()`, `Gym.installCamera()`, `FfmpegClipAssembler` e nos adaptadores CSV e PostgreSQL, como `CsvHighlightRepository` e `PostgresHighlightRepository`. São tratadas em [`CapturePanel`](src/main/java/br/edu/unipampa/varzinho/ui/CapturePanel.java), [`GymChanges`](src/main/java/br/edu/unipampa/varzinho/ui/GymChanges.java) (usado pelos painéis da quadra e das câmeras), [`ArchivePanel`](src/main/java/br/edu/unipampa/varzinho/ui/ArchivePanel.java), [`OperatorsPanel`](src/main/java/br/edu/unipampa/varzinho/ui/OperatorsPanel.java), [`SignInPanel`](src/main/java/br/edu/unipampa/varzinho/ui/SignInPanel.java) e [`GymSession`](src/main/java/br/edu/unipampa/varzinho/application/GymSession.java). A janela mostra a mensagem na [`MessageBar`](src/main/java/br/edu/unipampa/varzinho/ui/MessageBar.java), a barra no rodapé | Apertar o botão sem câmera ativa é um erro que o atleta precisa ver, não um lance vazio salvo em silêncio. Um arquivo danificado é recuperável: por isso a exceção é verificada e carrega os lances que puderam ser lidos |
+| Interface gráfica com Swing | [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java) (`JFrame`), com a navegação lateral em [`SidebarPanel`](src/main/java/br/edu/unipampa/varzinho/ui/SidebarPanel.java) (`JToggleButton`) e as páginas montadas por [`ArenaWorkspace`](src/main/java/br/edu/unipampa/varzinho/ui/ArenaWorkspace.java): o [`DashboardPanel`](src/main/java/br/edu/unipampa/varzinho/ui/DashboardPanel.java); a quadra, em [`CourtPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CourtPanel.java), que junta [`CourtSelectionPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CourtSelectionPanel.java) (`JComboBox`, `JTextField`), [`CameraInstallPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CameraInstallPanel.java) (`JList`, `JSpinner`), [`CameraListPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CameraListPanel.java) (`JTable`, `JPopupMenu`) e [`CameraPositionPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CameraPositionPanel.java); o [`CapturePanel`](src/main/java/br/edu/unipampa/varzinho/ui/CapturePanel.java) (`JButton`); o acervo, em [`ArchivePanel`](src/main/java/br/edu/unipampa/varzinho/ui/ArchivePanel.java) (`JTable`); e os operadores, em [`OperatorsPanel`](src/main/java/br/edu/unipampa/varzinho/ui/OperatorsPanel.java). Os erros aparecem na [`MessageBar`](src/main/java/br/edu/unipampa/varzinho/ui/MessageBar.java). O `JOptionPane` fica para confirmar uma remoção ou um novo nome, pedir o endereço do celular, mostrar o guia de conexão pelo Wi-Fi e avisar, no `Launcher`, o erro que impede a janela de abrir. O `javax.swing.Timer` serve de relógio | O usuário cria quadras, instala câmeras digitando os dados, muda a câmera de estado e de quadra, aponta a PTZ, salva o lance, vê o acervo e cadastra operadores (ver [O que a interface faz](#o-que-a-interface-faz)). Um dado inválido é recusado pelo construtor da câmera, e a mensagem aparece na `MessageBar`, sem janela para fechar. A interface não contém regra: chama os casos de uso e mostra o resultado |
+| Data e hora (`java.time`) | `Instant` em `Frame` e `Highlight`. `Clock` e `Duration` em [`ExpireRecordings`](src/main/java/br/edu/unipampa/varzinho/application/ExpireRecordings.java), que apaga os lances com 7 dias ou mais. `LocalDate`, `Clock` e `ZoneId` em [`BrowseArchive`](src/main/java/br/edu/unipampa/varzinho/application/BrowseArchive.java) (`byDay()` e `todaySummary()`), que converte o instante ao fuso do ginásio antes de comparar o dia. `Duration` como limite de espera do FFmpeg em `FfmpegClipAssembler`. `ZoneId` e `DateTimeFormatter` em `ArchivePanel` e `CapturePanel`. `Instant.parse()` e `DateTimeParseException` em `CsvHighlightRepository`. As classes `Date` e `Calendar` não são usadas | O lance é procurado pelo horário em que aconteceu, então o instante da captura é o dado central. O acervo guarda o `Instant` em UTC, e a tabela e a confirmação do lance o exibem no fuso local. O filtro **Hoje** usa o dia local do ginásio, não o dia em UTC |
+
+## Trabalho 2: SOLID e Clean Architecture
+
+O [segundo trabalho](docs/Trabalho%202.md) pede SOLID e Clean Architecture com
+exemplos concretos no projeto. As tabelas abaixo ligam cada princípio e cada
+camada às classes que os mostram. Caminhos relativos a
+`src/main/java/br/edu/unipampa/varzinho/`; os testes ficam no mesmo pacote, sob
+`src/test/java/`.
+
+### SOLID
+
+| Princípio | Onde | Por quê |
+|---|---|---|
+| **S** — Responsabilidade única | Os casos de uso de `application/`: [`ManageGym`](src/main/java/br/edu/unipampa/varzinho/application/ManageGym.java) (muda a estrutura do ginásio), [`CaptureHighlight`](src/main/java/br/edu/unipampa/varzinho/application/CaptureHighlight.java) (captura um lance), [`BrowseArchive`](src/main/java/br/edu/unipampa/varzinho/application/BrowseArchive.java) (lista o acervo), [`ManageRecordings`](src/main/java/br/edu/unipampa/varzinho/application/ManageRecordings.java) (renomeia e exclui gravações), [`OperatorAccess`](src/main/java/br/edu/unipampa/varzinho/application/OperatorAccess.java) (entrada do operador). O painel de quadra dividido: [`CourtPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CourtPanel.java) só organiza `CourtSelectionPanel`, `CameraListPanel`, `CameraInstallPanel` e `CameraPositionPanel` | Cada classe tem um único motivo para mudar. Um caso de uso só ordena as chamadas ao domínio e aos ports; o painel que escolhe a quadra não muda quando muda o formulário de instalar câmera |
+| **O** — Aberto/fechado | [`CameraCsvFormat`](src/main/java/br/edu/unipampa/varzinho/infrastructure/persistence/CameraCsvFormat.java), com `FixedCameraCsvFormat` e `PtzCameraCsvFormat`, registrados em `CameraCsvFormats.standard()` e usados por [`CsvGymRepository`](src/main/java/br/edu/unipampa/varzinho/infrastructure/persistence/CsvGymRepository.java). Os adaptadores `Postgres*`, que entraram ao lado dos `Csv*` | Um novo tipo de câmera é salvo adicionando um formato, sem editar o `CsvGymRepository` — o `CameraCsvExtensionTest` prova com uma câmera que só existe no teste. Um novo armazenamento entra como novo adaptador: o PostgreSQL chegou sem mudar `ManageGym`, `CaptureHighlight`, `BrowseArchive` nem a janela |
+| **L** — Substituição de Liskov | Os testes de contrato abstratos `HighlightRepositoryContractTest`, `GymRepositoryContractTest` e `OperatorStoreContractTest`, estendidos pelos testes de cada adaptador CSV, PostgreSQL e em memória. As subclasses de [`Camera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/Camera.java): `FixedCamera`, `PtzCamera` e `StreamCamera` | Os três adaptadores de um port passam pelos mesmos testes, então qualquer um substitui o outro. `Court.triggerCapture()` usa qualquer câmera pelo tipo `Camera`; as regras comuns (`recordedWindow()`, `clipFrom()`) são `protected final`, e nenhuma subclasse pode enfraquecê-las |
+| **I** — Segregação de interfaces | [`Aimable`](src/main/java/br/edu/unipampa/varzinho/domain/capture/Aimable.java), com só `moveTo(pan, tilt, zoom)`, implementada por `PtzCamera` e separada de `Camera`. `ManageGym.aimCamera()` e `CameraView.isAimable()` perguntam pela capacidade, não pela classe | Câmera fixa e celular não são obrigados a responder a um comando de mira que não conseguem cumprir. O `RecordingEditor` expõe apenas renomeação e exclusão ao caso de uso `ManageRecordings`, sem obrigar esse cliente a depender das consultas e da gravação do acervo |
+| **D** — Inversão de dependência | Os ports em [`application/port/`](src/main/java/br/edu/unipampa/varzinho/application/port/), implementados pelos adaptadores de [`infrastructure/persistence/`](src/main/java/br/edu/unipampa/varzinho/infrastructure/persistence/). [`ClipAssembler`](src/main/java/br/edu/unipampa/varzinho/domain/capture/ClipAssembler.java), no domínio, implementado por `FfmpegClipAssembler`. [`Storage`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Storage.java) e [`Launcher`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java), a raiz de composição | Os casos de uso recebem a abstração no construtor (`ManageGym(Gym, GymRepository)`, `OperatorAccess(OperatorStore)`) e nunca citam CSV nem SQL. Só o `bootstrap` escolhe e cria o adaptador concreto. O [`ArchitectureTest`](src/test/java/br/edu/unipampa/varzinho/ArchitectureTest.java) falha se uma camada interna importar uma externa |
+
+### Clean Code
+
+- `ManageGym.keepOrUndo()` centraliza a gravação da academia e desfaz a mudança em memória se o repositório falhar. Assim a janela e a próxima execução apresentam o mesmo estado.
+- `GymChanges` concentra o tratamento das operações da academia na interface. Os painéis recebem o resultado e exibem a mensagem ao operador sem repetir a regra de persistência.
+- `RepositoryTask` executa operações demoradas fora da thread da interface e devolve o resultado ao painel. Os controles ficam indisponíveis enquanto a operação está em andamento.
+
+### Camadas da Clean Architecture
+
+| Camada | Pacote | Classes | Por quê |
+|---|---|---|---|
+| Entidades | `domain/` (com `enums/` e `exception/`) | [`Gym`](src/main/java/br/edu/unipampa/varzinho/domain/structure/Gym.java), [`Court`](src/main/java/br/edu/unipampa/varzinho/domain/structure/Court.java), [`Camera`](src/main/java/br/edu/unipampa/varzinho/domain/capture/Camera.java), [`CircularBuffer`](src/main/java/br/edu/unipampa/varzinho/domain/capture/CircularBuffer.java), [`Highlight`](src/main/java/br/edu/unipampa/varzinho/domain/highlight/Highlight.java), [`Operator`](src/main/java/br/edu/unipampa/varzinho/domain/people/Operator.java) | As regras de negócio ficam aqui: o buffer circular, a captura que exige câmera ativa, a senha que nunca é guardada. O domínio não importa nenhum outro pacote do projeto, nem Swing, nem JDBC |
+| Casos de uso | `application/` e `application/port/` | [`ManageGym`](src/main/java/br/edu/unipampa/varzinho/application/ManageGym.java), [`CaptureHighlight`](src/main/java/br/edu/unipampa/varzinho/application/CaptureHighlight.java), [`BrowseArchive`](src/main/java/br/edu/unipampa/varzinho/application/BrowseArchive.java), [`ManageRecordings`](src/main/java/br/edu/unipampa/varzinho/application/ManageRecordings.java), [`OperatorAccess`](src/main/java/br/edu/unipampa/varzinho/application/OperatorAccess.java), [`GymSession`](src/main/java/br/edu/unipampa/varzinho/application/GymSession.java), [`ConnectStreamCamera`](src/main/java/br/edu/unipampa/varzinho/application/ConnectStreamCamera.java); os modelos de leitura `CourtView`, `CameraView` e `HighlightView`; os ports `HighlightRepository`, `GymRepository`, `OperatorStore` e `RecordingEditor` | Ordenam as chamadas ao domínio e aos ports e devolvem modelos de leitura imutáveis, nunca entidades. São testados com os repositórios em memória, sem abrir a janela |
+| Apresentação | `ui/` | [`VarZinhoWindow`](src/main/java/br/edu/unipampa/varzinho/ui/VarZinhoWindow.java), [`SignInDialog`](src/main/java/br/edu/unipampa/varzinho/ui/SignInDialog.java), [`CourtPanel`](src/main/java/br/edu/unipampa/varzinho/ui/CourtPanel.java), [`CapturePanel`](src/main/java/br/edu/unipampa/varzinho/ui/CapturePanel.java), [`ArchivePanel`](src/main/java/br/edu/unipampa/varzinho/ui/ArchivePanel.java) | A janela só chama casos de uso e mostra modelos de leitura. Não importa nada de `domain` nem de `infrastructure`, e não contém regra de negócio |
+| Detalhes externos | `infrastructure/` | [`CsvHighlightRepository`](src/main/java/br/edu/unipampa/varzinho/infrastructure/persistence/CsvHighlightRepository.java), [`PostgresGymRepository`](src/main/java/br/edu/unipampa/varzinho/infrastructure/persistence/PostgresGymRepository.java), [`PostgresOperatorStore`](src/main/java/br/edu/unipampa/varzinho/infrastructure/persistence/PostgresOperatorStore.java) (arquivos e banco); [`FfmpegClipAssembler`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/FfmpegClipAssembler.java) e [`PhoneConnection`](src/main/java/br/edu/unipampa/varzinho/infrastructure/stream/PhoneConnection.java) (FFmpeg); [`LiveFeed`](src/main/java/br/edu/unipampa/varzinho/infrastructure/simulation/LiveFeed.java) (relógio simulado); [`SpectatorServer`](src/main/java/br/edu/unipampa/varzinho/infrastructure/spectator/SpectatorServer.java) (página dos espectadores) | Implementam as interfaces definidas pelas camadas internas (`HighlightRepository`, `GymRepository`, `OperatorStore`, `ClipAssembler`, `Feed`). Trocar CSV por PostgreSQL ou o celular pelo relógio simulado não muda o núcleo |
+| Raiz de composição | `bootstrap/` | [`Launcher`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Launcher.java), [`Storage`](src/main/java/br/edu/unipampa/varzinho/bootstrap/Storage.java), [`SampleGym`](src/main/java/br/edu/unipampa/varzinho/bootstrap/SampleGym.java) | O único lugar que conhece cada adaptador concreto: `Storage` escolhe CSV ou PostgreSQL, e `Launcher` cria os casos de uso e os entrega à janela |
+
+**A regra de dependência é verificada por teste.** O
+[`ArchitectureTest`](src/test/java/br/edu/unipampa/varzinho/ArchitectureTest.java)
+lê os `import` de `src/main/java` e falha se `domain` importar `application`,
+`infrastructure`, `ui`, `bootstrap`, Swing ou AWT; se `application` importar
+`infrastructure`, `ui`, `bootstrap`, Swing ou AWT; se `domain` ou `application`
+importarem JDBC; se `infrastructure` importar `ui` ou `bootstrap`; e se `ui`
+importar `domain` ou `infrastructure`. As regras de negócio também funcionam sem
+a interface gráfica: a demonstração em modo texto
+([`ConsoleDemo`](src/main/java/br/edu/unipampa/varzinho/ConsoleDemo.java)) percorre
+o fluxo inteiro sem abrir nenhuma janela.
 
 ## Capturas de tela
 
-![Equipamentos da quadra](docs/screenshots/01-equipamentos-da-quadra.png)
+Capturas dos componentes reais da interface Swing, renderizados com dados de demonstração. As duas variantes mostram o tema claro e o escuro. Os formulários anteriores ao acesso são apresentados no tema claro, usado ao iniciar a aplicação.
 
-*Equipamentos da quadra: a câmera `ptz-1` está parada e a `fixed-1` está ativa.*
+A página pública foi capturada em Chromium isolado, recebendo um padrão de teste transmitido pelo FFmpeg. Essa página oferece apenas o tema claro.
 
-![Captura disparada](docs/screenshots/02-captura-disparada.png)
+A evidência PostgreSQL foi obtida com um banco temporário PostgreSQL 16.15. Uma JVM gravou os dados de demonstração da academia. A consulta exibida comprova o nome e a modalidade das quadras. Depois de encerrar essa JVM, outra execução carregou os mesmos dados por meio de Storage, com `VARZINHO_DATABASE_URL` configurada. A imagem reúne a interface carregada e a saída real da consulta psql em um painel de leitura.
 
-*Captura disparada: o lance foi salvo e a confirmação aparece abaixo do botão.*
+**Painel.** Demonstra a organização da interface, a navegação e os controles de captura e PTZ, relacionados aos critérios 6, 7 e 8.
 
-![Acervo listado](docs/screenshots/03-acervo-listado.png)
+| Claro | Escuro |
+|---|---|
+| ![Painel no tema claro](docs/screenshots/06-painel-claro.png) | ![Painel no tema escuro](docs/screenshots/06-painel-escuro.png) |
 
-*Acervo de lances filtrado pela quadra 1.*
+**Lance registrado.** Demonstra o registro de um lance de câmera simulada e o retorno da operação ao usuário. O histórico identifica a ausência de MP4 na simulação.
 
-![Erro: quadra sem câmera ativa](docs/screenshots/04-erro-quadra-sem-camera-ativa.png)
+| Claro | Escuro |
+|---|---|
+| ![Lance registrado no tema claro](docs/screenshots/12-lance-registrado-claro.png) | ![Lance registrado no tema escuro](docs/screenshots/12-lance-registrado-escuro.png) |
 
-*Disparo numa quadra sem câmera ativa: a exceção de domínio chega à interface como um aviso ("Court 2 has no active camera."). Demonstra a seção 2.8 do enunciado (tratamento de exceções).*
+**Erro de domínio.** A tentativa de captura em uma quadra sem câmera ativa apresenta a mensagem de erro na barra inferior. Demonstra tratamento de exceções e feedback ao usuário, conforme a seção 2.8 do Trabalho 1 e o critério 8 do Trabalho 2.
+
+| Claro | Escuro |
+|---|---|
+| ![Erro de domínio no tema claro](docs/screenshots/13-erro-quadra-sem-camera-ativa-claro.png) | ![Erro de domínio no tema escuro](docs/screenshots/13-erro-quadra-sem-camera-ativa-escuro.png) |
+
+**Acervo.** Demonstra a consulta do histórico por quadra e os dados das gravações.
+
+| Claro | Escuro |
+|---|---|
+| ![Acervo no tema claro](docs/screenshots/14-acervo-claro.png) | ![Acervo no tema escuro](docs/screenshots/14-acervo-escuro.png) |
+
+**Cadastro de operador.** Demonstra o formulário e a confirmação de cadastro. As capturas de validação na tabela mostram senha inválida e confirmação divergente.
+
+| Claro | Escuro |
+|---|---|
+| ![Cadastro de operador no tema claro](docs/screenshots/19-operador-cadastrado-claro.png) | ![Cadastro de operador no tema escuro](docs/screenshots/19-operador-cadastrado-escuro.png) |
+
+**Persistência PostgreSQL.** A interface de uma segunda JVM apresenta o nome e a modalidade persistidos. A saída real do psql consulta as mesmas quadras. Evidencia a persistência entre execuções do critério 9.
+
+| Claro | Escuro |
+|---|---|
+| ![Persistência PostgreSQL no tema claro](docs/screenshots/28-postgresql-apos-reinicio-claro.png) | ![Persistência PostgreSQL no tema escuro](docs/screenshots/28-postgresql-apos-reinicio-escuro.png) |
+
+**Espectador.** Página pública com reprodução de um padrão de teste transmitido pelo FFmpeg. Demonstra o fluxo de visualização no navegador.
+
+![Página pública do espectador](docs/screenshots/27-espectador-claro.png)
+
+| Tela ou estado | Claro | Escuro |
+|---|---|---|
+| Primeiro operador | [Abrir](docs/screenshots/01-primeiro-operador-claro.png) | Tema de entrada |
+| Entrada do operador | [Abrir](docs/screenshots/02-entrada-do-operador-claro.png) | Tema de entrada |
+| Recuperar senha | [Abrir](docs/screenshots/03-recuperar-senha-claro.png) | Tema de entrada |
+| Recuperação enviada | [Abrir](docs/screenshots/04-recuperacao-enviada-claro.png) | Tema de entrada |
+| Nova senha | [Abrir](docs/screenshots/05-nova-senha-claro.png) | Tema de entrada |
+| Painel | [Abrir](docs/screenshots/06-painel-claro.png) | [Abrir](docs/screenshots/06-painel-escuro.png) |
+| Quadras | [Abrir](docs/screenshots/07-quadras-claro.png) | [Abrir](docs/screenshots/07-quadras-escuro.png) |
+| Câmeras | [Abrir](docs/screenshots/08-cameras-claro.png) | [Abrir](docs/screenshots/08-cameras-escuro.png) |
+| Instalar câmera | [Abrir](docs/screenshots/09-instalar-camera-claro.png) | [Abrir](docs/screenshots/09-instalar-camera-escuro.png) |
+| Configurar câmera | [Abrir](docs/screenshots/10-configurar-camera-claro.png) | [Abrir](docs/screenshots/10-configurar-camera-escuro.png) |
+| Melhores momentos | [Abrir](docs/screenshots/11-melhores-momentos-claro.png) | [Abrir](docs/screenshots/11-melhores-momentos-escuro.png) |
+| Lance registrado | [Abrir](docs/screenshots/12-lance-registrado-claro.png) | [Abrir](docs/screenshots/12-lance-registrado-escuro.png) |
+| Erro de quadra sem câmera ativa | [Abrir](docs/screenshots/13-erro-quadra-sem-camera-ativa-claro.png) | [Abrir](docs/screenshots/13-erro-quadra-sem-camera-ativa-escuro.png) |
+| Acervo | [Abrir](docs/screenshots/14-acervo-claro.png) | [Abrir](docs/screenshots/14-acervo-escuro.png) |
+| Renomear gravação | [Abrir](docs/screenshots/15-renomear-gravacao-claro.png) | [Abrir](docs/screenshots/15-renomear-gravacao-escuro.png) |
+| Operadores | [Abrir](docs/screenshots/16-operadores-claro.png) | [Abrir](docs/screenshots/16-operadores-escuro.png) |
+| Erro de confirmação | [Abrir](docs/screenshots/17-erro-confirmacao-claro.png) | [Abrir](docs/screenshots/17-erro-confirmacao-escuro.png) |
+| Erro de senha | [Abrir](docs/screenshots/18-erro-senha-claro.png) | [Abrir](docs/screenshots/18-erro-senha-escuro.png) |
+| Operador cadastrado | [Abrir](docs/screenshots/19-operador-cadastrado-claro.png) | [Abrir](docs/screenshots/19-operador-cadastrado-escuro.png) |
+| Configurações | [Abrir](docs/screenshots/20-configuracoes-claro.png) | [Abrir](docs/screenshots/20-configuracoes-escuro.png) |
+| Conectar celular | [Abrir](docs/screenshots/21-conectar-celular-claro.png) | [Abrir](docs/screenshots/21-conectar-celular-escuro.png) |
+| Guia da câmera | [Abrir](docs/screenshots/22-guia-camera-claro.png) | [Abrir](docs/screenshots/22-guia-camera-escuro.png) |
+| Confirmar remoção da quadra | [Abrir](docs/screenshots/23-confirmar-remocao-quadra-claro.png) | [Abrir](docs/screenshots/23-confirmar-remocao-quadra-escuro.png) |
+| Confirmar exclusão | [Abrir](docs/screenshots/24-confirmar-exclusao-claro.png) | [Abrir](docs/screenshots/24-confirmar-exclusao-escuro.png) |
+| Reproduzir vídeo | [Abrir](docs/screenshots/25-reproduzir-video-claro.png) | [Abrir](docs/screenshots/25-reproduzir-video-escuro.png) |
+| Baixar vídeo | [Abrir](docs/screenshots/26-baixar-video-claro.png) | [Abrir](docs/screenshots/26-baixar-video-escuro.png) |
+| Espectador | [Abrir](docs/screenshots/27-espectador-claro.png) | Tema único |
+| PostgreSQL após reinício | [Abrir](docs/screenshots/28-postgresql-apos-reinicio-claro.png) | [Abrir](docs/screenshots/28-postgresql-apos-reinicio-escuro.png) |
 
 ## Documentação
 
@@ -250,10 +646,56 @@ cada conceito foi usado e por que faz sentido no domínio.
 | [docs/TESTING.md](docs/TESTING.md) | Como escrevemos testes (TDD) |
 | [docs/specs/](docs/specs/) | Especificações por agregado |
 
+## Documentação JavaDoc
+
+O JavaDoc já vem gerado em HTML navegável, versionado junto com o código:
+**[`docs/apidocs/index.html`](docs/apidocs/index.html)**. Abra esse arquivo no
+navegador para ver todos os pacotes, classes e métodos públicos e protegidos —
+num clone novo ele já está lá, sem precisar compilar nada.
+
+Depois de mudar um comentário JavaDoc, regenere o HTML e faça o commit de
+`docs/apidocs/` junto com a mudança:
+
+```bash
+mvn clean javadoc:javadoc
+```
+
+Gere com JDK 25, a versão usada no HTML versionado: é ela que dá à página a
+barra lateral, o tema claro/escuro e a busca, e o `javadoc` de outra versão
+troca o modelo de todas as páginas, fazendo o diff deixar de mostrar só o que
+mudou. Basta apontar o `JAVA_HOME` para ele só nesse comando:
+
+```bash
+JAVA_HOME=/caminho/do/jdk-25 mvn clean javadoc:javadoc
+```
+
+Compilar, testar e rodar continuam pedindo só o JDK 17: o código é compilado
+para Java 17 (`release` 17) seja qual for o JDK.
+
+A página inicial do JavaDoc vem de
+[`src/main/javadoc/overview.html`](src/main/javadoc/overview.html), e a
+descrição de cada pacote, do `package-info.java` dele.
+
+O `clean` importa: sem ele, o plugin só confere se a pasta `src/main/java` mudou,
+não cada arquivo, e responde "everything is up to date" mesmo depois de um
+comentário editado — o HTML antigo continua lá. O `clean` apaga só `target/`;
+`docs/apidocs/` é reescrita por cima. Se uma classe for removida ou renomeada,
+apague `docs/apidocs/` antes de gerar, para a página antiga não ficar para trás.
+As páginas saem sem data de geração, então o diff mostra só o que mudou de fato.
+
+O comando pode exibir avisos sobre `@param`, `@return` ou comentários ausentes;
+eles não interrompem a geração e vão diminuindo à medida que cada camada é
+documentada. Só um erro de JavaDoc faz o build falhar.
+
 ## Idioma
 
-**Todo o código e a documentação técnica são escritos em inglês.** Este README
-é a única exceção, por ser a porta de entrada do repositório.
+**Todo o código e a documentação técnica são escritos em inglês.** Há duas
+exceções, ambas em português: este README, por ser a porta de entrada do
+repositório, e o texto que a janela mostra ao operador — rótulos, botões,
+diálogos e mensagens. Mesmo em `ui/`, identificadores e mensagens de log
+continuam em inglês; a classe
+[`PortugueseText`](src/main/java/br/edu/unipampa/varzinho/ui/PortugueseText.java)
+traduz as mensagens dos casos de uso na fronteira da interface.
 
 ## Equipe
 

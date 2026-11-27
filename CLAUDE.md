@@ -21,17 +21,54 @@ is their single source of truth. Read it; do not restate it here.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layers, persistence, exception hierarchy |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | Branches, commits, pull requests, division of work |
 | [docs/TESTING.md](docs/TESTING.md) | How tests are written (TDD) |
+| [docs/PLAN-CLEAN-ARCHITECTURE.md](docs/PLAN-CLEAN-ARCHITECTURE.md) | Second assignment: SOLID and Clean Architecture — the target layers and the work items |
 | [docs/specs/](docs/specs/) | Per-aggregate specifications — the contract agreed before the code exists |
 | [.claude/rules/](.claude/rules/) | Project constraints, work calibration, Java conventions |
 
 ## Current state
 
-`src/` does not exist yet: the repository holds documentation, specs and the Maven
-build only. Every class named in `AGENTS.md` and `docs/specs/` is still to be
-written, tracked as 23 open issues across three milestones.
+This is VarZinho 2.0, continuing the delivered 1.0 (tag `VarZinho1.0.0`) in this
+same repository. It starts from that release — the full model, the Swing window
+and both CSV repositories — and adds real capture from a phone, following
+[docs/PLAN-REAL-CAPTURE.md](docs/PLAN-REAL-CAPTURE.md): `StreamCamera` and the
+`ClipAssembler` interface in the domain, the FFmpeg adapter in `stream/`, and the
+window wiring in `ui/`.
 
-Write against the interface described in another aggregate's spec rather than
-waiting for its classes to exist — that is what the specs are for.
+The phone path runs only when `VARZINHO_STREAM_URL` is set; without it the
+application is 1.0. It was run end to end on 2026-10-01 with a phone streaming
+through DroidCam: the ring kept one segment per second, every capture wrote a
+playable 30-second `.mp4`, and closing the window left no FFmpeg process behind.
+The phone dropping mid-session has not been exercised yet.
+
+Storage is PostgreSQL by default: the database `docker-compose.yml` starts, unless
+`VARZINHO_DATABASE_URL` names another. `VARZINHO_STORAGE=csv` is the offline mode
+that keeps everything in CSV under `data/`. An unreachable database stops the
+application instead of falling back to CSV. `bootstrap/Storage` makes that choice
+once for the three ports — `HighlightRepository`, `GymRepository` and
+`OperatorStore` — each of which has a CSV and a PostgreSQL adapter. The local
+database runs in Docker (`docker compose up -d`); the database tests use
+Testcontainers and are skipped where Docker is missing.
+
+The window opens only after an operator signs in. `Operator` is a staff account
+that keeps only a password hash; the first run asks for the first operator, a
+signed-in operator registers others, and a forgotten password goes through a
+simulated recovery. Operators are the only people the code models; the athlete
+is a role in the glossary, not a class. A public spectator view (#188) streams the phone
+court and sells a clip through a simulated or real Pix payment.
+
+The second assignment ([docs/Trabalho 2.md](docs/Trabalho%202.md)) asks for SOLID and
+Clean Architecture. The code is now in those layers: `domain/` holds the entities,
+`application/` the use cases (`ManageGym`, `CaptureHighlight`, `BrowseArchive`,
+`OperatorAccess`, ...) and, in `application/port/`, the storage contracts;
+`infrastructure/` the adapters for files, PostgreSQL, FFmpeg and the spectator view;
+`ui/` the window, which reaches the model only through the use cases; and
+`bootstrap/` the composition root, `Launcher` and `Storage`. `ArchitectureTest`
+fails when a layer imports one further out. The work items are in
+[docs/PLAN-CLEAN-ARCHITECTURE.md](docs/PLAN-CLEAN-ARCHITECTURE.md), one issue each,
+and what each merged one changed in
+[docs/CHANGES-CLEAN-ARCHITECTURE.md](docs/CHANGES-CLEAN-ARCHITECTURE.md). The
+README's second-assignment section maps each SOLID principle and each layer to
+the classes that show it.
 
 ## Agent skills
 

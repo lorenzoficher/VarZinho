@@ -1,21 +1,17 @@
 package br.edu.unipampa.varzinho.domain.structure;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import br.edu.unipampa.varzinho.domain.capture.FixedCamera;
 import br.edu.unipampa.varzinho.domain.capture.PtzCamera;
-import br.edu.unipampa.varzinho.domain.people.Athlete;
-import br.edu.unipampa.varzinho.domain.people.Operator;
-import br.edu.unipampa.varzinho.domain.people.Person;
 import br.edu.unipampa.varzinho.enums.CameraStatus;
 import br.edu.unipampa.varzinho.enums.Resolution;
 import br.edu.unipampa.varzinho.exception.DuplicateCameraException;
@@ -29,17 +25,45 @@ class GymTest {
     }
 
     @Test
-    void findAddedCourt() {
+    void opensCourtOneWhenTheGymHasNoCourts() {
         Gym gym = new Gym("Arena", "Rua A");
-        Court court = new Court(1);
-        gym.addCourt(court);
-        assertSame(court, gym.findCourt(1));
+
+        Court opened = gym.openNextCourt();
+
+        assertEquals(1, opened.getNumber());
+        assertSame(opened, gym.findCourt(1).orElseThrow());
+        assertEquals(1, gym.getCourts().size());
     }
 
     @Test
-    void findUnknownCourt() {
+    void opensTheCourtAfterTheHighestNumberWhenThereAreGaps() {
         Gym gym = new Gym("Arena", "Rua A");
-        assertNull(gym.findCourt(99));
+        Court first = new Court(1);
+        Court fourth = new Court(4);
+        gym.addCourt(fourth);
+        gym.addCourt(first);
+
+        Court opened = gym.openNextCourt();
+
+        assertEquals(5, opened.getNumber());
+        assertSame(opened, gym.findCourt(5).orElseThrow());
+        assertSame(first, gym.findCourt(1).orElseThrow());
+        assertSame(fourth, gym.findCourt(4).orElseThrow());
+        assertEquals(3, gym.getCourts().size());
+    }
+
+    @Test
+    void findsTheCourtRegisteredUnderANumber() {
+        Gym gym = new Gym("Arena", "Rua A");
+        Court court = new Court(1);
+        gym.addCourt(court);
+        assertEquals(Optional.of(court), gym.findCourt(1));
+    }
+
+    @Test
+    void findsNoCourtForAnUnregisteredNumber() {
+        Gym gym = new Gym("Arena", "Rua A");
+        assertTrue(gym.findCourt(99).isEmpty());
     }
 
     @Test
@@ -61,7 +85,7 @@ class GymTest {
 
         gym.installCamera(1, camera);
 
-        assertEquals(List.of(camera), gym.findCourt(1).getCameras());
+        assertEquals(List.of(camera), gym.findCourt(1).orElseThrow().getCameras());
     }
 
     @Test
@@ -75,7 +99,7 @@ class GymTest {
                 () -> gym.installCamera(2, new FixedCamera("fixed-1", "Fixed", Resolution.HD, 30, 45)));
 
         assertEquals("camera fixed-1 is already installed on court 1", refusal.getMessage());
-        assertTrue(gym.findCourt(2).getCameras().isEmpty());
+        assertTrue(gym.findCourt(2).orElseThrow().getCameras().isEmpty());
     }
 
     @Test
@@ -95,8 +119,8 @@ class GymTest {
 
         gym.moveCamera(camera, 2);
 
-        assertTrue(gym.findCourt(1).getCameras().isEmpty());
-        assertEquals(List.of(camera), gym.findCourt(2).getCameras());
+        assertTrue(gym.findCourt(1).orElseThrow().getCameras().isEmpty());
+        assertEquals(List.of(camera), gym.findCourt(2).orElseThrow().getCameras());
         assertEquals(CameraStatus.INACTIVE, camera.getStatus());
     }
 
@@ -123,7 +147,7 @@ class GymTest {
                 () -> gym.moveCamera(camera, 9));
 
         assertEquals("court 9 is not registered", refusal.getMessage());
-        assertEquals(List.of(camera), gym.findCourt(1).getCameras());
+        assertEquals(List.of(camera), gym.findCourt(1).orElseThrow().getCameras());
         assertEquals(CameraStatus.ACTIVE, camera.getStatus());
     }
 
@@ -148,6 +172,44 @@ class GymTest {
     }
 
     @Test
+    void aRemovedCourtIsNeitherFoundNorListed() {
+        Gym gym = gymWithTwoCourts();
+
+        gym.removeCourt(2);
+
+        assertTrue(gym.findCourt(2).isEmpty());
+        assertEquals(List.of(1), gym.getCourts().stream().map(Court::getNumber).toList());
+    }
+
+    @Test
+    void removingACourtTheGymDoesNotHaveIsRefused() {
+        Gym gym = gymWithTwoCourts();
+
+        assertThrows(IllegalArgumentException.class, () -> gym.removeCourt(3));
+        assertEquals(2, gym.getCourts().size());
+    }
+
+    @Test
+    void aCourtThatStillHoldsACameraIsNotRemoved() {
+        Gym gym = gymWithTwoCourts();
+        FixedCamera camera = new FixedCamera("fixed-1", "Fixed", Resolution.HD, 30, 45);
+        gym.installCamera(2, camera);
+
+        assertThrows(IllegalStateException.class, () -> gym.removeCourt(2));
+        assertEquals(List.of(camera), gym.findCourt(2).orElseThrow().getCameras());
+    }
+
+    @Test
+    void aRemovedCourtNumberCanBeAddedAgain() {
+        Gym gym = gymWithTwoCourts();
+        gym.removeCourt(2);
+
+        gym.addCourt(new Court(2));
+
+        assertEquals(2, gym.getCourts().size());
+    }
+
+    @Test
     void courtsAreUnmodifiable() {
         Gym gym = new Gym("Arena", "Rua A");
         gym.addCourt(new Court(1));
@@ -160,22 +222,6 @@ class GymTest {
         );
 
         assertEquals(1, gym.getCourts().size());
-    }
-
-    @Test
-    void registersDifferentKindsOfPeopleThroughTheSameOperation() {
-        Gym gym = new Gym("VarZinho", "100 Sports Avenue");
-        Person athlete = new Athlete("Ana", "ATH-1", LocalDate.of(2000, 1, 1), 10, "Forward");
-        Person operator = new Operator("Otavio", "OP-1", LocalDate.of(1990, 1, 1), "B-7", "Evening");
-
-        gym.registerPerson(athlete);
-        gym.registerPerson(operator);
-
-        assertEquals(athlete, gym.findPerson("ATH-1").orElseThrow());
-        assertEquals(operator, gym.findPerson("OP-1").orElseThrow());
-        assertTrue(gym.findPerson("unknown").isEmpty());
-        assertThrows(IllegalArgumentException.class, () -> gym.registerPerson(athlete));
-        assertThrows(UnsupportedOperationException.class, () -> gym.getPeople().clear());
     }
 
     private static Gym gymWithTwoCourts() {

@@ -25,6 +25,16 @@ public abstract class Camera {
     private CameraStatus status;
     private int clipsCut;
 
+    /**
+     * Builds a camera that is switched off, with an empty buffer of the given length.
+     *
+     * @param id the identifier, unique across the gym the camera is installed in
+     * @param model the make and model of the equipment
+     * @param resolution the resolution it records at
+     * @param bufferSeconds how many of the most recent seconds the camera keeps
+     * @throws IllegalArgumentException if the id or model is missing or blank, the
+     *         resolution is missing, or the buffer is not at least one second long
+     */
     protected Camera(String id, String model, Resolution resolution, int bufferSeconds) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("a camera needs an identifier");
@@ -63,8 +73,23 @@ public abstract class Camera {
         status = CameraStatus.ACTIVE;
     }
 
+    /**
+     * Takes the camera to the bench, from whatever state it was in. It stops recording,
+     * and nothing but {@link #releaseFromMaintenance()} brings it back.
+     */
     public void sendToMaintenance() {
         status = CameraStatus.MAINTENANCE;
+    }
+
+    /**
+     * Brings the camera back from the bench switched off. It records again only once
+     * someone calls {@link #startRecording()}.
+     *
+     * @throws IllegalStateException if the camera is not under maintenance
+     */
+    public void releaseFromMaintenance() {
+        if (status != CameraStatus.MAINTENANCE) throw new IllegalStateException("camera is not under maintenance");
+        status = CameraStatus.INACTIVE;
     }
 
     /**
@@ -86,6 +111,8 @@ public abstract class Camera {
      * Feeds one second of footage to the camera, which keeps it only while it is
      * recording. A camera that is off drops what it is sent rather than refusing it:
      * the gym goes on producing seconds whatever this camera is doing.
+     *
+     * @param frame the second that just went by
      */
     public void record(Frame frame) {
         if (!status.canRecord()) {
@@ -121,8 +148,12 @@ public abstract class Camera {
      * Freezes the most recent seconds into a clip. Each kind of camera produces one
      * its own way, and a court triggers them all through this single call.
      *
+     * <p>Every kind keeps one promise: the clip is finished when this returns. A kind
+     * that writes a file has written it, so whoever holds the clip may archive it at
+     * once, without knowing which kind of camera cut it.
+     *
      * @param seconds how much of the recent past to keep
-     * @return the clip that stands for those seconds
+     * @return the finished clip that stands for those seconds
      * @throws EmptyBufferException if the camera is not recording, or has not recorded
      *         that many seconds yet
      */
@@ -134,6 +165,7 @@ public abstract class Camera {
      * keeps two triggers ending on the same second from naming the same file.
      *
      * @param last the most recent frame of the window being frozen
+     * @return the file name without its extension, which the subclass adds
      */
     protected final String clipName(Frame last) {
         clipsCut++;
@@ -144,12 +176,13 @@ public abstract class Camera {
      * Builds the clip for a window this camera has already taken, stamping it with
      * what every camera knows about its own footage.
      *
-     * <p>The size is an estimate, not a measurement: no file is written and no frame
-     * is ever encoded, so megapixels times seconds is as close to the truth as this
-     * model gets.
+     * <p>The size is an estimate, not a measurement: no frame is ever encoded in Java,
+     * so megapixels times seconds is as close to the truth as this model gets. A stream
+     * camera's real file is written outside the domain, and its size is still estimated.
      *
      * @param filePath where the subclass decided the clip belongs
      * @param seconds the length of the window being frozen
+     * @return the clip, at this camera's resolution and with its estimated size
      */
     protected final VideoClip clipFrom(String filePath, int seconds) {
         double megapixels = resolution.width() * resolution.height() / 1_000_000.0;
@@ -170,38 +203,45 @@ public abstract class Camera {
      * the lines of different cameras still read alike when listed together.
      *
      * @param kind how this kind of camera names itself
+     * @return the id, kind, resolution and status, for the subclass to extend
      */
     protected final String describeAs(String kind) {
         return id + " · " + kind + " · " + resolution + " · " + status;
     }
 
+    /** {@return whether the camera is active, so it keeps the frames it is sent} */
     public boolean isRecording() {
         return status.canRecord();
     }
 
+    /** {@return whether the camera is active, switched off or under maintenance} */
     public CameraStatus getStatus() {
         return status;
     }
 
+    /** {@return the identifier, never blank and unique across the camera's gym} */
     public String getId() {
         return id;
     }
 
+    /** {@return the make and model of the equipment, never blank} */
     public String getModel() {
         return model;
     }
 
+    /** {@return the resolution the camera records at} */
     public Resolution getResolution() {
         return resolution;
     }
 
+    /** {@return how many seconds the buffer holds at most: the longest clip it can give} */
     public int getBufferSeconds() {
         return buffer.capacity();
     }
 
     /**
-     * @return how many seconds the buffer holds since the camera was last switched on,
-     *     never more than its length
+     * {@return how many seconds the buffer holds since the camera was last switched on,
+     * never more than its length}
      */
     public int getSecondsRecorded() {
         return buffer.size();

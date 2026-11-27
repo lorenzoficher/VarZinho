@@ -17,14 +17,57 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.10.2</junit.version>
+        <flatlaf.version>3.5.4</flatlaf.version>
+        <miglayout.version>11.4.2</miglayout.version>
+        <postgresql.version>42.7.14</postgresql.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <exec.mainClass>br.edu.unipampa.varzinho.Main</exec.mainClass>
     </properties>
 
     <dependencies>
         <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>${flatlaf.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-extras</artifactId>
+            <version>${flatlaf.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.miglayout</groupId>
+            <artifactId>miglayout-swing</artifactId>
+            <version>${miglayout.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -75,6 +118,26 @@
                 <version>3.2.0</version>
                 <configuration>
                     <mainClass>${exec.mainClass}</mainClass>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.11.2</version>
+                <configuration>
+                    <release>17</release>
+                    <show>protected</show>
+                    <overview>${project.basedir}/src/main/javadoc/overview.html</overview>
+                    <!-- The submission ships the HTML and target/ is not versioned, so it lands in docs/apidocs (the plugin appends apidocs). -->
+                    <outputDirectory>${project.basedir}/docs</outputDirectory>
+                    <!-- Without it every regeneration rewrites every page with a new date, and the diff hides the real changes. -->
+                    <notimestamp>true</notimestamp>
+                    <doctitle>VarZinho ${project.version} API</doctitle>
+                    <windowtitle>VarZinho ${project.version} API</windowtitle>
+                    <!-- Missing tags are being filled in per layer; only real errors should stop the build. -->
+                    <failOnWarnings>false</failOnWarnings>
+                    <failOnError>true</failOnError>
                 </configuration>
             </plugin>
         </plugins>

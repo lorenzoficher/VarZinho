@@ -1,0 +1,60 @@
+package br.edu.unipampa.varzinho.infrastructure.persistence;
+
+import br.edu.unipampa.varzinho.application.port.HighlightRepository;
+import br.edu.unipampa.varzinho.application.port.RepositoryException;
+
+import br.edu.unipampa.varzinho.application.port.StorableHighlights;
+import br.edu.unipampa.varzinho.domain.highlight.Highlight;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+/**
+ * Keeps highlights in memory only, so they vanish with the process. It exists to
+ * prove the abstraction holds and to let other aggregates' tests run without a file.
+ */
+public final class InMemoryHighlightRepository implements HighlightRepository {
+
+    private final Map<String, Highlight> highlightsById = new LinkedHashMap<>();
+
+    /** Starts with an empty archive. */
+    public InMemoryHighlightRepository() { }
+
+    @Override
+    public void save(Highlight highlight) {
+        StorableHighlights.requireStorable(highlight);
+        highlightsById.put(highlight.getId(), highlight);
+    }
+
+    @Override
+    public void rename(String id, String title) throws RepositoryException {
+        Highlight item = findById(id).orElseThrow(() -> new RepositoryException("recording no longer exists"));
+        highlightsById.put(id, item.named(title));
+    }
+
+    @Override
+    public void delete(String id) {
+        highlightsById.remove(id);
+    }
+
+    @Override
+    public Optional<Highlight> findById(String id) {
+        return Optional.ofNullable(highlightsById.get(id));
+    }
+
+    @Override
+    public List<Highlight> findAll() {
+        return new ArrayList<>(highlightsById.values());
+    }
+
+    @Override
+    public List<Highlight> findByCourt(int courtNumber) {
+        return highlightsById.values().stream()
+                .filter(highlight -> highlight.getCourtNumber() == courtNumber)
+                .collect(Collectors.toList());
+    }
+}

@@ -1,8 +1,9 @@
 package br.edu.unipampa.varzinho;
 
-import br.edu.unipampa.varzinho.repository.CsvHighlightRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import br.edu.unipampa.varzinho.infrastructure.persistence.CsvHighlightRepository;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -10,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConsoleDemoTest {
@@ -31,10 +33,9 @@ class ConsoleDemoTest {
 
         String demonstration = output.toString(StandardCharsets.UTF_8);
         assertEquals(1, new CsvHighlightRepository(archive).findByCourt(1).size());
-        assertTrue(demonstration.contains("Registered:"));
+        assertFalse(demonstration.contains("Registered:"));
         assertTrue(demonstration.contains("Reloaded highlight:"));
-        assertTrue(demonstration.contains("Existing archive for court 1 searched by"));
-        assertTrue(demonstration.contains("after a request from"));
+        assertTrue(demonstration.contains("Existing archive for court 1 ("));
         assertTrue(demonstration.contains("Expected error:"));
     }
 }

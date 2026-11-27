@@ -15,7 +15,8 @@ nobody scrubs through six hours of video to find a goal.
 ## Solution
 
 Cameras record continuously into a circular buffer holding the last 30
-seconds. A button on the court freezes that window into a permanent clip.
+seconds. A button on the court freezes that window into a clip, kept for seven
+days.
 Everything older is discarded automatically and never reaches disk.
 
 The result is an archive containing only the moments somebody cared about,
@@ -28,8 +29,8 @@ identity.
 1. Model the domain in Java with correct object-oriented design
 2. Demonstrate encapsulation, inheritance, polymorphism, abstraction,
    associations and exception handling
-3. Produce a working, testable system, driven from a minimal Swing interface
-   and exercised by automated tests
+3. Produce a working, testable system, driven from a Swing interface and
+   exercised by automated tests
 4. Keep persistence swappable behind an abstraction
 
 ## Non-goals
@@ -38,16 +39,19 @@ Stated explicitly so they are not mistaken for omissions:
 
 | Not doing | Why |
 |---|---|
-| Real video capture or encoding | Would consume the entire schedule and demonstrate no OOP |
-| A polished or complete interface | Section 2.9 of the brief asks for a minimal one; every rule stays in the domain, never on the screen |
-| Database | CSV is sufficient at this scale; the interface allows a later swap |
-| User accounts, login, authentication | No identity exists in the capture flow |
-| Live streaming, sponsors, multi-angle | Real products do this; out of scope here |
+| Video decoding or encoding in Java | No video library on the classpath. Since 2.0 a phone's clips are real files, but FFmpeg — an external program — writes them; see `CONTEXT.md` |
+| Business rules in the interface | The window grew past the brief's minimum — a sidebar workspace with light and dark themes — but every rule stays in the domain, never on the screen |
+| Sponsors and multi-angle | The public spectator view in #188 covers a single phone court |
 | Automatic play detection | Listed as future work |
 | Classifying the kind of play | Per-sport by nature; the system must serve any sport |
 | Recording who played or who pressed | No identity exists at the button |
 
 ## Users
+
+The extension agreed in [#188](https://github.com/lorenzoficher/VarZinho/issues/188)
+lets a remote spectator watch the phone court through a public HTTPS link and reserve
+the 30 seconds ending at the displayed playback time. A verified BRL 5.00 Pix
+payment grants access to the reserved clip. The operator's local capture remains independent.
 
 **Athlete** — plays the match and presses the button when something worth
 keeping happens. Afterwards asks the operator for the clip. Needs capture to be
@@ -77,17 +81,24 @@ about who played or who pressed.
 
 Triggering a court with no active camera is an error, not a silent no-op.
 
-### FR-3 — People registered at the gym
+### FR-3 — Operator accounts
 
-A gym keeps a register of the people around it: athletes who play there and
-operators who work there. Registration is independent of capture — no person is
-ever recorded on a highlight, because no identity exists at the moment the
-button is pressed.
+The window opens only after an operator signs in with a username and a
+password. On the first run, with no account stored, it asks for the first
+operator instead. A signed-in operator registers further operators, and a
+forgotten password is reset through a simulated recovery: no e-mail is sent.
+Only a salted hash of each password is stored.
+
+Accounts are independent of capture — no operator is ever recorded on a
+highlight, because no identity exists at the moment the button is pressed.
 
 ### FR-4 — Persistence
 
-Highlights survive between executions. They are written to a CSV file through
-the `HighlightRepository` abstraction. No other class knows the storage format.
+Highlights, the gym's structure and the operator accounts survive between
+executions. Each goes through its own abstraction — `HighlightRepository`,
+`GymRepository` and `OperatorStore` — and is written to PostgreSQL by
+default, or to CSV files under `data/` when `VARZINHO_STORAGE=csv` asks for
+the offline mode. No other class knows the storage format.
 
 ### FR-5 — Retrieval
 
@@ -102,8 +113,12 @@ status (active, inactive, maintenance) determines whether it records.
 
 ### FR-7 — Graphical interface
 
-A minimal Swing interface drives the system: the user supplies data, runs at
-least one real operation, and sees the result. It is the layer that catches
+A Swing interface drives the system: the user supplies data, runs at least
+one real operation, and sees the result. It goes beyond the brief's minimum: a
+sidebar workspace with light and dark themes, pages for the dashboard, courts,
+cameras, highlights, archive, operators and settings, the capture on F2, and
+an archive filtered by court and by day whose clips open in the system's
+video player. It is the layer that catches
 domain exceptions and turns them into a message a person can read — triggering
 a court with no active camera reports why nothing was captured, rather than
 failing silently or printing a stack trace.
@@ -112,13 +127,20 @@ The interface owns no rule. It calls the domain and displays what comes back;
 if logic starts accumulating in a window class, it belongs in a domain class
 instead.
 
+### FR-8 — Retention
+
+A recording is removed seven days after its capture, its video file included,
+so the disk does not fill. `VARZINHO_RETENTION_DAYS` sets another number of
+days, and `0` keeps everything. Expiry runs when the window opens and every
+hour after, without blocking the window.
+
 ## Non-functional requirements
 
 - **Java 17.** No language feature above 17, so the project compiles on every
   team machine and on the presentation machine.
 - **Tested.** Behaviour is developed test-first. See `TESTING.md`.
 - **Domain independent of infrastructure.** `domain/` imports nothing from
-  `repository/`.
+  `application/` or `infrastructure/`.
 - **English throughout**, except `README.md`.
 
 ## Acceptance criteria
@@ -128,8 +150,7 @@ The project is done when:
 - [x] `mvn test` passes with every spec's criteria covered
 - [x] `mvn exec:java` opens the interface and demonstrates the full flow:
       load the gym, create courts, install and control cameras, record, trigger,
-      persist, reload and list. People registration is demonstrated by
-      `ConsoleDemo`, because people do not participate in capture.
+      persist, reload and list, after an operator signs in
 - [x] A domain exception raised by the model reaches the user as a readable
       message, never as a stack trace
 - [x] Highlights written in one run are readable in the next
@@ -145,17 +166,16 @@ Deliberately deferred, recorded so the scope boundary is visible:
 
 - Multi-angle capture (many cameras per highlight, N:N)
 - `Match` grouping highlights, with teams and score
-- Database repository implementation
 - Automatic play detection
-- Sponsor and live-streaming features
-- Advanced archive search and clip playback beyond the delivered court filter
+- Sponsor features
+- Archive search beyond the delivered court, day and text filters
 
 ## Risks
 
 | Risk | Mitigation |
 |---|---|
 | ~~Official brief contradicts these decisions~~ — it did, and required a GUI | Reconciled in #30; the brief now lives in `docs/ASSIGNMENT-BRIEF.md` |
-| Swing is new to the team and was never planned for | Keep it minimal, give it its own issue and its own owner |
+| Swing is new to the team and was never planned for | Started minimal, with its own issue and its own owner; it grew only after the model was done, and never took a rule |
 | TDD unfamiliar to the team — time lost to tooling | Maven preconfigured; test only real logic, never accessors |
 | Five people editing the same files | Work split by aggregate, no cross-dependency |
 | Scope creep near the deadline | Non-goals are explicit; new work needs an issue |
