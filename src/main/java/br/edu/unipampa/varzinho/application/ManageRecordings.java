@@ -15,6 +15,8 @@ public final class ManageRecordings {
     private final RecordingEditor editor;
 
     /**
+     * Creates the use case with the editor that updates completed recordings.
+     *
      * @param editor what changes the stored recordings and their video files
      * @throws IllegalArgumentException if the editor is missing
      */
